@@ -36,6 +36,11 @@ type ConfigStruct struct {
 	ForceAuth string
 
 	ProcessEngineUrl string
+
+	AmqpUrl					string
+	AmqpReconnectTimeout    int64
+	AmqpConsumerName		string
+	AmqpDeploymentTopic		string
 }
 
 type ConfigType *ConfigStruct

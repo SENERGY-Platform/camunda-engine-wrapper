@@ -30,7 +30,14 @@ func main() {
 	err := LoadConfig(*configLocation)
 	if err != nil {
 		log.Fatal("unable to load config", err)
-	} else {
-		InitApi()
 	}
+
+	err = InitEventSourcing()
+	if err != nil {
+		log.Fatal("unable to start eventsourcing", err)
+	}
+
+	defer CloseEventSourcing()
+
+	InitApi()
 }

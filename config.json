@@ -3,5 +3,10 @@
     "LogLevel" : "CALL",
     "ForceUser": "true",
     "ForceAuth": "true",
-    "ProcessEngineUrl": "http://process-engine:8080"
+    "ProcessEngineUrl": "http://process-engine:8080",
+
+    "AmqpUrl": "amqp://guest:guest@rabbitmq:5672/",
+    "AmqpReconnectTimeout": 10,
+    "AmqpConsumerName": "camunda_wrapper",
+    "AmqpDeploymentTopic": "deployment"
 }

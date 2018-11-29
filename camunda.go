@@ -19,6 +19,8 @@ package main
 import (
 	"io/ioutil"
 	"net/url"
+	"strings"
+	"time"
 
 	"errors"
 	"net/http"
@@ -235,5 +237,46 @@ func getDefinitionByDeployment(id string) (result interface{}, err error) {
 func getDeployment(deploymentId string) (result interface{}, err error) {
 	//"/engine-rest/deployment/" + id
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/deployment/"+url.QueryEscape(deploymentId), &result)
+	return
+}
+
+func buildPayLoad(name string, xml string, svg string, boundary string, owner string) string {
+	segments := []string{}
+	deploymentSource := "sepl"
+
+	segments = append(segments, "Content-Disposition: form-data; name=\"data\"; "+"filename=\""+name+".bpmn\"\r\nContent-Type: text/xml\r\n\r\n"+xml+"\r\n")
+	segments = append(segments, "Content-Disposition: form-data; name=\"diagram\"; "+"filename=\""+name+".svg\"\r\nContent-Type: image/svg+xml\r\n\r\n"+svg+"\r\n")
+	segments = append(segments, "Content-Disposition: form-data; name=\"deployment-name\"\r\n\r\n"+name+"\r\n")
+	segments = append(segments, "Content-Disposition: form-data; name=\"deployment-source\"\r\n\r\n"+deploymentSource+"\r\n")
+	segments = append(segments, "Content-Disposition: form-data; name=\"tenant-id\"\r\n\r\n"+owner+"\r\n")
+
+	return "--" + boundary + "\r\n" + strings.Join(segments, "--"+boundary+"\r\n") + "--" + boundary + "--\r\n"
+}
+
+func DeployProcess(name string, xml string, svg string, owner string) (processId string, err error) {
+	boundary := "---------------------------" + time.Now().String()
+	b := strings.NewReader(buildPayLoad(name, xml, svg, boundary, owner))
+	resp, err := http.Post(Config.ProcessEngineUrl+"/engine-rest/deployment/create", "multipart/form-data; boundary="+boundary, b)
+	if err != nil {
+		log.Println("ERROR: request to processengine ", err)
+		return processId, err
+	}
+	responseWrapper := struct {
+		Id string `json:"id"`
+	}{}
+	err = json.NewDecoder(resp.Body).Decode(&responseWrapper)
+	processId = responseWrapper.Id
+	if err == nil && processId == "" {
+		err = errors.New("process-engine didnt deploy process: " + xml)
+	}
+	log.Println("DEBUG: DeployProcess() = ", responseWrapper)
+	return
+}
+
+func RemoveProcess(id string) (err error) {
+	client := &http.Client{}
+	url := Config.ProcessEngineUrl + "/engine-rest/deployment/" + id + "?cascade=true"
+	request, err := http.NewRequest("DELETE", url, nil)
+	_, err = client.Do(request)
 	return
 }
