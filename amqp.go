@@ -25,13 +25,13 @@ import (
 var amqp *amqp_wrapper_lib.Connection
 
 type AbstractProcess struct {
-	Xml           string         `json:"xml"`
-	Name          string         `json:"name"`
-	AbstractTasks interface{} `json:"abstract_tasks"`
+	Xml                     string      `json:"xml"`
+	Name                    string      `json:"name"`
+	AbstractTasks           interface{} `json:"abstract_tasks"`
 	AbstractDataExportTasks interface{} `json:"abstract_data_export_tasks"`
-	ReceiveTasks  interface{}     `json:"receive_tasks"`
-	MsgEvents     interface{}     `json:"msg_events"`
-	TimeEvents    interface{}    `json:"time_events"`
+	ReceiveTasks            interface{} `json:"receive_tasks"`
+	MsgEvents               interface{} `json:"msg_events"`
+	TimeEvents              interface{} `json:"time_events"`
 }
 
 type DeploymentRequest struct {
@@ -40,19 +40,19 @@ type DeploymentRequest struct {
 }
 
 type DeploymentCommand struct {
-	Command    string          		 	`json:"command"`
-	Id         string           		`json:"id"`
-	Owner      string           		`json:"owner"`
-	DeploymentXml string				`json:"deployment_xml"`
-	Deployment DeploymentRequest	`json:"deployment"`
+	Command       string            `json:"command"`
+	Id            string            `json:"id"`
+	Owner         string            `json:"owner"`
+	DeploymentXml string            `json:"deployment_xml"`
+	Deployment    DeploymentRequest `json:"deployment"`
 }
 
-func InitEventSourcing()(err error){
+func InitEventSourcing() (err error) {
 	amqp, err = amqp_wrapper_lib.Init(Config.AmqpUrl, []string{Config.AmqpDeploymentTopic}, Config.AmqpReconnectTimeout)
 	if err != nil {
 		return err
 	}
-	err = amqp.Consume(Config.AmqpConsumerName + "_" +Config.AmqpDeploymentTopic, Config.AmqpDeploymentTopic, func(delivery []byte) error {
+	err = amqp.Consume(Config.AmqpConsumerName+"_"+Config.AmqpDeploymentTopic, Config.AmqpDeploymentTopic, func(delivery []byte) error {
 		command := DeploymentCommand{}
 		err = json.Unmarshal(delivery, &command)
 		if err != nil {
@@ -62,9 +62,10 @@ func InitEventSourcing()(err error){
 		log.Println("amqp receive ", string(delivery))
 		switch command.Command {
 		case "PUT":
-			return nil
-		case "POST":
 			return handleDeploymentCreate(command)
+		case "POST":
+			log.Println("WARNING: deprecated event type POST")
+			return nil
 		case "DELETE":
 			return handleDeploymentDelete(command)
 		default:
@@ -76,38 +77,44 @@ func InitEventSourcing()(err error){
 }
 
 func handleDeploymentDelete(command DeploymentCommand) error {
-	return RemoveProcess(command.Id)
+	id, exists, err := getDeploymentId(command.Id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+	commit, rollback, err := removeVidRelation(command, id)
+	if err != nil {
+		return err
+	}
+	err = RemoveProcess(id)
+	if err != nil {
+		rollback()
+	} else {
+		commit()
+	}
+	return err
 }
 
-func handleDeploymentCreate(command DeploymentCommand)error{
-	processId, err := DeployProcess(command.Deployment.Process.Name, command.DeploymentXml, command.Deployment.Svg, command.Owner)
+func handleDeploymentCreate(command DeploymentCommand) error {
+	deploymentId, err := DeployProcess(command.Deployment.Process.Name, command.DeploymentXml, command.Deployment.Svg, command.Owner)
 	if err != nil {
 		log.Println("WARNING: unable to deploy process to camunda ", err)
 		return err
 	}
-	err = PublishDeploymentSaga(processId, command)
+	err = saveVidRelation(command, deploymentId)
 	if err != nil {
 		log.Println("WARNING: unable to publish deployment saga \n", err, "\nremove deployed process")
-		removeErr := RemoveProcess(processId)
+		removeErr := RemoveProcess(deploymentId)
 		if removeErr != nil {
-			log.Println("ERROR: unable to remove deployed process", processId, err)
+			log.Println("ERROR: unable to remove deployed process", deploymentId, err)
 		}
 		return err
 	}
 	return err
 }
 
-func CloseEventSourcing(){
+func CloseEventSourcing() {
 	amqp.Close()
 }
-
-func PublishDeploymentSaga(id string, command DeploymentCommand)error{
-	command.Id = id
-	command.Command = "PUT"
-	payload, err := json.Marshal(command)
-	if err != nil {
-		return err
-	}
-	return amqp.Publish(Config.AmqpDeploymentTopic, payload)
-}
-

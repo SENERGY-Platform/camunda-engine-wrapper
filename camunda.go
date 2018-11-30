@@ -32,22 +32,8 @@ import (
 	"github.com/SmartEnergyPlatform/util/http/request"
 )
 
-type StartResult struct {
-	Id    string `json:"id"`
-	Ended bool   `json:"ended"`
-}
-
-type OwnerWrapper struct {
-	Owner string `json:"tenantId"`
-}
-
-type ProcessVariable struct {
-	Name  string      `json:"name"`
-	Value interface{} `json:"value"`
-}
-
-func startProcess(processDefinitionId string) (result []ProcessVariable, err error) {
-	startResult := StartResult{}
+func startProcess(processDefinitionId string) (result VariableInstances, err error) {
+	startResult := ProcessInstance{}
 	var code int
 	err, _, code = request.Post(Config.ProcessEngineUrl+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/start", map[string]string{}, &startResult)
 	if err != nil {
@@ -61,7 +47,7 @@ func startProcess(processDefinitionId string) (result []ProcessVariable, err err
 	return
 }
 
-func startProcessGetId(processDefinitionId string) (result StartResult, err error) {
+func startProcessGetId(processDefinitionId string) (result ProcessInstance, err error) {
 	var code int
 	err, _, code = request.Post(Config.ProcessEngineUrl+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/start", map[string]string{}, &result)
 	if err == nil && code != http.StatusOK {
@@ -71,7 +57,7 @@ func startProcessGetId(processDefinitionId string) (result StartResult, err erro
 	return
 }
 
-func getProcessVariables(processDefinitionId string, processEnded bool) (result []ProcessVariable, err error) {
+func getProcessVariables(processDefinitionId string, processEnded bool) (result VariableInstances, err error) {
 	if processEnded {
 		err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/variable-instance?processInstanceId="+url.QueryEscape(processDefinitionId), &result)
 	} else {
@@ -81,45 +67,52 @@ func getProcessVariables(processDefinitionId string, processEnded bool) (result 
 }
 
 func checkProcessDefinitionAccess(id string, userId string) (err error) {
-	wrapper := OwnerWrapper{}
-	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/process-definition/"+url.QueryEscape(id), &wrapper)
-	if err == nil && wrapper.Owner != userId {
+	definition := ProcessDefinition{}
+	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/process-definition/"+url.QueryEscape(id), &definition)
+	if err == nil && definition.TenantId != userId {
 		err = errors.New("access denied")
 	}
 	return
 }
 
-func checkDeploymentAccess(id string, userId string) (err error) {
-	wrapper := OwnerWrapper{}
+func checkDeploymentAccess(vid string, userId string) (err error) {
+	id, exists, err := getDeploymentId(vid)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errors.New("unknown vid " + vid)
+	}
+	wrapper := Deployment{}
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/deployment/"+url.QueryEscape(id), &wrapper)
 	if err != nil {
 		log.Println("ERROR in request: ", Config.ProcessEngineUrl+"/engine-rest/deployment/"+url.QueryEscape(id), err)
 	}
-	if err == nil && wrapper.Owner != userId {
+	if err == nil && wrapper.TenantId != userId {
 		err = errors.New("access denied")
 	}
 	return
 }
 
 func checkProcessInstanceAccess(id string, userId string) (err error) {
-	wrapper := OwnerWrapper{}
+	wrapper := ProcessInstance{}
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/process-instance/"+url.QueryEscape(id), &wrapper)
-	if err == nil && wrapper.Owner != userId {
+	if err == nil && wrapper.TenantId != userId {
 		err = errors.New("access denied")
 	}
 	return
 }
 
 func checkHistoryAccess(id string, userId string) (err error) {
-	wrapper := OwnerWrapper{}
+	wrapper := HistoricProcessInstance{}
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance/"+url.QueryEscape(id), &wrapper)
-	if err == nil && wrapper.Owner != userId {
+	if err == nil && wrapper.TenantId != userId {
 		err = errors.New("access denied")
 	}
 	return
 }
 
-func getProcessInstanceIncidents(id string) (result interface{}, err error) {
+func getProcessInstanceIncidents(id string) (result Incidents, err error) {
 	//"/engine-rest/incident?processInstanceId=" + processInstanceId
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/incident?processInstanceId="+url.QueryEscape(id), &result)
 	return
@@ -139,7 +132,7 @@ func removeProcessInstance(id string) (err error) {
 	defer resp.Body.Close()
 	if !(resp.StatusCode == 200 || resp.StatusCode == 204) {
 		msg, _ := ioutil.ReadAll(resp.Body)
-		err = errors.New("error on delete in engine for " + Config.ProcessEngineUrl+"/engine-rest/process-instance/"+url.QueryEscape(id) + ": " + resp.Status + " " + string(msg))
+		err = errors.New("error on delete in engine for " + Config.ProcessEngineUrl + "/engine-rest/process-instance/" + url.QueryEscape(id) + ": " + resp.Status + " " + string(msg))
 	}
 	return
 }
@@ -160,61 +153,65 @@ func removeProcessInstanceHistory(id string) (result interface{}, err error) {
 	return
 }
 
-func getProcessInstanceHistoricVariables(id string) (result interface{}, err error) {
+func getProcessInstanceHistoricVariables(id string) (result VariableInstances, err error) {
 	//"/engine-rest/history/variable-instance?processInstanceId=" + processInstanceId
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/variable-instance?processInstanceId="+url.QueryEscape(id), &result)
 	return
 }
 
-func getProcessInstanceHistoryByProcessDefinition(id string) (result interface{}, err error) {
+func getProcessInstanceHistoryByProcessDefinition(id string) (result HistoricProcessInstances, err error) {
 	//"/engine-rest/history/process-instance?processDefinitionId="
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id), &result)
 	return
 }
-func getProcessInstanceHistoryByProcessDefinitionFinished(id string) (result interface{}, err error) {
+func getProcessInstanceHistoryByProcessDefinitionFinished(id string) (result HistoricProcessInstances, err error) {
 	//"/engine-rest/history/process-instance?processDefinitionId="
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id)+"&finished=true", &result)
 	return
 }
-func getProcessInstanceHistoryByProcessDefinitionUnfinished(id string) (result interface{}, err error) {
+func getProcessInstanceHistoryByProcessDefinitionUnfinished(id string) (result HistoricProcessInstances, err error) {
 	//"/engine-rest/history/process-instance?processDefinitionId="
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id)+"&unfinished=true", &result)
 	return
 }
 
-func getProcessInstanceHistoryList(userId string) (result interface{}, err error) {
+func getProcessInstanceHistoryList(userId string) (result HistoricProcessInstances, err error) {
 	//"/engine-rest/process-instance"
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId), &result)
 	return
 }
-func getProcessInstanceHistoryListFinished(userId string) (result interface{}, err error) {
+func getProcessInstanceHistoryListFinished(userId string) (result HistoricProcessInstances, err error) {
 	//"/engine-rest/process-instance"
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&finished=true", &result)
 	return
 }
-func getProcessInstanceHistoryListUnfinished(userId string) (result interface{}, err error) {
+func getProcessInstanceHistoryListUnfinished(userId string) (result HistoricProcessInstances, err error) {
 	//"/engine-rest/process-instance"
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&unfinished=true", &result)
 	return
 }
-func getProcessInstanceCount(userId string) (result interface{}, err error) {
+func getProcessInstanceCount(userId string) (result Count, err error) {
 	//"/engine-rest/process-instance/count"
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/process-instance/count?tenantIdIn="+url.QueryEscape(userId), &result)
 	return
 }
-func getProcessInstanceList(userId string) (result interface{}, err error) {
+func getProcessInstanceList(userId string) (result ProcessInstances, err error) {
 	//"/engine-rest/process-instance"
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/process-instance?tenantIdIn="+url.QueryEscape(userId), &result)
 	return
 }
-func getProcessDefinitionIncident(definitionId string) (result interface{}, err error) {
+func getProcessDefinitionIncident(definitionId string) (result Count, err error) {
 	//"/engine-rest/incident/count?processDefinitionId=" + deployment.processDefintionId
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/incident/count?processDefinitionId="+url.QueryEscape(definitionId), &result)
 	return
 }
-func getProcessDefinition(id string) (result interface{}, err error) {
+func getProcessDefinition(id string) (result ProcessDefinition, err error) {
 	//"/engine-rest/process-definition/" + processDefinitionId
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/process-definition/"+url.QueryEscape(id), &result)
+	if err != nil {
+		return
+	}
+	err = setVid(&result)
 	return
 }
 func getProcessDefinitionDiagram(id string) (resp *http.Response, err error) {
@@ -222,21 +219,64 @@ func getProcessDefinitionDiagram(id string) (resp *http.Response, err error) {
 	resp, err = http.Get(Config.ProcessEngineUrl + "/engine-rest/process-definition/" + url.QueryEscape(id) + "/diagram")
 	return
 }
-func getDeploymentList(userId string, params url.Values) (result interface{}, err error) {
+func getDeploymentList(userId string, params url.Values) (result Deployments, err error) {
 	// "/engine-rest/deployment?tenantIdIn="+userId
 	params.Del("tenantIdIn")
-	path := Config.ProcessEngineUrl+"/engine-rest/deployment?tenantIdIn="+url.QueryEscape(userId)+"&"+params.Encode()
+	path := Config.ProcessEngineUrl + "/engine-rest/deployment?tenantIdIn=" + url.QueryEscape(userId) + "&" + params.Encode()
 	err = request.Get(path, &result)
+	if err != nil {
+		return
+	}
+	for i := 0; i < len(result); i++ {
+		err = setVid(&result[i])
+		if err != nil {
+			return
+		}
+	}
 	return
 }
-func getDefinitionByDeployment(id string) (result interface{}, err error) {
+
+func getDefinitionByDeployment(vid string) (result ProcessDefinitions, err error) {
+	id, exists, err := getDeploymentId(vid)
+	if err != nil {
+		return result, err
+	}
+	if !exists {
+		return result, errors.New("unknown vid " + vid)
+	}
 	//"/engine-rest/process-definition?deploymentId=
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/process-definition?deploymentId="+url.QueryEscape(id), &result)
+	if err != nil {
+		return
+	}
+	for i := 0; i < len(result); i++ {
+		err = setVid(&result[i])
+		if err != nil {
+			return
+		}
+	}
 	return
 }
-func getDeployment(deploymentId string) (result interface{}, err error) {
+func getDeployment(vid string) (result Deployment, err error) {
+	deploymentId, exists, err := getDeploymentId(vid)
+	if err != nil {
+		return result, err
+	}
+	if !exists {
+		return result, errors.New("unknown vid " + vid)
+	}
 	//"/engine-rest/deployment/" + id
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/deployment/"+url.QueryEscape(deploymentId), &result)
+	if err != nil {
+		return
+	}
+	err = setVid(&result)
+	return
+}
+
+//uses original deploymentId (not vid)
+func getDeploymentCount(deploymentId string) (result Count, err error) {
+	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/deployment/count?id="+url.QueryEscape(deploymentId), &result)
 	return
 }
 
@@ -253,29 +293,38 @@ func buildPayLoad(name string, xml string, svg string, boundary string, owner st
 	return "--" + boundary + "\r\n" + strings.Join(segments, "--"+boundary+"\r\n") + "--" + boundary + "--\r\n"
 }
 
-func DeployProcess(name string, xml string, svg string, owner string) (processId string, err error) {
+//returns original deploymentId (not vid)
+func DeployProcess(name string, xml string, svg string, owner string) (deploymentId string, err error) {
 	boundary := "---------------------------" + time.Now().String()
 	b := strings.NewReader(buildPayLoad(name, xml, svg, boundary, owner))
 	resp, err := http.Post(Config.ProcessEngineUrl+"/engine-rest/deployment/create", "multipart/form-data; boundary="+boundary, b)
 	if err != nil {
 		log.Println("ERROR: request to processengine ", err)
-		return processId, err
+		return deploymentId, err
 	}
 	responseWrapper := struct {
 		Id string `json:"id"`
 	}{}
 	err = json.NewDecoder(resp.Body).Decode(&responseWrapper)
-	processId = responseWrapper.Id
-	if err == nil && processId == "" {
+	deploymentId = responseWrapper.Id
+	if err == nil && deploymentId == "" {
 		err = errors.New("process-engine didnt deploy process: " + xml)
 	}
 	log.Println("DEBUG: DeployProcess() = ", responseWrapper)
 	return
 }
 
-func RemoveProcess(id string) (err error) {
+//uses original deploymentId (not vid)
+func RemoveProcess(deploymentId string) (err error) {
+	count, err := getDeploymentCount(deploymentId)
+	if err != nil {
+		return err
+	}
+	if count.Count == 0 {
+		return nil
+	}
 	client := &http.Client{}
-	url := Config.ProcessEngineUrl + "/engine-rest/deployment/" + id + "?cascade=true"
+	url := Config.ProcessEngineUrl + "/engine-rest/deployment/" + deploymentId + "?cascade=true"
 	request, err := http.NewRequest("DELETE", url, nil)
 	_, err = client.Do(request)
 	return
