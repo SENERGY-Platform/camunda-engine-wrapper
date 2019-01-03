@@ -221,18 +221,28 @@ func getProcessDefinitionDiagram(id string) (resp *http.Response, err error) {
 }
 func getDeploymentList(userId string, params url.Values) (result Deployments, err error) {
 	// "/engine-rest/deployment?tenantIdIn="+userId
+	temp := Deployments{}
 	params.Del("tenantIdIn")
 	path := Config.ProcessEngineUrl + "/engine-rest/deployment?tenantIdIn=" + url.QueryEscape(userId) + "&" + params.Encode()
-	err = request.Get(path, &result)
+	err = request.Get(path, &temp)
 	if err != nil {
 		return
 	}
-	for i := 0; i < len(result); i++ {
-		err = setVid(&result[i])
+	for i := 0; i < len(temp); i++ {
+		err = setVid(&temp[i])
 		if err != nil {
-			return
+			log.Println("WARNING: unable to find virtual id for process; ignore process", temp[i].Id, temp[i].Name, err)
+		} else {
+			result = append(result, temp[i])
 		}
 	}
+	return
+}
+
+//returns all process deployments without replacing the deployment id with the virtual id
+func getDeploymentListAllRaw() (result Deployments, err error) {
+	path := Config.ProcessEngineUrl + "/engine-rest/deployment"
+	err = request.Get(path, &result)
 	return
 }
 
@@ -302,11 +312,19 @@ func DeployProcess(name string, xml string, svg string, owner string) (deploymen
 		log.Println("ERROR: request to processengine ", err)
 		return deploymentId, err
 	}
-	responseWrapper := struct {
-		Id string `json:"id"`
-	}{}
+	responseWrapper := map[string]interface{}{}
 	err = json.NewDecoder(resp.Body).Decode(&responseWrapper)
-	deploymentId = responseWrapper.Id
+	if err != nil {
+		log.Println("ERROR: unable to decode process engine deployment response", err)
+		return
+	}
+	ok := false
+	deploymentId, ok = responseWrapper["id"].(string)
+	if !ok {
+		log.Println("unable to interpret process engine deployment response", responseWrapper)
+		err = errors.New("unable to interpret process engine deployment response")
+		return
+	}
 	if err == nil && deploymentId == "" {
 		err = errors.New("process-engine didnt deploy process: " + xml)
 	}

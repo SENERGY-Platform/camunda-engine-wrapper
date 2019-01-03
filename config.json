@@ -8,5 +8,8 @@
     "AmqpUrl": "amqp://guest:guest@rabbitmq:5672/",
     "AmqpReconnectTimeout": 10,
     "AmqpConsumerName": "camunda_wrapper",
-    "AmqpDeploymentTopic": "deployment"
+    "AmqpDeploymentTopic": "deployment",
+
+    "PgConn": "postgres://user:password@host/dbname?sslmode=disable",
+    "MaintenanceTime": 6
 }

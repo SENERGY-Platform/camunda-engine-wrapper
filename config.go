@@ -37,10 +37,13 @@ type ConfigStruct struct {
 
 	ProcessEngineUrl string
 
-	AmqpUrl					string
-	AmqpReconnectTimeout    int64
-	AmqpConsumerName		string
-	AmqpDeploymentTopic		string
+	AmqpUrl              string
+	AmqpReconnectTimeout int64
+	AmqpConsumerName     string
+	AmqpDeploymentTopic  string
+
+	PgConn          string
+	MaintenanceTime int64 //in hours
 }
 
 type ConfigType *ConfigStruct

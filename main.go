@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"time"
 )
 
 func main() {
@@ -38,6 +39,14 @@ func main() {
 	}
 
 	defer CloseEventSourcing()
+
+	ticker := time.NewTicker(time.Duration(Config.MaintenanceTime) * time.Hour)
+	defer ticker.Stop()
+	go func() {
+		for tick := range ticker.C {
+			log.Println("MAINTENANCE: ", tick, clearUnlinkedDeployments())
+		}
+	}()
 
 	InitApi()
 }

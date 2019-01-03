@@ -53,6 +53,8 @@ func InitEventSourcing() (err error) {
 		return err
 	}
 	err = amqp.Consume(Config.AmqpConsumerName+"_"+Config.AmqpDeploymentTopic, Config.AmqpDeploymentTopic, func(delivery []byte) error {
+		maintenanceLock.RLock()
+		defer maintenanceLock.RUnlock()
 		command := DeploymentCommand{}
 		err = json.Unmarshal(delivery, &command)
 		if err != nil {
@@ -97,7 +99,11 @@ func handleDeploymentDelete(command DeploymentCommand) error {
 	return err
 }
 
-func handleDeploymentCreate(command DeploymentCommand) error {
+func handleDeploymentCreate(command DeploymentCommand) (err error) {
+	err = cleanupExistingDeployment(command)
+	if err != nil {
+		return err
+	}
 	deploymentId, err := DeployProcess(command.Deployment.Process.Name, command.DeploymentXml, command.Deployment.Svg, command.Owner)
 	if err != nil {
 		log.Println("WARNING: unable to deploy process to camunda ", err)
@@ -115,6 +121,26 @@ func handleDeploymentCreate(command DeploymentCommand) error {
 	return err
 }
 
+func cleanupExistingDeployment(command DeploymentCommand) error {
+	exists, err := vidExists(command.Id)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return handleDeploymentDelete(DeploymentCommand{Id: command.Id, Owner: command.Owner, Command: "DELETE"})
+	}
+	return nil
+}
+
 func CloseEventSourcing() {
 	amqp.Close()
+}
+
+func PublishDeploymentDelete(id string) error {
+	command := DeploymentCommand{Id: id, Command: "DELETE"}
+	payload, err := json.Marshal(command)
+	if err != nil {
+		return err
+	}
+	return amqp.Publish(Config.AmqpDeploymentTopic, payload)
 }
