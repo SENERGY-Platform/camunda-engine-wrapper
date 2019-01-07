@@ -33,20 +33,24 @@ func main() {
 		log.Fatal("unable to load config", err)
 	}
 
-	err = InitEventSourcing()
-	if err != nil {
-		log.Fatal("unable to start eventsourcing", err)
-	}
-
-	defer CloseEventSourcing()
-
-	ticker := time.NewTicker(time.Duration(Config.MaintenanceTime) * time.Hour)
-	defer ticker.Stop()
-	go func() {
-		for tick := range ticker.C {
-			log.Println("MAINTENANCE: ", tick, clearUnlinkedDeployments())
+	if Config.Migrate == "true" {
+		log.Println(Migrate())
+	} else {
+		err = InitEventSourcing()
+		if err != nil {
+			log.Fatal("unable to start eventsourcing", err)
 		}
-	}()
 
-	InitApi()
+		defer CloseEventSourcing()
+
+		ticker := time.NewTicker(time.Duration(Config.MaintenanceTime) * time.Hour)
+		defer ticker.Stop()
+		go func() {
+			for tick := range ticker.C {
+				log.Println("MAINTENANCE: ", tick, clearUnlinkedDeployments())
+			}
+		}()
+
+		InitApi()
+	}
 }

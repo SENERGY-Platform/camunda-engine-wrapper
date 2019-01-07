@@ -22,7 +22,13 @@ import (
 	"log"
 )
 
-var amqp *amqp_wrapper_lib.Connection
+type AmqpInterface interface {
+	Consume(qname string, resource string, worker amqp_wrapper_lib.ConsumerFunc) (err error)
+	Publish(resource string, payload []byte) error
+	Close()
+}
+
+var amqp AmqpInterface
 
 type AbstractProcess struct {
 	Xml                     string      `json:"xml"`
@@ -69,7 +75,7 @@ func InitEventSourcing() (err error) {
 			log.Println("WARNING: deprecated event type POST")
 			return nil
 		case "DELETE":
-			return handleDeploymentDelete(command)
+			return handleDeploymentDelete(command.Id)
 		default:
 			log.Println("WARNING: unknown event type", string(delivery))
 			return nil
@@ -78,15 +84,15 @@ func InitEventSourcing() (err error) {
 	return err
 }
 
-func handleDeploymentDelete(command DeploymentCommand) error {
-	id, exists, err := getDeploymentId(command.Id)
+func handleDeploymentDelete(vid string) error {
+	id, exists, err := getDeploymentId(vid)
 	if err != nil {
 		return err
 	}
 	if !exists {
 		return nil
 	}
-	commit, rollback, err := removeVidRelation(command, id)
+	commit, rollback, err := removeVidRelation(vid, id)
 	if err != nil {
 		return err
 	}
@@ -100,7 +106,7 @@ func handleDeploymentDelete(command DeploymentCommand) error {
 }
 
 func handleDeploymentCreate(command DeploymentCommand) (err error) {
-	err = cleanupExistingDeployment(command)
+	err = cleanupExistingDeployment(command.Id)
 	if err != nil {
 		return err
 	}
@@ -109,7 +115,7 @@ func handleDeploymentCreate(command DeploymentCommand) (err error) {
 		log.Println("WARNING: unable to deploy process to camunda ", err)
 		return err
 	}
-	err = saveVidRelation(command, deploymentId)
+	err = saveVidRelation(command.Id, deploymentId)
 	if err != nil {
 		log.Println("WARNING: unable to publish deployment saga \n", err, "\nremove deployed process")
 		removeErr := RemoveProcess(deploymentId)
@@ -121,13 +127,13 @@ func handleDeploymentCreate(command DeploymentCommand) (err error) {
 	return err
 }
 
-func cleanupExistingDeployment(command DeploymentCommand) error {
-	exists, err := vidExists(command.Id)
+func cleanupExistingDeployment(vid string) error {
+	exists, err := vidExists(vid)
 	if err != nil {
 		return err
 	}
 	if exists {
-		return handleDeploymentDelete(DeploymentCommand{Id: command.Id, Owner: command.Owner, Command: "DELETE"})
+		return handleDeploymentDelete(vid)
 	}
 	return nil
 }

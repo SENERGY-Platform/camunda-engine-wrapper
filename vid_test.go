@@ -38,21 +38,7 @@ const jwt jwt_http_router.JwtImpersonate = `Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgO
 var jwtPayload = jwt_http_router.Jwt{}
 var _ = jwt_http_router.GetJWTPayload(string(jwt), &jwtPayload)
 
-/*
-TODO: idempotent events
-
-DELETE
-	1. process does not exist, relation exists
-	2. neither exist
-	3. both exist
-
-PUT
-	1. process does not exist, relation exists
-	2. neither exist
-	3. both exist
-*/
-
-func Test(t *testing.T) {
+func TestVid(t *testing.T) {
 	pgCloser, _, _, pgStr, err := testHelper_getPgDependency("vid_relations")
 	defer pgCloser()
 	if err != nil {
@@ -94,7 +80,6 @@ func Test(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	defer db.Close()
 
 	//put process
 	err = testHelper_putProcess("1", "n11", jwtPayload.UserId)
@@ -157,7 +142,7 @@ func Test(t *testing.T) {
 	}
 
 	//delete by vid
-	err = testHelper_deleteProcess("1", jwtPayload.UserId)
+	err = testHelper_deleteProcess("1")
 	if err != nil {
 		t.Error(err)
 		return
@@ -188,7 +173,7 @@ func Test(t *testing.T) {
 	}
 
 	//manually add relation without process in camunda
-	err = saveVidRelation(DeploymentCommand{Id: "v2"}, "d2")
+	err = saveVidRelation("v2", "d2")
 	if err != nil {
 		t.Error(err)
 		return
@@ -226,14 +211,14 @@ func Test(t *testing.T) {
 	}
 
 	//manually add relation without process in camunda
-	err = saveVidRelation(DeploymentCommand{Id: "v3"}, "d3")
+	err = saveVidRelation("v3", "d3")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//delete added relation by "event"
-	err = testHelper_deleteProcess("v3", jwtPayload.UserId)
+	err = testHelper_deleteProcess("v3")
 	if err != nil {
 		t.Error(err)
 		return
@@ -264,7 +249,7 @@ func Test(t *testing.T) {
 	}
 
 	//delete not existing relation (vid) by "event"
-	err = testHelper_deleteProcess("v4", jwtPayload.UserId)
+	err = testHelper_deleteProcess("v4")
 	if err != nil {
 		t.Error(err)
 		return
@@ -369,10 +354,6 @@ func testHelper_putProcess(vid string, name string, owner string) error {
 	})
 }
 
-func testHelper_deleteProcess(vid string, owner string) error {
-	return handleDeploymentDelete(DeploymentCommand{
-		Id:      vid,
-		Command: "DELETE",
-		Owner:   owner,
-	})
+func testHelper_deleteProcess(vid string) error {
+	return handleDeploymentDelete(vid)
 }

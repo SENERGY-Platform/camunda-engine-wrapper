@@ -164,3 +164,11 @@ type HistoricProcessInstance struct {
 // /engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)
 // /engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&finished=true
 type HistoricProcessInstances = []HistoricProcessInstance
+
+//result for vid migration deployment check on process-deployment service
+type DeploymentMetadata struct {
+	Process  string          `json:"process" bson:"process"`
+	Abstract AbstractProcess `json:"abstract" bson:"abstract"`
+	Online   bool            `json:"online" bson:"-"`
+	Owner    string          `json:"owner" bson:"owner"`
+}

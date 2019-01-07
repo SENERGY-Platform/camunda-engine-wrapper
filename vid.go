@@ -36,20 +36,31 @@ func clearUnlinkedDeployments() error {
 		return err
 	}
 	_, byDeplId, err := getVidRelations(db)
-
+	if err != nil {
+		return err
+	}
 	deployments, err := getDeploymentListAllRaw()
+	if err != nil {
+		return err
+	}
 	deplIndex := map[string]bool{}
 
 	for _, depl := range deployments {
 		if _, ok := byDeplId[depl.Id]; !ok {
-			RemoveProcess(depl.Id)
+			err = RemoveProcess(depl.Id)
+			if err != nil {
+				log.Println("WARNING: unable to remove process while clearing unlinked deployments: ", depl.Id, depl.Name, err)
+			}
 		}
 		deplIndex[depl.Id] = true
 	}
 
 	for did, vid := range byDeplId {
 		if filled, exists := deplIndex[did]; !filled || !exists {
-			removeVidByEvent(vid)
+			err = removeVidByEvent(vid)
+			if err != nil {
+				log.Println("WARNING: unable to remove process relation while clearing unlinked deployments: ", did, vid, err)
+			}
 		}
 	}
 	return nil
@@ -79,13 +90,13 @@ func getVidRelations(db DbInterface) (byVid map[string]string, byDeploymentId ma
 }
 
 //saves relation between vid (command.Id) and deploymentId
-func saveVidRelation(command DeploymentCommand, deploymentId string) (err error) {
+func saveVidRelation(vid string, deploymentId string) (err error) {
 	db, err := GetDB()
 	if err != nil {
 		log.Println("ERROR: ", err)
 		return err
 	}
-	_, err = db.Exec("INSERT INTO VidRelation (DeploymentId, VirtualId) VALUES ($1, $2);", deploymentId, command.Id)
+	_, err = db.Exec("INSERT INTO VidRelation (DeploymentId, VirtualId) VALUES ($1, $2);", deploymentId, vid)
 	return err
 }
 
@@ -108,7 +119,7 @@ func vidExists(vid string) (exists bool, err error) {
 }
 
 //remove relation between vid (command.Id) and deploymentId
-func removeVidRelation(command DeploymentCommand, deploymentId string) (commit func() error, rollback func() error, err error) {
+func removeVidRelation(vid string, deploymentId string) (commit func() error, rollback func() error, err error) {
 	db, err := GetDB()
 	if err != nil {
 		return commit, rollback, err
@@ -122,7 +133,7 @@ func removeVidRelation(command DeploymentCommand, deploymentId string) (commit f
 		tx.Rollback()
 		return commit, rollback, err
 	}
-	_, err = tx.Exec("DELETE FROM VidRelation WHERE VirtualId = $1; ", command.Id)
+	_, err = tx.Exec("DELETE FROM VidRelation WHERE VirtualId = $1; ", vid)
 	if err != nil {
 		tx.Rollback()
 		return commit, rollback, err
