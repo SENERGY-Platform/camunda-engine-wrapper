@@ -20,7 +20,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"github.com/SmartEnergyPlatform/jwt-http-router"
 	"github.com/ory/dockertest"
@@ -60,10 +59,7 @@ func TestVid(t *testing.T) {
 		return
 	}
 
-	configLocation := flag.String("config", "config.json", "configuration file")
-	flag.Parse()
-
-	err = LoadConfig(*configLocation)
+	err = LoadConfig("config.json")
 	if err != nil {
 		t.Error(err)
 		return

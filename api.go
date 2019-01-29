@@ -313,13 +313,13 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := removeProcessInstanceHistory(id)
+		err := removeProcessInstanceHistory(id)
 		if err != nil {
 			log.Println("ERROR: error on removeProcessInstanceHistory", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(result)
+		response.To(writer).Text("ok")
 	})
 
 	router.DELETE("/process-instance/:id", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {

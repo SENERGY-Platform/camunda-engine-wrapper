@@ -137,7 +137,7 @@ func removeProcessInstance(id string) (err error) {
 	return
 }
 
-func removeProcessInstanceHistory(id string) (result interface{}, err error) {
+func removeProcessInstanceHistory(id string) (err error) {
 	//DELETE "/engine-rest/history/process-instance/" + processInstanceId
 	client := &http.Client{}
 	request, err := http.NewRequest("DELETE", Config.ProcessEngineUrl+"/engine-rest/history/process-instance/"+url.QueryEscape(id), nil)
@@ -149,7 +149,10 @@ func removeProcessInstanceHistory(id string) (result interface{}, err error) {
 		return
 	}
 	defer resp.Body.Close()
-	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err == nil && !(resp.StatusCode == 200 || resp.StatusCode == 204) {
+		msg, _ := ioutil.ReadAll(resp.Body)
+		err = errors.New("error on delete in engine for " + Config.ProcessEngineUrl + "/engine-rest/history/process-instance/" + url.QueryEscape(id) + ": " + resp.Status + " " + string(msg))
+	}
 	return
 }
 
