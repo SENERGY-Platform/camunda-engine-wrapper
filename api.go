@@ -214,6 +214,17 @@ func getRoutes() *jwt_http_router.Router {
 		response.To(writer).Json(result)
 	})
 
+	router.GET("/history/filtered/process-instance", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+		//"/engine-rest/history/process-instance"
+		result, err := getFilteredProcessInstanceHistoryList(jwt.UserId, request.URL.Query())
+		if err != nil {
+			log.Println("ERROR: error on getProcessDefinitionIncident", err)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		response.To(writer).Json(result)
+	})
+
 	router.GET("/history/finished/process-instance", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
 		//"/engine-rest/history/process-instance"
 		result, err := getProcessInstanceHistoryListFinished(jwt.UserId)

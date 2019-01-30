@@ -183,6 +183,13 @@ func getProcessInstanceHistoryList(userId string) (result HistoricProcessInstanc
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId), &result)
 	return
 }
+
+func getFilteredProcessInstanceHistoryList(userId string, query url.Values) (result HistoricProcessInstances, err error) {
+	query.Del("tenantIdIn")
+	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&"+query.Encode(), &result)
+	return
+}
+
 func getProcessInstanceHistoryListFinished(userId string) (result HistoricProcessInstances, err error) {
 	//"/engine-rest/process-instance"
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&finished=true", &result)
