@@ -173,8 +173,7 @@ type DeploymentMetadata struct {
 	Owner    string          `json:"owner" bson:"owner"`
 }
 
-type DeploymentInformation struct {
-	Deployment Deployment        `json:"deployment"`
-	Definition ProcessDefinition `json:"definition"`
-	Diagram    string            `json:"diagram"`
+type ExtendedDeployment struct {
+	Deployment
+	Diagram string `json:"diagram"`
 }

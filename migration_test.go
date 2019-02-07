@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"github.com/SmartEnergyPlatform/amqp-wrapper-lib"
 	"github.com/SmartEnergyPlatform/jwt-http-router"
 	"github.com/SmartEnergyPlatform/util/http/response"
@@ -233,7 +234,7 @@ func TestMigration(t *testing.T) {
 		return
 	}
 
-	deplInfos, err := getDeploymentInformationList(jwtPayload.UserId, url.Values{})
+	deplInfos, err := getExtendedDeploymentList(jwtPayload.UserId, url.Values{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -243,13 +244,10 @@ func TestMigration(t *testing.T) {
 	}
 	for index, deplInfo := range deplInfos {
 		if deplInfo.Deployment.Id == "000" || deplInfo.Deployment.Id == "001" {
-			if deplInfo.Deployment.Id == "" || deplInfo.Deployment.Name == "" {
+			b, _ := json.Marshal(deplInfo)
+			fmt.Println(string(b))
+			if deplInfo.Id == "" || deplInfo.Name == "" {
 				t.Error("unexpected deployment result", index, deplInfo.Deployment)
-				return
-			}
-			if deplInfo.Definition.Id == "" {
-				b, _ := json.Marshal(deplInfo.Definition)
-				t.Error("unexpected definition result", index, string(b))
 				return
 			}
 			if deplInfo.Diagram != svgExample {

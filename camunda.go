@@ -358,7 +358,7 @@ func RemoveProcess(deploymentId string) (err error) {
 	return
 }
 
-func getDeploymentInformationList(userId string, params url.Values) (result []DeploymentInformation, err error) {
+func getExtendedDeploymentList(userId string, params url.Values) (result []ExtendedDeployment, err error) {
 	deployments, err := getDeploymentList(userId, params)
 	if err != nil {
 		return result, err
@@ -382,7 +382,7 @@ func getDeploymentInformationList(userId string, params url.Values) (result []De
 		if err != nil {
 			return result, err
 		}
-		result = append(result, DeploymentInformation{Deployment: deployment, Definition: definition[0], Diagram: string(b)})
+		result = append(result, ExtendedDeployment{Deployment: deployment, Diagram: string(b)})
 	}
 	return
 }
