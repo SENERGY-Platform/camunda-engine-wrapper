@@ -174,7 +174,7 @@ type DeploymentMetadata struct {
 }
 
 type DeploymentInformation struct {
-	Deployment Deployment
-	Definition ProcessDefinition
-	Diagram    string
+	Deployment Deployment        `json:"deployment"`
+	Definition ProcessDefinition `json:"definition"`
+	Diagram    string            `json:"diagram"`
 }
