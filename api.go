@@ -120,6 +120,17 @@ func getRoutes() *jwt_http_router.Router {
 		response.To(writer).Json(result)
 	})
 
+	router.GET("/deploymentinformations", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+		// "/engine-rest/deployment?tenantIdIn="+userId
+		result, err := getDeploymentInformationList(jwt.UserId, request.URL.Query())
+		if err != nil {
+			log.Println("ERROR: error on getDeploymentList", err)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		response.To(writer).Json(result)
+	})
+
 	router.GET("/process-definition/:id", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
 		//"/engine-rest/process-definition/" + processDefinitionId
 		id := params.ByName("id")

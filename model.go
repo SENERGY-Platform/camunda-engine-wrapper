@@ -172,3 +172,9 @@ type DeploymentMetadata struct {
 	Online   bool            `json:"online" bson:"-"`
 	Owner    string          `json:"owner" bson:"owner"`
 }
+
+type DeploymentInformation struct {
+	Deployment Deployment
+	Definition ProcessDefinition
+	Diagram    string
+}

@@ -25,6 +25,7 @@ import (
 	"github.com/SmartEnergyPlatform/util/http/response"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 )
 
@@ -229,8 +230,34 @@ func TestMigration(t *testing.T) {
 	}
 	if deploymentIndex[byVid["110"]].Name != "n110" {
 		t.Error("unexpected deployment: ", deploymentIndex[byVid["110"]])
+		return
 	}
 
+	deplInfos, err := getDeploymentInformationList(jwtPayload.UserId, url.Values{})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(deplInfos) != 5 {
+		t.Error("unexpected result", len(deplInfos), deplInfos)
+	}
+	for index, deplInfo := range deplInfos {
+		if deplInfo.Deployment.Id == "000" || deplInfo.Deployment.Id == "001" {
+			if deplInfo.Deployment.Id == "" || deplInfo.Deployment.Name == "" {
+				t.Error("unexpected deployment result", index, deplInfo.Deployment)
+				return
+			}
+			if deplInfo.Definition.Id == "" {
+				b, _ := json.Marshal(deplInfo.Definition)
+				t.Error("unexpected definition result", index, string(b))
+				return
+			}
+			if deplInfo.Diagram != svgExample {
+				t.Error("unexpected digramm result", index, deplInfo.Diagram, deplInfo)
+				return
+			}
+		}
+	}
 }
 
 func testHelper_getProcessDeploymentMock(deployments *[]DeploymentMetadata) http.Handler {

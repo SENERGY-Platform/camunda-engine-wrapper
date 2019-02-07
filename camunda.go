@@ -357,3 +357,32 @@ func RemoveProcess(deploymentId string) (err error) {
 	_, err = client.Do(request)
 	return
 }
+
+func getDeploymentInformationList(userId string, params url.Values) (result []DeploymentInformation, err error) {
+	deployments, err := getDeploymentList(userId, params)
+	if err != nil {
+		return result, err
+	}
+	for _, deployment := range deployments {
+		definition, err := getDefinitionByDeployment(deployment.Id)
+		if err != nil {
+			return result, err
+		}
+		if len(definition) < 1 {
+			return result, errors.New("missing definition for given deployment")
+		}
+		if len(definition) > 1 {
+			return result, errors.New("mor than one definition for given deployment")
+		}
+		svgResp, err := getProcessDefinitionDiagram(definition[0].Id)
+		if err != nil {
+			return result, err
+		}
+		b, err := ioutil.ReadAll(svgResp.Body)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, DeploymentInformation{Deployment: deployment, Definition: definition[0], Diagram: string(b)})
+	}
+	return
+}
