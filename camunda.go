@@ -378,11 +378,15 @@ func getExtendedDeploymentList(userId string, params url.Values) (result []Exten
 		if err != nil {
 			return result, err
 		}
-		b, err := ioutil.ReadAll(svgResp.Body)
+		svg, err := ioutil.ReadAll(svgResp.Body)
 		if err != nil {
 			return result, err
 		}
-		result = append(result, ExtendedDeployment{Deployment: deployment, Diagram: string(b)})
+		count, err := getProcessDefinitionIncident(definition[0].Id)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, ExtendedDeployment{Deployment: deployment, HasIncidents: count.Count > 0, Diagram: string(svg)})
 	}
 	return
 }

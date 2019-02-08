@@ -175,5 +175,6 @@ type DeploymentMetadata struct {
 
 type ExtendedDeployment struct {
 	Deployment
-	Diagram string `json:"diagram"`
+	Diagram      string `json:"diagram"`
+	HasIncidents bool   `json:"has_incidents"`
 }
