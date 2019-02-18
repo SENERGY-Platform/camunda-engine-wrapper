@@ -91,7 +91,7 @@ type Deployments = []Deployment
 // /engine-rest/process-instance/count?tenantIdIn="+url.QueryEscape(userId)
 // /engine-rest/incident/count?processDefinitionId="+url.QueryEscape(definitionId)
 type Count struct {
-	Count int `json:"count"`
+	Count int64 `json:"count"`
 }
 
 type Incident struct {
@@ -177,4 +177,9 @@ type ExtendedDeployment struct {
 	Deployment
 	Diagram      string `json:"diagram"`
 	HasIncidents bool   `json:"has_incidents"`
+}
+
+type HistoricProcessInstancesWithTotal = struct {
+	Total int64                    `json:"total"`
+	Data  HistoricProcessInstances `json:"data"`
 }

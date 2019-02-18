@@ -390,3 +390,30 @@ func getExtendedDeploymentList(userId string, params url.Values) (result []Exten
 	}
 	return
 }
+
+func getProcessInstanceHistoryListWithTotal(userId string, search string, limit string, offset string, sortby string, sortdirection string, finished bool) (result HistoricProcessInstancesWithTotal, err error) {
+	params := url.Values{
+		"tenantIdIn":  []string{userId},
+		"maxResults":  []string{limit},
+		"firstResult": []string{offset},
+		"sortBy":      []string{sortby},
+		"sortOrder":   []string{sortdirection},
+	}
+	if search != "" {
+		params["processDefinitionNameLike"] = []string{"%" + search + "%"}
+	}
+	if finished {
+		params["finished"] = []string{"true"}
+	} else {
+		params["unfinished"] = []string{"true"}
+	}
+
+	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance?"+params.Encode(), &result.Data)
+	if err != nil {
+		return
+	}
+	count := Count{}
+	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance/count?"+params.Encode(), &count)
+	result.Total = count.Count
+	return
+}

@@ -246,6 +246,36 @@ func getRoutes() *jwt_http_router.Router {
 		response.To(writer).Json(result)
 	})
 
+	router.GET("/history/finished/process-instance/:search/:limit/:offset/:sortby/:sortdirection", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+		search := params.ByName("search")
+		limit := params.ByName("limit")
+		offset := params.ByName("offset")
+		sortby := params.ByName("sortby")
+		sortdirection := params.ByName("sortdirection")
+		result, err := getProcessInstanceHistoryListWithTotal(jwt.UserId, search, limit, offset, sortby, sortdirection, true)
+		if err != nil {
+			log.Println("ERROR: error on getProcessDefinitionIncident", err)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		response.To(writer).Json(result)
+	})
+
+	router.GET("/history/unfinished/process-instance/:search/:limit/:offset/:sortby/:sortdirection", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+		search := params.ByName("search")
+		limit := params.ByName("limit")
+		offset := params.ByName("offset")
+		sortby := params.ByName("sortby")
+		sortdirection := params.ByName("sortdirection")
+		result, err := getProcessInstanceHistoryListWithTotal(jwt.UserId, search, limit, offset, sortby, sortdirection, false)
+		if err != nil {
+			log.Println("ERROR: error on getProcessDefinitionIncident", err)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		response.To(writer).Json(result)
+	})
+
 	router.GET("/history/unfinished/process-instance", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
 		//"/engine-rest/history/process-instance"
 		result, err := getProcessInstanceHistoryListUnfinished(jwt.UserId)
