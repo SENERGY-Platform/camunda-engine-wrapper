@@ -1,4 +1,4 @@
-module github.com/SmartEnergyPlatform/camunda-engine-wrapper
+module github.com/SENERGY-Platform/camunda-engine-wrapper
 
 require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
