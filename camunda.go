@@ -392,7 +392,7 @@ func getExtendedDeploymentList(userId string, params url.Values) (result []Exten
 	return
 }
 
-func getProcessInstanceHistoryListWithTotal(userId string, search string, limit string, offset string, sortby string, sortdirection string, finished bool) (result HistoricProcessInstancesWithTotal, err error) {
+func getProcessInstanceHistoryListWithTotal(userId string, searchtype string, searchvalue string, limit string, offset string, sortby string, sortdirection string, finished bool) (result HistoricProcessInstancesWithTotal, err error) {
 	params := url.Values{
 		"tenantIdIn":  []string{userId},
 		"maxResults":  []string{limit},
@@ -400,8 +400,14 @@ func getProcessInstanceHistoryListWithTotal(userId string, search string, limit 
 		"sortBy":      []string{sortby},
 		"sortOrder":   []string{sortdirection},
 	}
-	if search != "" {
-		params["processDefinitionNameLike"] = []string{"%" + search + "%"}
+	if searchtype != "" && searchvalue != "" {
+		if searchtype == "processDefinitionId" {
+			params["processDefinitionId"] = []string{searchvalue}
+		}
+		if searchtype == "processDefinitionNameLike" {
+			params["processDefinitionNameLike"] = []string{"%" + searchvalue + "%"}
+		}
+
 	}
 	if finished {
 		params["finished"] = []string{"true"}
