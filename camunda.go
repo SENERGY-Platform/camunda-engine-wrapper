@@ -331,7 +331,7 @@ func DeployProcess(name string, xml string, svg string, owner string) (deploymen
 	ok := false
 	deploymentId, ok = responseWrapper["id"].(string)
 	if !ok {
-		log.Println("unable to interpret process engine deployment response", responseWrapper, xml)
+		log.Println("unable to interpret process engine deployment response", responseWrapper, "\""+xml+"\"")
 		err = errors.New("unable to interpret process engine deployment response")
 		return
 	}
