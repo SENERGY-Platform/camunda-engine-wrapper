@@ -18,6 +18,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/etree"
 	"github.com/SmartEnergyPlatform/amqp-wrapper-lib"
 	"log"
 	"strconv"
@@ -116,6 +117,7 @@ func handleDeploymentCreate(command DeploymentCommand) (err error) {
 	if !validateXml(command.DeploymentXml) {
 		log.Println("ERROR: got empty xml, replace with default")
 		command.DeploymentXml = createBlankProcess()
+		command.Deployment.Svg = createBlankSvg()
 	}
 	deploymentId, err := DeployProcess(command.Deployment.Process.Name, command.DeploymentXml, command.Deployment.Svg, command.Owner)
 	if err != nil {
@@ -134,13 +136,27 @@ func handleDeploymentCreate(command DeploymentCommand) (err error) {
 	return err
 }
 
+func createBlankSvg() string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.2" id="Layer_1" x="0px" y="0px" viewBox="0 0 20 16" xml:space="preserve">
+<path fill="#D61F33" d="M10,0L0,16h20L10,0z M11,13.908H9v-2h2V13.908z M9,10.908v-6h2v6H9z"/>
+</svg>`
+}
+
 func createBlankProcess() string {
 	templ := `<bpmn:definitions xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:bpmn='http://www.omg.org/spec/BPMN/20100524/MODEL' xmlns:bpmndi='http://www.omg.org/spec/BPMN/20100524/DI' xmlns:dc='http://www.omg.org/spec/DD/20100524/DC' id='Definitions_1' targetNamespace='http://bpmn.io/schema/bpmn'><bpmn:process id='PROCESSID' isExecutable='true'><bpmn:startEvent id='StartEvent_1'/></bpmn:process><bpmndi:BPMNDiagram id='BPMNDiagram_1'><bpmndi:BPMNPlane id='BPMNPlane_1' bpmnElement='PROCESSID'><bpmndi:BPMNShape id='_BPMNShape_StartEvent_2' bpmnElement='StartEvent_1'><dc:Bounds x='173' y='102' width='36' height='36'/></bpmndi:BPMNShape></bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>`
 	return strings.Replace(templ, "PROCESSID", "id_"+strconv.FormatInt(time.Now().Unix(), 10), 1)
 }
 
 func validateXml(xml string) bool {
-	return xml != ""
+	if xml == "" {
+		return false
+	}
+	err := etree.NewDocument().ReadFromString(xml)
+	if err != nil {
+		log.Println("ERROR: unable to parse xml", err)
+		return false
+	}
+	return true
 }
 
 func cleanupExistingDeployment(vid string) error {
