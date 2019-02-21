@@ -372,7 +372,7 @@ func getExtendedDeploymentList(userId string, params url.Values) (result []Exten
 			return result, errors.New("missing definition for given deployment")
 		}
 		if len(definition) > 1 {
-			return result, errors.New("mor than one definition for given deployment")
+			return result, errors.New("more than one definition for given deployment")
 		}
 		svgResp, err := getProcessDefinitionDiagram(definition[0].Id)
 		if err != nil {
@@ -386,7 +386,7 @@ func getExtendedDeploymentList(userId string, params url.Values) (result []Exten
 		if err != nil {
 			return result, err
 		}
-		result = append(result, ExtendedDeployment{Deployment: deployment, HasIncidents: count.Count > 0, Diagram: string(svg)})
+		result = append(result, ExtendedDeployment{Deployment: deployment, HasIncidents: count.Count > 0, Diagram: string(svg), DefinitionId: definition[0].Id})
 	}
 	return
 }
