@@ -115,7 +115,7 @@ func handleDeploymentCreate(command DeploymentCommand) (err error) {
 		return err
 	}
 	if !validateXml(command.DeploymentXml) {
-		log.Println("ERROR: got empty xml, replace with default")
+		log.Println("ERROR: got invalid xml, replace with default")
 		command.DeploymentXml = createBlankProcess()
 		command.Deployment.Svg = createBlankSvg()
 	}

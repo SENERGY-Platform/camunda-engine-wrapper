@@ -315,31 +315,47 @@ func buildPayLoad(name string, xml string, svg string, boundary string, owner st
 
 //returns original deploymentId (not vid)
 func DeployProcess(name string, xml string, svg string, owner string) (deploymentId string, err error) {
-	boundary := "---------------------------" + time.Now().String()
-	b := strings.NewReader(buildPayLoad(name, xml, svg, boundary, owner))
-	resp, err := http.Post(Config.ProcessEngineUrl+"/engine-rest/deployment/create", "multipart/form-data; boundary="+boundary, b)
-	if err != nil {
-		log.Println("ERROR: request to processengine ", err)
-		return deploymentId, err
-	}
-	responseWrapper := map[string]interface{}{}
-	err = json.NewDecoder(resp.Body).Decode(&responseWrapper)
+	responseWrapper, err := deployProcess(name, xml, svg, owner)
 	if err != nil {
 		log.Println("ERROR: unable to decode process engine deployment response", err)
-		return
+		return deploymentId, err
 	}
 	ok := false
 	deploymentId, ok = responseWrapper["id"].(string)
 	if !ok {
 		log.Println("ERROR: unable to interpret process engine deployment response", responseWrapper)
 		log.Println("ERROR: tried to deploy:" + xml)
-		err = errors.New("unable to interpret process engine deployment response")
-		return
+		if responseWrapper["type"] == "ProcessEngineException" {
+			log.Println("DEBUG: try deploying placeholder process")
+			responseWrapper, err = deployProcess(name, createBlankProcess(), createBlankSvg(), owner)
+			deploymentId, ok = responseWrapper["id"].(string)
+			if !ok {
+				log.Println("ERROR: unable to deploy placeholder process", responseWrapper)
+				err = errors.New("unable to interpret process engine deployment response")
+				return
+			}
+		} else {
+			log.Println("ERROR: unable to deploy placeholder process", responseWrapper)
+			err = errors.New("unable to interpret process engine deployment response")
+			return
+		}
 	}
 	if err == nil && deploymentId == "" {
 		err = errors.New("process-engine didnt deploy process: " + xml)
 	}
-	log.Println("DEBUG: DeployProcess() = ", responseWrapper)
+	return
+}
+
+func deployProcess(name string, xml string, svg string, owner string) (result map[string]interface{}, err error) {
+	result = map[string]interface{}{}
+	boundary := "---------------------------" + time.Now().String()
+	b := strings.NewReader(buildPayLoad(name, xml, svg, boundary, owner))
+	resp, err := http.Post(Config.ProcessEngineUrl+"/engine-rest/deployment/create", "multipart/form-data; boundary="+boundary, b)
+	if err != nil {
+		log.Println("ERROR: request to processengine ", err)
+		return result, err
+	}
+	err = json.NewDecoder(resp.Body).Decode(&result)
 	return
 }
 
