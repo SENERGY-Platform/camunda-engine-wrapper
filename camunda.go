@@ -384,10 +384,6 @@ func getExtendedDeploymentList(userId string, params url.Values) (result []Exten
 	}
 	for _, deployment := range deployments {
 		definition, err := getDefinitionByDeployment(deployment.Id)
-		if err == vidError {
-			log.Println("WARNING: unable to use vid for process", deployment.Id, deployment.Name)
-			continue
-		}
 		if err != nil {
 			return result, err
 		}

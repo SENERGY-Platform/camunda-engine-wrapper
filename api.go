@@ -122,6 +122,10 @@ func getRoutes() *jwt_http_router.Router {
 
 	router.GET("/deployment", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
 		result, err := getExtendedDeploymentList(jwt.UserId, request.URL.Query())
+		if err == vidError {
+			log.Println("WARNING: unable to use vid for process; try repeat")
+			result, err = getExtendedDeploymentList(jwt.UserId, request.URL.Query())
+		}
 		if err != nil {
 			log.Println("ERROR: error on getDeploymentList", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
