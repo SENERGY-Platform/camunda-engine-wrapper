@@ -19,6 +19,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"io"
 
@@ -124,6 +125,7 @@ func getRoutes() *jwt_http_router.Router {
 		result, err := getExtendedDeploymentList(jwt.UserId, request.URL.Query())
 		if err == vidError {
 			log.Println("WARNING: unable to use vid for process; try repeat")
+			time.Sleep(1 * time.Second)
 			result, err = getExtendedDeploymentList(jwt.UserId, request.URL.Query())
 		}
 		if err != nil {
