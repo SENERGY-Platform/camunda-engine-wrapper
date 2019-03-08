@@ -81,7 +81,7 @@ func checkDeploymentAccess(vid string, userId string) (err error) {
 		return err
 	}
 	if !exists {
-		return errors.New("unknown vid " + vid)
+		return vidError
 	}
 	wrapper := Deployment{}
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/deployment/"+url.QueryEscape(id), &wrapper)
@@ -256,13 +256,15 @@ func getDeploymentListAllRaw() (result Deployments, err error) {
 	return
 }
 
+var vidError = errors.New("unknown vid")
+
 func getDefinitionByDeployment(vid string) (result ProcessDefinitions, err error) {
 	id, exists, err := getDeploymentId(vid)
 	if err != nil {
 		return result, err
 	}
 	if !exists {
-		return result, errors.New("unknown vid " + vid)
+		return result, vidError
 	}
 	//"/engine-rest/process-definition?deploymentId=
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/process-definition?deploymentId="+url.QueryEscape(id), &result)
@@ -283,7 +285,7 @@ func getDeployment(vid string) (result Deployment, err error) {
 		return result, err
 	}
 	if !exists {
-		return result, errors.New("unknown vid " + vid)
+		return result, vidError
 	}
 	//"/engine-rest/deployment/" + id
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/deployment/"+url.QueryEscape(deploymentId), &result)
@@ -382,6 +384,10 @@ func getExtendedDeploymentList(userId string, params url.Values) (result []Exten
 	}
 	for _, deployment := range deployments {
 		definition, err := getDefinitionByDeployment(deployment.Id)
+		if err == vidError {
+			log.Println("WARNING: unable to use vid for process", deployment.Id, deployment.Name)
+			continue
+		}
 		if err != nil {
 			return result, err
 		}
