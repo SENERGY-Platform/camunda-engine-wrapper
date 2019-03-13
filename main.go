@@ -43,6 +43,7 @@ func main() {
 
 		defer CloseEventSourcing()
 
+		log.Println("MAINTENANCE: ", clearUnlinkedDeployments())
 		ticker := time.NewTicker(time.Duration(Config.MaintenanceTime) * time.Hour)
 		defer ticker.Stop()
 		go func() {
