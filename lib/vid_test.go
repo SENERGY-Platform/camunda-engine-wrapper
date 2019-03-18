@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package main
+package lib
 
 import (
 	"database/sql"
@@ -59,7 +59,7 @@ func TestVid(t *testing.T) {
 		return
 	}
 
-	err = LoadConfig("config.json")
+	err = LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
 		return

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package main
+package lib
 
 import (
 	"encoding/json"
@@ -63,7 +63,7 @@ func TestMigration(t *testing.T) {
 		return
 	}
 
-	configLocation := flag.String("config", "config.json", "configuration file")
+	configLocation := flag.String("config", "../config.json", "configuration file")
 	flag.Parse()
 
 	err = LoadConfig(*configLocation)
