@@ -28,7 +28,7 @@ var maintenanceLock = sync.RWMutex{}
 //should be called periodically or on startup, to remove all process deployments which are not referenced by a virtual id (remove dead deployments)
 //and remove all virtual id relations without process deployments
 //can lead to a lost update, if called while a process is deploying using a other instance of this program
-func clearUnlinkedDeployments() error {
+func ClearUnlinkedDeployments() error {
 	maintenanceLock.Lock()
 	defer maintenanceLock.Unlock()
 	db, err := GetDB()

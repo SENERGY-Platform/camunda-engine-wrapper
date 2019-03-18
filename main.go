@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib"
 	"log"
 	"time"
 )
@@ -28,30 +29,26 @@ func main() {
 	configLocation := flag.String("config", "config.json", "configuration file")
 	flag.Parse()
 
-	err := LoadConfig(*configLocation)
+	err := lib.LoadConfig(*configLocation)
 	if err != nil {
 		log.Fatal("unable to load config", err)
 	}
 
-	if Config.Migrate == "true" {
-		log.Println(Migrate())
-	} else {
-		err = InitEventSourcing()
-		if err != nil {
-			log.Fatal("unable to start eventsourcing", err)
-		}
-
-		defer CloseEventSourcing()
-
-		log.Println("MAINTENANCE: ", clearUnlinkedDeployments())
-		ticker := time.NewTicker(time.Duration(Config.MaintenanceTime) * time.Hour)
-		defer ticker.Stop()
-		go func() {
-			for tick := range ticker.C {
-				log.Println("MAINTENANCE: ", tick, clearUnlinkedDeployments())
-			}
-		}()
-
-		InitApi()
+	err = lib.InitEventSourcing()
+	if err != nil {
+		log.Fatal("unable to start eventsourcing", err)
 	}
+
+	defer lib.CloseEventSourcing()
+
+	log.Println("MAINTENANCE: ", lib.ClearUnlinkedDeployments())
+	ticker := time.NewTicker(time.Duration(lib.Config.MaintenanceTime) * time.Hour)
+	defer ticker.Stop()
+	go func() {
+		for tick := range ticker.C {
+			log.Println("MAINTENANCE: ", tick, lib.ClearUnlinkedDeployments())
+		}
+	}()
+
+	lib.InitApi()
 }

@@ -44,10 +44,6 @@ type ConfigStruct struct {
 
 	PgConn          string
 	MaintenanceTime int64 //in hours
-
-	Migrate                     string //"true" or any string
-	MigrateProcessDeploymentUrl string //url to process deployment service
-	MigrateJwt                  string //jwt token
 }
 
 type ConfigType *ConfigStruct
