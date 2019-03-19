@@ -157,6 +157,7 @@ type HistoricProcessInstance struct {
 	DeleteReason             string  `json:"deleteReason"`
 	TenantId                 string  `json:"tenantId"`
 	State                    string  `json:"state"`
+	Incidents                bool    `json:"incidents"`
 }
 
 // /engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id)

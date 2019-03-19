@@ -433,10 +433,20 @@ func getProcessInstanceHistoryListWithTotal(userId string, searchtype string, se
 		params["unfinished"] = []string{"true"}
 	}
 
-	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance?"+params.Encode(), &result.Data)
+	temp := HistoricProcessInstances{}
+	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance?"+params.Encode(), &temp)
 	if err != nil {
 		return
 	}
+	for _, process := range temp {
+		count, err := getProcessDefinitionIncident(process.ProcessDefinitionId)
+		if err != nil {
+			return result, err
+		}
+		process.Incidents = count.Count > 0
+		result.Data = append(result.Data, process)
+	}
+
 	count := Count{}
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance/count?"+params.Encode(), &count)
 	result.Total = count.Count

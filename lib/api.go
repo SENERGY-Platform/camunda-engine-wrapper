@@ -261,7 +261,7 @@ func getRoutes() *jwt_http_router.Router {
 		sortdirection := params.ByName("sortdirection")
 		result, err := getProcessInstanceHistoryListWithTotal(jwt.UserId, searchtype, searchvalue, limit, offset, sortby, sortdirection, true)
 		if err != nil {
-			log.Println("ERROR: error on getProcessDefinitionIncident", err)
+			log.Println("ERROR: error on getProcessInstanceHistoryListWithTotal", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -277,7 +277,7 @@ func getRoutes() *jwt_http_router.Router {
 		sortdirection := params.ByName("sortdirection")
 		result, err := getProcessInstanceHistoryListWithTotal(jwt.UserId, searchtype, searchvalue, limit, offset, sortby, sortdirection, false)
 		if err != nil {
-			log.Println("ERROR: error on getProcessDefinitionIncident", err)
+			log.Println("ERROR: error on getProcessInstanceHistoryListWithTotal", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -288,7 +288,7 @@ func getRoutes() *jwt_http_router.Router {
 		//"/engine-rest/history/process-instance"
 		result, err := getProcessInstanceHistoryListUnfinished(jwt.UserId)
 		if err != nil {
-			log.Println("ERROR: error on getProcessDefinitionIncident", err)
+			log.Println("ERROR: error on getProcessInstanceHistoryListUnfinished", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
