@@ -110,17 +110,6 @@ func getRoutes() *jwt_http_router.Router {
 		response.To(writer).Json(result)
 	})
 
-	router.GET("/deprecated/deployment", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
-		// "/engine-rest/deployment?tenantIdIn="+userId
-		result, err := getDeploymentList(jwt.UserId, request.URL.Query())
-		if err != nil {
-			log.Println("ERROR: error on getDeploymentList", err)
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		response.To(writer).Json(result)
-	})
-
 	router.GET("/deployment", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
 		result, err := getExtendedDeploymentList(jwt.UserId, request.URL.Query())
 		if err == vidError {
