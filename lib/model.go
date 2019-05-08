@@ -179,6 +179,7 @@ type ExtendedDeployment struct {
 	Diagram      string `json:"diagram"`
 	HasIncidents bool   `json:"has_incidents"`
 	DefinitionId string `json:"definition_id"`
+	Error        string `json:"error"`
 }
 
 type HistoricProcessInstancesWithTotal = struct {

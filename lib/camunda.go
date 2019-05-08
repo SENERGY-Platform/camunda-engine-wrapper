@@ -383,31 +383,40 @@ func getExtendedDeploymentList(userId string, params url.Values) (result []Exten
 		return result, err
 	}
 	for _, deployment := range deployments {
-		definition, err := getDefinitionByDeployment(deployment.Id)
+		extended, err := getExtendedDeployment(deployment)
 		if err != nil {
-			return result, err
+			result = append(result, ExtendedDeployment{Deployment: deployment, Error: err.Error()})
+		} else {
+			result = append(result, extended)
 		}
-		if len(definition) < 1 {
-			return result, errors.New("missing definition for given deployment")
-		}
-		if len(definition) > 1 {
-			return result, errors.New("more than one definition for given deployment")
-		}
-		svgResp, err := getProcessDefinitionDiagram(definition[0].Id)
-		if err != nil {
-			return result, err
-		}
-		svg, err := ioutil.ReadAll(svgResp.Body)
-		if err != nil {
-			return result, err
-		}
-		count, err := getProcessDefinitionIncident(definition[0].Id)
-		if err != nil {
-			return result, err
-		}
-		result = append(result, ExtendedDeployment{Deployment: deployment, HasIncidents: count.Count > 0, Diagram: string(svg), DefinitionId: definition[0].Id})
 	}
 	return
+}
+
+func getExtendedDeployment(deployment Deployment) (result ExtendedDeployment, err error) {
+	definition, err := getDefinitionByDeployment(deployment.Id)
+	if err != nil {
+		return result, err
+	}
+	if len(definition) < 1 {
+		return result, errors.New("missing definition for given deployment")
+	}
+	if len(definition) > 1 {
+		return result, errors.New("more than one definition for given deployment")
+	}
+	svgResp, err := getProcessDefinitionDiagram(definition[0].Id)
+	if err != nil {
+		return result, err
+	}
+	svg, err := ioutil.ReadAll(svgResp.Body)
+	if err != nil {
+		return result, err
+	}
+	count, err := getProcessDefinitionIncident(definition[0].Id)
+	if err != nil {
+		return result, err
+	}
+	return ExtendedDeployment{Deployment: deployment, HasIncidents: count.Count > 0, Diagram: string(svg), DefinitionId: definition[0].Id}, nil
 }
 
 func getProcessInstanceHistoryListWithTotal(userId string, searchtype string, searchvalue string, limit string, offset string, sortby string, sortdirection string, finished bool) (result HistoricProcessInstancesWithTotal, err error) {
