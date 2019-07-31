@@ -121,7 +121,7 @@ func getProcessInstanceIncidents(id string) (result Incidents, err error) {
 func removeProcessInstance(id string) (err error) {
 	////DELETE "/engine-rest/process-instance/" + processInstanceId
 	client := &http.Client{}
-	request, err := http.NewRequest("DELETE", Config.ProcessEngineUrl+"/engine-rest/process-instance/"+url.QueryEscape(id), nil)
+	request, err := http.NewRequest("DELETE", Config.ProcessEngineUrl+"/engine-rest/process-instance/"+url.QueryEscape(id)+"?skipIoMappings=true", nil)
 	if err != nil {
 		return
 	}
@@ -371,7 +371,7 @@ func RemoveProcess(deploymentId string) (err error) {
 		return nil
 	}
 	client := &http.Client{}
-	url := Config.ProcessEngineUrl + "/engine-rest/deployment/" + deploymentId + "?cascade=true"
+	url := Config.ProcessEngineUrl + "/engine-rest/deployment/" + deploymentId + "?cascade=true&skipIoMappings=true"
 	request, err := http.NewRequest("DELETE", url, nil)
 	_, err = client.Do(request)
 	return
