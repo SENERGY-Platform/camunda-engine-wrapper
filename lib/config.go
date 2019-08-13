@@ -37,10 +37,11 @@ type ConfigStruct struct {
 
 	ProcessEngineUrl string
 
-	AmqpUrl              string
-	AmqpReconnectTimeout int64
-	AmqpConsumerName     string
-	AmqpDeploymentTopic  string
+	ZookeeperUrl string
+	KafkaGroup   string
+	KafkaDebug   bool
+
+	DeploymentTopic string
 
 	PgConn          string
 	MaintenanceTime int64 //in hours
@@ -64,13 +65,8 @@ func LoadConfig(location string) error {
 		return error
 	}
 	HandleEnvironmentVars(&configuration)
-	HandleDefaultValues(&configuration)
 	Config = &configuration
 	return nil
-}
-
-func HandleDefaultValues(config ConfigType) {
-
 }
 
 var camel = regexp.MustCompile("(^[^A-Z]*|[A-Z]*)([A-Z][^A-Z]+|$)")
@@ -104,6 +100,14 @@ func HandleEnvironmentVars(config ConfigType) {
 			}
 			if configValue.FieldByName(fieldName).Kind() == reflect.String {
 				configValue.FieldByName(fieldName).SetString(envValue)
+			}
+			if configValue.FieldByName(fieldName).Kind() == reflect.Bool {
+				b, _ := strconv.ParseBool(envValue)
+				configValue.FieldByName(fieldName).SetBool(b)
+			}
+			if configValue.FieldByName(fieldName).Kind() == reflect.Float64 {
+				f, _ := strconv.ParseFloat(envValue, 64)
+				configValue.FieldByName(fieldName).SetFloat(f)
 			}
 			if configValue.FieldByName(fieldName).Kind() == reflect.Slice {
 				val := []string{}

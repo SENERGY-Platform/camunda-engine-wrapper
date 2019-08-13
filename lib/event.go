@@ -19,20 +19,14 @@ package lib
 import (
 	"encoding/json"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/etree"
-	"github.com/SmartEnergyPlatform/amqp-wrapper-lib"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/kafka"
 	"log"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type AmqpInterface interface {
-	Consume(qname string, resource string, worker amqp_wrapper_lib.ConsumerFunc) (err error)
-	Publish(resource string, payload []byte) error
-	Close()
-}
-
-var amqp AmqpInterface
+var cqrs kafka.Interface
 
 type AbstractProcess struct {
 	Xml                     string      `json:"xml"`
@@ -58,20 +52,20 @@ type DeploymentCommand struct {
 }
 
 func InitEventSourcing() (err error) {
-	amqp, err = amqp_wrapper_lib.Init(Config.AmqpUrl, []string{Config.AmqpDeploymentTopic}, Config.AmqpReconnectTimeout)
+	cqrs, err = kafka.Init(Config.ZookeeperUrl, Config.KafkaGroup, Config.KafkaDebug)
 	if err != nil {
 		return err
 	}
-	err = amqp.Consume(Config.AmqpConsumerName+"_"+Config.AmqpDeploymentTopic, Config.AmqpDeploymentTopic, func(delivery []byte) error {
+	err = cqrs.Consume(Config.DeploymentTopic, func(delivery []byte) error {
 		maintenanceLock.RLock()
 		defer maintenanceLock.RUnlock()
 		command := DeploymentCommand{}
 		err = json.Unmarshal(delivery, &command)
 		if err != nil {
-			log.Println("ERROR: unable to parse amqp event as json \n", err, "\n --> ignore event \n", string(delivery))
+			log.Println("ERROR: unable to parse cqrs event as json \n", err, "\n --> ignore event \n", string(delivery))
 			return nil
 		}
-		log.Println("amqp receive ", string(delivery))
+		log.Println("cqrs receive ", string(delivery))
 		switch command.Command {
 		case "PUT":
 			return handleDeploymentCreate(command)
@@ -173,7 +167,7 @@ func cleanupExistingDeployment(vid string) error {
 }
 
 func CloseEventSourcing() {
-	amqp.Close()
+	cqrs.Close()
 }
 
 func PublishDeploymentDelete(id string) error {
@@ -182,5 +176,5 @@ func PublishDeploymentDelete(id string) error {
 	if err != nil {
 		return err
 	}
-	return amqp.Publish(Config.AmqpDeploymentTopic, payload)
+	return cqrs.Publish(Config.DeploymentTopic, "DELETE_"+id, payload)
 }

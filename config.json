@@ -5,10 +5,11 @@
     "ForceAuth": "true",
     "ProcessEngineUrl": "http://process-engine:8080",
 
-    "AmqpUrl": "amqp://guest:guest@rabbitmq:5672/",
-    "AmqpReconnectTimeout": 10,
-    "AmqpConsumerName": "camunda_wrapper",
-    "AmqpDeploymentTopic": "deployment",
+    "ZookeeperUrl": "zk",
+    "KafkaGroup": "camunda-engine-wrapper",
+    "KafkaDebug": false,
+
+    "DeploymentTopic": "deployment",
 
     "PgConn": "postgres://user:password@host/dbname?sslmode=disable",
     "MaintenanceTime": 6
