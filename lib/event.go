@@ -176,5 +176,5 @@ func PublishDeploymentDelete(id string) error {
 	if err != nil {
 		return err
 	}
-	return cqrs.Publish(Config.DeploymentTopic, "DELETE_"+id, payload)
+	return cqrs.Publish(Config.DeploymentTopic, id, payload)
 }

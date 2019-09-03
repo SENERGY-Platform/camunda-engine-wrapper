@@ -9,7 +9,7 @@
     "KafkaGroup": "camunda-engine-wrapper",
     "KafkaDebug": false,
 
-    "DeploymentTopic": "deployment",
+    "DeploymentTopic": "deployments",
 
     "PgConn": "postgres://user:password@host/dbname?sslmode=disable",
     "MaintenanceTime": 6
