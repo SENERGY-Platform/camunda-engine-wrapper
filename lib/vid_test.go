@@ -337,15 +337,14 @@ func testHelper_getCamundaDependency(pgIp string, pgPort string) (closer func(),
 
 func testHelper_putProcess(vid string, name string, owner string) error {
 	return handleDeploymentCreate(DeploymentCommand{
-		Id:            vid,
-		Command:       "PUT",
-		Owner:         owner,
-		DeploymentXml: bpmnExample,
-		Deployment: DeploymentRequest{
-			Svg: svgExample,
-			Process: AbstractProcess{
-				Name: name,
-			},
+		Id:      vid,
+		Command: "PUT",
+		Owner:   owner,
+		Deployment: DeploymentMessage{
+			Id:   vid,
+			Xml:  bpmnExample,
+			Svg:  svgExample,
+			Name: name,
 		},
 	})
 }

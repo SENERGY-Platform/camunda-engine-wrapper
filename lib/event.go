@@ -38,17 +38,17 @@ type AbstractProcess struct {
 	TimeEvents              interface{} `json:"time_events"`
 }
 
-type DeploymentRequest struct {
-	Svg     string          `json:"svg"`
-	Process AbstractProcess `json:"process"`
+type DeploymentMessage struct {
+	Id   string `json:"id"`
+	Xml  string `json:"xml"`
+	Svg  string `json:"svg"`
+	Name string `json:"name"`
 }
-
 type DeploymentCommand struct {
-	Command       string            `json:"command"`
-	Id            string            `json:"id"`
-	Owner         string            `json:"owner"`
-	DeploymentXml string            `json:"deployment_xml"`
-	Deployment    DeploymentRequest `json:"deployment"`
+	Command    string            `json:"command"`
+	Id         string            `json:"id"`
+	Owner      string            `json:"owner"`
+	Deployment DeploymentMessage `json:"deployment"`
 }
 
 func InitEventSourcing() (err error) {
@@ -108,13 +108,13 @@ func handleDeploymentCreate(command DeploymentCommand) (err error) {
 	if err != nil {
 		return err
 	}
-	if !validateXml(command.DeploymentXml) {
+	if !validateXml(command.Deployment.Xml) {
 		log.Println("ERROR: got invalid xml, replace with default")
-		command.DeploymentXml = createBlankProcess()
+		command.Deployment.Xml = createBlankProcess()
 		command.Deployment.Svg = createBlankSvg()
 	}
-	log.Println("deploy process", command.Id, command.Deployment.Process.Name)
-	deploymentId, err := DeployProcess(command.Deployment.Process.Name, command.DeploymentXml, command.Deployment.Svg, command.Owner)
+	log.Println("deploy process", command.Id, command.Deployment.Name)
+	deploymentId, err := DeployProcess(command.Deployment.Name, command.Deployment.Xml, command.Deployment.Svg, command.Owner)
 	if err != nil {
 		log.Println("WARNING: unable to deploy process to camunda ", err)
 		return err
