@@ -41,14 +41,16 @@ func main() {
 
 	defer lib.CloseEventSourcing()
 
-	log.Println("MAINTENANCE: ", lib.ClearUnlinkedDeployments())
-	ticker := time.NewTicker(time.Duration(lib.Config.MaintenanceTime) * time.Hour)
-	defer ticker.Stop()
-	go func() {
-		for tick := range ticker.C {
-			log.Println("MAINTENANCE: ", tick, lib.ClearUnlinkedDeployments())
-		}
-	}()
+	if lib.Config.MaintenanceTime > 0 {
+		log.Println("MAINTENANCE: ", lib.ClearUnlinkedDeployments())
+		ticker := time.NewTicker(time.Duration(lib.Config.MaintenanceTime) * time.Hour)
+		defer ticker.Stop()
+		go func() {
+			for tick := range ticker.C {
+				log.Println("MAINTENANCE: ", tick, lib.ClearUnlinkedDeployments())
+			}
+		}()
+	}
 
 	lib.InitApi()
 }
