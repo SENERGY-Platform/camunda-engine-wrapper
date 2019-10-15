@@ -12,5 +12,7 @@
     "DeploymentTopic": "deployments",
 
     "PgConn": "postgres://user:password@host/dbname?sslmode=disable",
-    "MaintenanceTime": 0
+    "MaintenanceTime": 0,
+
+    "Debug": true
 }

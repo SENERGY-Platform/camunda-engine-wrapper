@@ -45,6 +45,8 @@ type ConfigStruct struct {
 
 	PgConn          string
 	MaintenanceTime int64 //in hours
+
+	Debug bool
 }
 
 type ConfigType *ConfigStruct
