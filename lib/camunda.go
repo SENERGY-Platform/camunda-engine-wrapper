@@ -317,9 +317,6 @@ func buildPayLoad(name string, xml string, svg string, boundary string, owner st
 
 //returns original deploymentId (not vid)
 func DeployProcess(name string, xml string, svg string, owner string) (deploymentId string, err error) {
-	if Config.Debug {
-		log.Println("DEBUG: try to deploy ", xml)
-	}
 	responseWrapper, err := deployProcess(name, xml, svg, owner)
 	if err != nil {
 		log.Println("ERROR: unable to decode process engine deployment response", err)
@@ -329,7 +326,6 @@ func DeployProcess(name string, xml string, svg string, owner string) (deploymen
 	deploymentId, ok = responseWrapper["id"].(string)
 	if !ok {
 		log.Println("ERROR: unable to interpret process engine deployment response", responseWrapper)
-		log.Println("ERROR: tried to deploy:", xml)
 		if responseWrapper["type"] == "ProcessEngineException" {
 			log.Println("DEBUG: try deploying placeholder process")
 			responseWrapper, err = deployProcess(name, createBlankProcess(), createBlankSvg(), owner)

@@ -113,13 +113,17 @@ func handleDeploymentCreate(command DeploymentCommand) (err error) {
 		command.Deployment.Xml = createBlankProcess()
 		command.Deployment.Svg = createBlankSvg()
 	}
-	log.Println("deploy process", command.Id, command.Deployment.Name)
+	if Config.Debug {
+		log.Println("deploy process", command.Id, command.Deployment.Name, command.Deployment.Xml)
+	}
 	deploymentId, err := DeployProcess(command.Deployment.Name, command.Deployment.Xml, command.Deployment.Svg, command.Owner)
 	if err != nil {
 		log.Println("WARNING: unable to deploy process to camunda ", err)
 		return err
 	}
-	log.Println("save vid relation", command.Id, deploymentId)
+	if Config.Debug {
+		log.Println("save vid relation", command.Id, deploymentId)
+	}
 	err = saveVidRelation(command.Id, deploymentId)
 	if err != nil {
 		log.Println("WARNING: unable to publish deployment saga \n", err, "\nremove deployed process")
