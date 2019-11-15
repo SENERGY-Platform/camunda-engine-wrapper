@@ -51,13 +51,18 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := startProcess(id)
+		err := startProcess(id)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(result)
+		//old version returned list of process-variables from history
+		// variable history is deprecated
+		// keep empty list as output
+		// 		to keep signature of endpoint
+		// 		and ensure that no other services throw errors because of this change
+		response.To(writer).Json([]string{})
 	})
 
 	router.GET("/process-definition/:id/start/id", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
@@ -169,23 +174,6 @@ func getRoutes() *jwt_http_router.Router {
 		}
 	})
 
-	router.GET("/process-definition/:id/incident/count", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
-		//"/engine-rest/incident/count?processDefinitionId=" + deployment.processDefintionId
-		id := params.ByName("id")
-		if err := checkProcessDefinitionAccess(id, jwt.UserId); err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
-			http.Error(writer, "Access denied", http.StatusUnauthorized)
-			return
-		}
-		result, err := getProcessDefinitionIncident(id)
-		if err != nil {
-			log.Println("ERROR: error on getProcessDefinitionIncident", err)
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		response.To(writer).Json(result)
-	})
-
 	router.GET("/process-instance", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
 		//"/engine-rest/process-instance"
 		result, err := getProcessInstanceList(jwt.UserId)
@@ -212,7 +200,7 @@ func getRoutes() *jwt_http_router.Router {
 		//"/engine-rest/history/process-instance"
 		result, err := getProcessInstanceHistoryList(jwt.UserId)
 		if err != nil {
-			log.Println("ERROR: error on getProcessDefinitionIncident", err)
+			log.Println("ERROR: error on getProcessInstanceHistoryList", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -223,7 +211,7 @@ func getRoutes() *jwt_http_router.Router {
 		//"/engine-rest/history/process-instance"
 		result, err := getFilteredProcessInstanceHistoryList(jwt.UserId, request.URL.Query())
 		if err != nil {
-			log.Println("ERROR: error on getProcessDefinitionIncident", err)
+			log.Println("ERROR: error on getFilteredProcessInstanceHistoryList", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -234,7 +222,7 @@ func getRoutes() *jwt_http_router.Router {
 		//"/engine-rest/history/process-instance"
 		result, err := getProcessInstanceHistoryListFinished(jwt.UserId)
 		if err != nil {
-			log.Println("ERROR: error on getProcessDefinitionIncident", err)
+			log.Println("ERROR: error on getProcessInstanceHistoryListFinished", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -336,23 +324,6 @@ func getRoutes() *jwt_http_router.Router {
 		response.To(writer).Json(result)
 	})
 
-	router.GET("/history/process-instance/:id/variable-instance", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
-		//"/engine-rest/history/variable-instance?processInstanceId=" + processInstanceId
-		id := params.ByName("id")
-		if err := checkHistoryAccess(id, jwt.UserId); err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
-			http.Error(writer, "Access denied", http.StatusUnauthorized)
-			return
-		}
-		result, err := getProcessInstanceHistoricVariables(id)
-		if err != nil {
-			log.Println("ERROR: error on getProcessInstanceHistoricVariables", err)
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		response.To(writer).Json(result)
-	})
-
 	router.DELETE("/history/process-instance/:id", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
 		//DELETE "/engine-rest/history/process-instance/" + processInstanceId
 		id := params.ByName("id")
@@ -385,23 +356,6 @@ func getRoutes() *jwt_http_router.Router {
 			return
 		}
 		response.To(writer).Text("ok")
-	})
-
-	router.GET("/process-instance/:id/incident", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
-		//"/engine-rest/incident?processInstanceId=" + processInstanceId
-		id := params.ByName("id")
-		if err := checkProcessInstanceAccess(id, jwt.UserId); err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
-			http.Error(writer, "Access denied", http.StatusUnauthorized)
-			return
-		}
-		result, err := getProcessInstanceIncidents(id)
-		if err != nil {
-			log.Println("ERROR: error on getProcessInstanceIncidents", err)
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		response.To(writer).Json(result)
 	})
 
 	return router

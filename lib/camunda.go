@@ -32,7 +32,7 @@ import (
 	"github.com/SmartEnergyPlatform/util/http/request"
 )
 
-func startProcess(processDefinitionId string) (result VariableInstances, err error) {
+func startProcess(processDefinitionId string) (err error) {
 	startResult := ProcessInstance{}
 	var code int
 	err, _, code = request.Post(Config.ProcessEngineUrl+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/start", map[string]string{}, &startResult)
@@ -43,7 +43,6 @@ func startProcess(processDefinitionId string) (result VariableInstances, err err
 		err = errors.New("error on process start (status != 200)")
 		return
 	}
-	result, err = getProcessVariables(startResult.Id, startResult.Ended)
 	return
 }
 
@@ -53,15 +52,6 @@ func startProcessGetId(processDefinitionId string) (result ProcessInstance, err 
 	if err == nil && code != http.StatusOK {
 		err = errors.New("error on process start (status != 200)")
 		return
-	}
-	return
-}
-
-func getProcessVariables(processDefinitionId string, processEnded bool) (result VariableInstances, err error) {
-	if processEnded {
-		err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/variable-instance?processInstanceId="+url.QueryEscape(processDefinitionId), &result)
-	} else {
-		err = request.Get(Config.ProcessEngineUrl+"/engine-rest/variable-instance?processInstanceId="+url.QueryEscape(processDefinitionId), &result)
 	}
 	return
 }
@@ -112,12 +102,6 @@ func checkHistoryAccess(id string, userId string) (err error) {
 	return
 }
 
-func getProcessInstanceIncidents(id string) (result Incidents, err error) {
-	//"/engine-rest/incident?processInstanceId=" + processInstanceId
-	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/incident?processInstanceId="+url.QueryEscape(id), &result)
-	return
-}
-
 func removeProcessInstance(id string) (err error) {
 	////DELETE "/engine-rest/process-instance/" + processInstanceId
 	client := &http.Client{}
@@ -153,12 +137,6 @@ func removeProcessInstanceHistory(id string) (err error) {
 		msg, _ := ioutil.ReadAll(resp.Body)
 		err = errors.New("error on delete in engine for " + Config.ProcessEngineUrl + "/engine-rest/history/process-instance/" + url.QueryEscape(id) + ": " + resp.Status + " " + string(msg))
 	}
-	return
-}
-
-func getProcessInstanceHistoricVariables(id string) (result VariableInstances, err error) {
-	//"/engine-rest/history/variable-instance?processInstanceId=" + processInstanceId
-	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/variable-instance?processInstanceId="+url.QueryEscape(id), &result)
 	return
 }
 

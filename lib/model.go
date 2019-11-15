@@ -94,50 +94,6 @@ type Count struct {
 	Count int64 `json:"count"`
 }
 
-type Incident struct {
-	Id                  string `json:"id"`
-	ProcessDefinitionId string `json:"processDefinitionId"`
-	ProcessInstanceId   string `json:"processInstanceId"`
-	ExecutionId         string `json:"executionId"`
-	IncidentTimestamp   string `json:"incidentTimestamp"`
-	IncidentType        string `json:"incidentType"`
-	ActivityId          string `json:"activityId"`
-	CauseIncidentId     string `json:"causeIncidentId"`
-	RootCauseIncidentId string `json:"rootCauseIncidentId"`
-	Configuration       string `json:"configuration"`
-	TenantId            string `json:"tenantId"`
-	IncidentMessage     string `json:"incidentMessage"`
-	JobDefinitionId     string `json:"jobDefinitionId"`
-}
-
-// /engine-rest/incident?processInstanceId="+url.QueryEscape(id)
-type Incidents = []Incident
-
-type VariableInstance struct {
-	Id                 string      `json:"id"`
-	Name               string      `json:"name"`
-	Type               string      `json:"type"`
-	Value              interface{} `json:"value"`
-	ValueInfo          interface{} `json:"valueInfo"`
-	ProcessInstanceId  string      `json:"processInstanceId"`
-	ExecutionId        string      `json:"executionId"`
-	ActivityInstanceId string      `json:"activityInstanceId"`
-	CaseInstanceId     string      `json:"caseInstanceId"`
-	CaseExecutionId    string      `json:"caseExecutionId"`
-	TaskId             string      `json:"taskId"`
-	TenantId           string      `json:"tenantId"`
-	//history fields, ignored
-	//ProcessDefinitionKey string      `json:"processDefinitionKey"`
-	//ProcessDefinitionId  string      `json:"processDefinitionId"`
-	//CaseDefinitionKey    string      `json:"caseDefinitionKey"`
-	//CaseDefinitionId     string      `json:"caseDefinitionId"`
-	//ErrorMessage         string      `json:"errorMessage"`
-}
-
-// /engine-rest/history/variable-instance?processInstanceId="+url.QueryEscape(id)
-// /engine-rest/history/variable-instance
-type VariableInstances = []VariableInstance
-
 // /engine-rest/history/process-instance/"+url.QueryEscape(id)
 type HistoricProcessInstance struct {
 	Id                       string  `json:"id"`

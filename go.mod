@@ -25,3 +25,5 @@ require (
 	golang.org/x/text v0.3.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )
+
+go 1.13
