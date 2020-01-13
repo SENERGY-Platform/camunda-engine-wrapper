@@ -188,11 +188,7 @@ func getProcessInstanceList(userId string) (result ProcessInstances, err error) 
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/process-instance?tenantIdIn="+url.QueryEscape(userId), &result)
 	return
 }
-func getProcessDefinitionIncident(definitionId string) (result Count, err error) {
-	//"/engine-rest/incident/count?processDefinitionId=" + deployment.processDefintionId
-	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/incident/count?processDefinitionId="+url.QueryEscape(definitionId), &result)
-	return
-}
+
 func getProcessDefinition(id string) (result ProcessDefinition, err error) {
 	//"/engine-rest/process-definition/" + processDefinitionId
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/process-definition/"+url.QueryEscape(id), &result)
@@ -389,11 +385,7 @@ func getExtendedDeployment(deployment Deployment) (result ExtendedDeployment, er
 	if err != nil {
 		return result, err
 	}
-	count, err := getProcessDefinitionIncident(definition[0].Id)
-	if err != nil {
-		return result, err
-	}
-	return ExtendedDeployment{Deployment: deployment, HasIncidents: count.Count > 0, Diagram: string(svg), DefinitionId: definition[0].Id}, nil
+	return ExtendedDeployment{Deployment: deployment, Diagram: string(svg), DefinitionId: definition[0].Id}, nil
 }
 
 func getProcessInstanceHistoryListWithTotal(userId string, searchtype string, searchvalue string, limit string, offset string, sortby string, sortdirection string, finished bool) (result HistoricProcessInstancesWithTotal, err error) {
@@ -425,11 +417,6 @@ func getProcessInstanceHistoryListWithTotal(userId string, searchtype string, se
 		return
 	}
 	for _, process := range temp {
-		count, err := getProcessDefinitionIncident(process.ProcessDefinitionId)
-		if err != nil {
-			return result, err
-		}
-		process.Incidents = count.Count > 0
 		result.Data = append(result.Data, process)
 	}
 

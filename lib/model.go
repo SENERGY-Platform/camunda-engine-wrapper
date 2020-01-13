@@ -113,7 +113,6 @@ type HistoricProcessInstance struct {
 	DeleteReason             string  `json:"deleteReason"`
 	TenantId                 string  `json:"tenantId"`
 	State                    string  `json:"state"`
-	Incidents                bool    `json:"incidents"`
 }
 
 // /engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id)
@@ -133,7 +132,6 @@ type DeploymentMetadata struct {
 type ExtendedDeployment struct {
 	Deployment
 	Diagram      string `json:"diagram"`
-	HasIncidents bool   `json:"has_incidents"`
 	DefinitionId string `json:"definition_id"`
 	Error        string `json:"error"`
 }
