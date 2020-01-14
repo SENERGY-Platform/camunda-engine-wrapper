@@ -37,7 +37,24 @@ const jwt jwt_http_router.JwtImpersonate = `Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgO
 var jwtPayload = jwt_http_router.Jwt{}
 var _ = jwt_http_router.GetJWTPayload(string(jwt), &jwtPayload)
 
+type SilentKafkaMock struct {
+}
+
+func (k SilentKafkaMock) Consume(topic string, listener func(delivery []byte) error) (err error) {
+	return nil
+}
+
+func (k SilentKafkaMock) Publish(topic string, key string, payload []byte) error {
+	return nil
+}
+
+func (k SilentKafkaMock) Close() {
+	return
+}
+
 func TestVid(t *testing.T) {
+	cqrs = SilentKafkaMock{}
+
 	pgCloser, _, _, pgStr, err := testHelper_getPgDependency("vid_relations")
 	defer pgCloser()
 	if err != nil {

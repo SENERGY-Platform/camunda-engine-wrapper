@@ -10,6 +10,8 @@
     "KafkaDebug": false,
 
     "DeploymentTopic": "deployments",
+    "ProcessDefinitionEventTopic": "process-definition-event",
+    "ProcessInstanceHistoryEventTopic": "process-instance-history-event",
 
     "PgConn": "postgres://user:password@host/dbname?sslmode=disable",
     "MaintenanceTime": 0,

@@ -232,7 +232,7 @@ func getDeploymentListAllRaw() (result Deployments, err error) {
 
 var vidError = errors.New("unknown vid")
 
-func getDefinitionByDeployment(vid string) (result ProcessDefinitions, err error) {
+func getDefinitionByDeploymentVid(vid string) (result ProcessDefinitions, err error) {
 	id, exists, err := getDeploymentId(vid)
 	if err != nil {
 		return result, err
@@ -241,7 +241,7 @@ func getDefinitionByDeployment(vid string) (result ProcessDefinitions, err error
 		return result, vidError
 	}
 	//"/engine-rest/process-definition?deploymentId=
-	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/process-definition?deploymentId="+url.QueryEscape(id), &result)
+	result, err = getRawDefinitionsByDeployment(id)
 	if err != nil {
 		return
 	}
@@ -253,6 +253,12 @@ func getDefinitionByDeployment(vid string) (result ProcessDefinitions, err error
 	}
 	return
 }
+
+func getRawDefinitionsByDeployment(deploymentId string) (result ProcessDefinitions, err error) {
+	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/process-definition?deploymentId="+url.QueryEscape(deploymentId), &result)
+	return
+}
+
 func getDeployment(vid string) (result Deployment, err error) {
 	deploymentId, exists, err := getDeploymentId(vid)
 	if err != nil {
@@ -367,7 +373,7 @@ func getExtendedDeploymentList(userId string, params url.Values) (result []Exten
 }
 
 func getExtendedDeployment(deployment Deployment) (result ExtendedDeployment, err error) {
-	definition, err := getDefinitionByDeployment(deployment.Id)
+	definition, err := getDefinitionByDeploymentVid(deployment.Id)
 	if err != nil {
 		return result, err
 	}

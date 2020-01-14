@@ -106,7 +106,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := getDefinitionByDeployment(id)
+		result, err := getDefinitionByDeploymentVid(id)
 		if err != nil {
 			log.Println("ERROR: error on getDeploymentByDef", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -332,7 +332,13 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		err := removeProcessInstanceHistory(id)
+		err := PublishProcessInstanceHistoryDeleteEvent(id)
+		if err != nil {
+			log.Println("ERROR: error on PublishProcessInstanceHistoryDeleteEvent", err)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		err = removeProcessInstanceHistory(id)
 		if err != nil {
 			log.Println("ERROR: error on removeProcessInstanceHistory", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)

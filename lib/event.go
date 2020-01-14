@@ -44,11 +44,22 @@ type DeploymentMessage struct {
 	Svg  string `json:"svg"`
 	Name string `json:"name"`
 }
+
 type DeploymentCommand struct {
 	Command    string            `json:"command"`
 	Id         string            `json:"id"`
 	Owner      string            `json:"owner"`
 	Deployment DeploymentMessage `json:"deployment"`
+}
+
+type CamundaProcessDefinitionEvent struct {
+	Command string `json:"command"`
+	Id      string `json:"id"`
+}
+
+type CamundaProcessInstanceHistoryEvent struct {
+	Command string `json:"command"`
+	Id      string `json:"id"`
 }
 
 func InitEventSourcing() (err error) {
@@ -90,6 +101,12 @@ func handleDeploymentDelete(vid string) error {
 	if !exists {
 		return nil
 	}
+
+	err = deleteIncidentsByDeploymentId(id)
+	if err != nil {
+		return err
+	}
+
 	commit, rollback, err := removeVidRelation(vid, id)
 	if err != nil {
 		return err
@@ -101,6 +118,44 @@ func handleDeploymentDelete(vid string) error {
 		commit()
 	}
 	return err
+}
+
+func deleteIncidentsByDeploymentId(id string) (err error) {
+	definitions, err := getRawDefinitionsByDeployment(id)
+	if err != nil {
+		return err
+	}
+	for _, definition := range definitions {
+		err = PublishProcessDefinitionDeleteEvent(definition.Id)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func PublishProcessDefinitionDeleteEvent(definitionId string) error {
+	command := CamundaProcessDefinitionEvent{
+		Command: "DELETE",
+		Id:      definitionId,
+	}
+	payload, err := json.Marshal(command)
+	if err != nil {
+		return err
+	}
+	return cqrs.Publish(Config.ProcessDefinitionEventTopic, definitionId, payload)
+}
+
+func PublishProcessInstanceHistoryDeleteEvent(instanceId string) error {
+	command := CamundaProcessInstanceHistoryEvent{
+		Command: "DELETE",
+		Id:      instanceId,
+	}
+	payload, err := json.Marshal(command)
+	if err != nil {
+		return err
+	}
+	return cqrs.Publish(Config.ProcessInstanceHistoryEventTopic, instanceId, payload)
 }
 
 func handleDeploymentCreate(command DeploymentCommand) (err error) {
