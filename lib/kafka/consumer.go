@@ -30,7 +30,7 @@ import (
 func (this *Kafka) Consume(topic string, listener func(delivery []byte) error) (err error) {
 	this.mux.Lock()
 	defer this.mux.Unlock()
-	consumer, err := NewConsumer(this.zk, this.group, topic, func(topic string, msg []byte) error {
+	consumer, err := NewConsumer(this.zk, this.group, topic, this.debug, func(topic string, msg []byte) error {
 		return listener(msg)
 	}, func(err error, consumer *Consumer) {
 		debug.PrintStack()
@@ -47,8 +47,8 @@ func (this *Kafka) Consume(topic string, listener func(delivery []byte) error) (
 	return nil
 }
 
-func NewConsumer(zk string, groupid string, topic string, listener func(topic string, msg []byte) error, errorhandler func(err error, consumer *Consumer)) (consumer *Consumer, err error) {
-	consumer = &Consumer{groupId: groupid, zkUrl: zk, topic: topic, listener: listener, errorhandler: errorhandler}
+func NewConsumer(zk string, groupid string, topic string, debug bool, listener func(topic string, msg []byte) error, errorhandler func(err error, consumer *Consumer)) (consumer *Consumer, err error) {
+	consumer = &Consumer{groupId: groupid, zkUrl: zk, topic: topic, listener: listener, errorhandler: errorhandler, debug: debug}
 	err = consumer.start()
 	return
 }
@@ -63,6 +63,7 @@ type Consumer struct {
 	listener     func(topic string, msg []byte) error
 	errorhandler func(err error, consumer *Consumer)
 	mux          sync.Mutex
+	debug        bool
 }
 
 func (this *Consumer) Stop() {
@@ -108,11 +109,18 @@ func (this *Consumer) start() error {
 					this.errorhandler(err, this)
 					return
 				}
+				if this.debug {
+					log.Println("consume: ", m.Time, m.Topic, string(m.Value))
+				}
 				err = this.listener(m.Topic, m.Value)
 				if err != nil {
 					log.Println("ERROR: unable to handle message (no commit)", err)
 				} else {
 					err = r.CommitMessages(this.ctx, m)
+					if err != nil {
+						log.Println("ERROR: unable to commit", err)
+					}
+
 				}
 			}
 		}
