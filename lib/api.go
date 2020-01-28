@@ -98,6 +98,33 @@ func getRoutes() *jwt_http_router.Router {
 		response.To(writer).Json(result)
 	})
 
+	router.GET("/deployment/:id/start", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+		id := params.ByName("id")
+		if err := checkDeploymentAccess(id, jwt.UserId); err != nil {
+			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+			http.Error(writer, "Access denied", http.StatusUnauthorized)
+			return
+		}
+		definitions, err := getDefinitionByDeploymentVid(id)
+		if err != nil {
+			log.Println("ERROR: error on getDeploymentByDef", err)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if len(definitions) == 0 {
+			log.Println("ERROR: no definition for deployment found", err)
+			http.Error(writer, "no definition for deployment found", http.StatusInternalServerError)
+			return
+		}
+		result, err := startProcessGetId(definitions[0].Id)
+		if err != nil {
+			log.Println("ERROR: error on process start", err)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		response.To(writer).Json(result)
+	})
+
 	router.GET("/deployment/:id/definition", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
 		//"/engine-rest/process-definition?deploymentId=
 		id := params.ByName("id")
