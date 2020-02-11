@@ -71,7 +71,7 @@ func checkDeploymentAccess(vid string, userId string) (err error) {
 		return err
 	}
 	if !exists {
-		return vidError
+		return UnknownVid
 	}
 	wrapper := Deployment{}
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/deployment/"+url.QueryEscape(id), &wrapper)
@@ -230,7 +230,7 @@ func getDeploymentListAllRaw() (result Deployments, err error) {
 	return
 }
 
-var vidError = errors.New("unknown vid")
+var UnknownVid = errors.New("unknown vid")
 
 func getDefinitionByDeploymentVid(vid string) (result ProcessDefinitions, err error) {
 	id, exists, err := getDeploymentId(vid)
@@ -238,7 +238,7 @@ func getDefinitionByDeploymentVid(vid string) (result ProcessDefinitions, err er
 		return result, err
 	}
 	if !exists {
-		return result, vidError
+		return result, UnknownVid
 	}
 	//"/engine-rest/process-definition?deploymentId=
 	result, err = getRawDefinitionsByDeployment(id)
@@ -265,7 +265,7 @@ func getDeployment(vid string) (result Deployment, err error) {
 		return result, err
 	}
 	if !exists {
-		return result, vidError
+		return result, UnknownVid
 	}
 	//"/engine-rest/deployment/" + id
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/deployment/"+url.QueryEscape(deploymentId), &result)

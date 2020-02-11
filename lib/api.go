@@ -98,6 +98,21 @@ func getRoutes() *jwt_http_router.Router {
 		response.To(writer).Json(result)
 	})
 
+	router.GET("/deployment/:id/exists", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+		//"/engine-rest/deployment/" + id
+		id := params.ByName("id")
+		err := checkDeploymentAccess(id, jwt.UserId)
+		if err == UnknownVid {
+			response.To(writer).Json(false)
+			return
+		}
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		response.To(writer).Json(true)
+	})
+
 	router.GET("/deployment/:id/start", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
 		id := params.ByName("id")
 		if err := checkDeploymentAccess(id, jwt.UserId); err != nil {
@@ -144,7 +159,7 @@ func getRoutes() *jwt_http_router.Router {
 
 	router.GET("/deployment", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
 		result, err := getExtendedDeploymentList(jwt.UserId, request.URL.Query())
-		if err == vidError {
+		if err == UnknownVid {
 			log.Println("WARNING: unable to use vid for process; try repeat")
 			time.Sleep(1 * time.Second)
 			result, err = getExtendedDeploymentList(jwt.UserId, request.URL.Query())
