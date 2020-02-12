@@ -76,10 +76,13 @@ func checkDeploymentAccess(vid string, userId string) (err error) {
 	wrapper := Deployment{}
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/deployment/"+url.QueryEscape(id), &wrapper)
 	if err != nil {
-		log.Println("ERROR in request: ", Config.ProcessEngineUrl+"/engine-rest/deployment/"+url.QueryEscape(id), err)
+		return err
 	}
-	if err == nil && wrapper.TenantId != userId {
-		err = errors.New("access denied")
+	if wrapper.Id == "" {
+		return CamundaDeploymentUnknown
+	}
+	if wrapper.TenantId != userId {
+		err = AccessDenied
 	}
 	return
 }
@@ -231,6 +234,8 @@ func getDeploymentListAllRaw() (result Deployments, err error) {
 }
 
 var UnknownVid = errors.New("unknown vid")
+var CamundaDeploymentUnknown = errors.New("deployment unknown in camunda")
+var AccessDenied = errors.New("access denied")
 
 func getDefinitionByDeploymentVid(vid string) (result ProcessDefinitions, err error) {
 	id, exists, err := getDeploymentId(vid)

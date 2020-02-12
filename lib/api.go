@@ -102,7 +102,7 @@ func getRoutes() *jwt_http_router.Router {
 		//"/engine-rest/deployment/" + id
 		id := params.ByName("id")
 		err := checkDeploymentAccess(id, jwt.UserId)
-		if err == UnknownVid {
+		if err == UnknownVid || err == CamundaDeploymentUnknown {
 			response.To(writer).Json(false)
 			return
 		}
