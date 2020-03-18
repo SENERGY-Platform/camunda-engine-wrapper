@@ -144,7 +144,7 @@ func PublishIncidentsDeleteByProcessDefinitionEvent(definitionId string) error {
 	return cqrs.Publish(Config.IncidentTopic, definitionId, payload)
 }
 
-func PublishIncidentDeleteByProcessInstanceEvent(instanceId string) error {
+func PublishIncidentDeleteByProcessInstanceEvent(instanceId string, definitionId string) error {
 	command := KafkaIncidentsCommand{
 		Command:           "DELETE",
 		ProcessInstanceId: instanceId,
@@ -154,7 +154,7 @@ func PublishIncidentDeleteByProcessInstanceEvent(instanceId string) error {
 	if err != nil {
 		return err
 	}
-	return cqrs.Publish(Config.IncidentTopic, instanceId, payload)
+	return cqrs.Publish(Config.IncidentTopic, definitionId, payload)
 }
 
 func handleDeploymentCreate(command DeploymentCommand) (err error) {

@@ -369,12 +369,13 @@ func getRoutes() *jwt_http_router.Router {
 	router.DELETE("/history/process-instance/:id", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
 		//DELETE "/engine-rest/history/process-instance/" + processInstanceId
 		id := params.ByName("id")
-		if err := checkHistoryAccess(id, jwt.UserId); err != nil {
+		definitionId, err := checkHistoryAccess(id, jwt.UserId)
+		if err != nil {
 			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		err := PublishIncidentDeleteByProcessInstanceEvent(id)
+		err = PublishIncidentDeleteByProcessInstanceEvent(id, definitionId)
 		if err != nil {
 			log.Println("ERROR: error on PublishIncidentDeleteByProcessInstanceEvent", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)

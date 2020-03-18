@@ -96,13 +96,13 @@ func checkProcessInstanceAccess(id string, userId string) (err error) {
 	return
 }
 
-func checkHistoryAccess(id string, userId string) (err error) {
+func checkHistoryAccess(id string, userId string) (definitionId string, err error) {
 	wrapper := HistoricProcessInstance{}
 	err = request.Get(Config.ProcessEngineUrl+"/engine-rest/history/process-instance/"+url.QueryEscape(id), &wrapper)
 	if err == nil && wrapper.TenantId != userId {
 		err = errors.New("access denied")
 	}
-	return
+	return wrapper.ProcessDefinitionId, err
 }
 
 func removeProcessInstance(id string) (err error) {
