@@ -374,9 +374,9 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		err := PublishProcessInstanceHistoryDeleteEvent(id)
+		err := PublishIncidentDeleteByProcessInstanceEvent(id)
 		if err != nil {
-			log.Println("ERROR: error on PublishProcessInstanceHistoryDeleteEvent", err)
+			log.Println("ERROR: error on PublishIncidentDeleteByProcessInstanceEvent", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}

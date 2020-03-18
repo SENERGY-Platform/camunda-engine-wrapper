@@ -52,14 +52,11 @@ type DeploymentCommand struct {
 	Deployment DeploymentMessage `json:"deployment"`
 }
 
-type CamundaProcessDefinitionEvent struct {
-	Command string `json:"command"`
-	Id      string `json:"id"`
-}
-
-type CamundaProcessInstanceHistoryEvent struct {
-	Command string `json:"command"`
-	Id      string `json:"id"`
+type KafkaIncidentsCommand struct {
+	Command             string `json:"command"`
+	MsgVersion          int64  `json:"msg_version"`
+	ProcessDefinitionId string `json:"process_definition_id,omitempty"`
+	ProcessInstanceId   string `json:"process_instance_id,omitempty"`
 }
 
 func InitEventSourcing() (err error) {
@@ -126,7 +123,7 @@ func deleteIncidentsByDeploymentId(id string) (err error) {
 		return err
 	}
 	for _, definition := range definitions {
-		err = PublishProcessDefinitionDeleteEvent(definition.Id)
+		err = PublishIncidentsDeleteByProcessDefinitionEvent(definition.Id)
 		if err != nil {
 			return err
 		}
@@ -134,28 +131,30 @@ func deleteIncidentsByDeploymentId(id string) (err error) {
 	return nil
 }
 
-func PublishProcessDefinitionDeleteEvent(definitionId string) error {
-	command := CamundaProcessDefinitionEvent{
-		Command: "DELETE",
-		Id:      definitionId,
+func PublishIncidentsDeleteByProcessDefinitionEvent(definitionId string) error {
+	command := KafkaIncidentsCommand{
+		Command:             "DELETE",
+		ProcessDefinitionId: definitionId,
+		MsgVersion:          3,
 	}
 	payload, err := json.Marshal(command)
 	if err != nil {
 		return err
 	}
-	return cqrs.Publish(Config.ProcessDefinitionEventTopic, definitionId, payload)
+	return cqrs.Publish(Config.IncidentTopic, definitionId, payload)
 }
 
-func PublishProcessInstanceHistoryDeleteEvent(instanceId string) error {
-	command := CamundaProcessInstanceHistoryEvent{
-		Command: "DELETE",
-		Id:      instanceId,
+func PublishIncidentDeleteByProcessInstanceEvent(instanceId string) error {
+	command := KafkaIncidentsCommand{
+		Command:           "DELETE",
+		ProcessInstanceId: instanceId,
+		MsgVersion:        3,
 	}
 	payload, err := json.Marshal(command)
 	if err != nil {
 		return err
 	}
-	return cqrs.Publish(Config.ProcessInstanceHistoryEventTopic, instanceId, payload)
+	return cqrs.Publish(Config.IncidentTopic, instanceId, payload)
 }
 
 func handleDeploymentCreate(command DeploymentCommand) (err error) {

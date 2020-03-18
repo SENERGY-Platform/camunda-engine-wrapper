@@ -10,8 +10,7 @@
     "KafkaDebug": false,
 
     "DeploymentTopic": "deployments",
-    "ProcessDefinitionEventTopic": "process-definition-event",
-    "ProcessInstanceHistoryEventTopic": "process-instance-history-event",
+    "IncidentTopic":"camunda_incident",
 
     "PgConn": "postgres://user:password@host/dbname?sslmode=disable",
     "MaintenanceTime": 0,

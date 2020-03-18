@@ -41,9 +41,8 @@ type ConfigStruct struct {
 	KafkaGroup   string
 	KafkaDebug   bool
 
-	DeploymentTopic                  string
-	ProcessDefinitionEventTopic      string
-	ProcessInstanceHistoryEventTopic string
+	DeploymentTopic string
+	IncidentTopic   string
 
 	PgConn          string
 	MaintenanceTime int64 //in hours
