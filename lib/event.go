@@ -19,6 +19,8 @@ package lib
 import (
 	"encoding/json"
 	"encoding/xml"
+	"errors"
+	"fmt"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/etree"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/kafka"
 	"log"
@@ -29,18 +31,30 @@ import (
 
 var cqrs kafka.Interface
 
-type DeploymentMessage struct {
+type DeploymentV1 struct {
 	Id   string `json:"id"`
 	Xml  string `json:"xml"`
 	Svg  string `json:"svg"`
 	Name string `json:"name"`
 }
 
+type DeploymentV2 struct {
+	Id      string  `json:"id"`
+	Version string  `json:"version"`
+	Name    string  `json:"name"`
+	Diagram Diagram `json:"diagram"`
+}
+
+type Diagram struct {
+	XmlDeployed string `json:"xml_deployed"`
+	Svg         string `json:"svg"`
+}
+
 type DeploymentCommand struct {
-	Command    string            `json:"command"`
-	Id         string            `json:"id"`
-	Owner      string            `json:"owner"`
-	Deployment DeploymentMessage `json:"deployment"`
+	Command    string                 `json:"command"`
+	Id         string                 `json:"id"`
+	Owner      string                 `json:"owner"`
+	Deployment map[string]interface{} `json:"deployment"`
 }
 
 type KafkaIncidentsCommand struct {
@@ -64,7 +78,11 @@ func InitEventSourcing(kafka kafka.Interface) (err error) {
 		log.Println("cqrs receive ", string(delivery))
 		switch command.Command {
 		case "PUT":
-			return handleDeploymentCreate(command)
+			owner, id, name, xml, svg, err := parsePutCommand(command)
+			if err != nil {
+				return err
+			}
+			return handleDeploymentCreate(owner, id, name, xml, svg)
 		case "POST":
 			log.Println("WARNING: deprecated event type POST")
 			return nil
@@ -76,6 +94,41 @@ func InitEventSourcing(kafka kafka.Interface) (err error) {
 		}
 	})
 	return err
+}
+
+func parsePutCommand(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("recovered error %v", r)
+		}
+	}()
+	switch command.Deployment["version"] {
+	case nil:
+		return parseV1Command(command)
+	case "":
+		return parseV1Command(command)
+	case "1":
+		return parseV1Command(command)
+	case "2":
+		return parseV2Command(command)
+	default:
+		err = errors.New("unknown version")
+		return
+	}
+}
+
+func parseV1Command(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, err error) {
+	return command.Owner, command.Id, command.Deployment["name"].(string), command.Deployment["xml"].(string), command.Deployment["svg"].(string), nil
+}
+
+func parseV2Command(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, err error) {
+	temp, err := json.Marshal(command.Deployment)
+	if err != nil {
+		return owner, id, name, xml, svg, err
+	}
+	deployment := DeploymentV2{}
+	err = json.Unmarshal(temp, &deployment)
+	return command.Owner, command.Id, deployment.Name, deployment.Diagram.XmlDeployed, deployment.Diagram.Svg, err
 }
 
 func handleDeploymentDelete(vid string) error {
@@ -145,28 +198,28 @@ func PublishIncidentDeleteByProcessInstanceEvent(instanceId string, definitionId
 	return cqrs.Publish(Config.IncidentTopic, definitionId, payload)
 }
 
-func handleDeploymentCreate(command DeploymentCommand) (err error) {
-	err = cleanupExistingDeployment(command.Id)
+func handleDeploymentCreate(owner string, id string, name string, xml string, svg string) (err error) {
+	err = cleanupExistingDeployment(id)
 	if err != nil {
 		return err
 	}
-	if !validateXml(command.Deployment.Xml) {
+	if !validateXml(xml) {
 		log.Println("ERROR: got invalid xml, replace with default")
-		command.Deployment.Xml = createBlankProcess()
-		command.Deployment.Svg = createBlankSvg()
+		xml = createBlankProcess()
+		svg = createBlankSvg()
 	}
 	if Config.Debug {
-		log.Println("deploy process", command.Id, command.Deployment.Name, command.Deployment.Xml)
+		log.Println("deploy process", id, name, xml)
 	}
-	deploymentId, err := DeployProcess(command.Deployment.Name, command.Deployment.Xml, command.Deployment.Svg, command.Owner)
+	deploymentId, err := DeployProcess(name, xml, svg, owner)
 	if err != nil {
 		log.Println("WARNING: unable to deploy process to camunda ", err)
 		return err
 	}
 	if Config.Debug {
-		log.Println("save vid relation", command.Id, deploymentId)
+		log.Println("save vid relation", id, deploymentId)
 	}
-	err = saveVidRelation(command.Id, deploymentId)
+	err = saveVidRelation(id, deploymentId)
 	if err != nil {
 		log.Println("WARNING: unable to publish deployment saga \n", err, "\nremove deployed process")
 		removeErr := RemoveProcess(deploymentId)

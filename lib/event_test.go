@@ -42,14 +42,22 @@ func TestEvents(t *testing.T) {
 
 	t.Run("publish version 1 deployment", publishVersion1Deployment("1", "testname", bpmnExample, svgExample))
 
-	t.Run("check version 1 camunda request", checkVersion1CamundaRequest(requests, "testname", bpmnExample, svgExample))
+	t.Run("check version 1 camunda request", checkCamundaRequest(requests, "testname", bpmnExample, svgExample))
 
 	t.Run("publish version 1 invalid deployment", publishVersion1Deployment("1", "testname", "invalid", svgExample))
 
-	t.Run("check version 1 invalid camunda request", checkVersion1CamundaRequest(requests, "testname", createBlankProcess(), createBlankSvg()))
+	t.Run("check version 1 invalid camunda request", checkCamundaRequest(requests, "testname", createBlankProcess(), createBlankSvg()))
+
+	t.Run("publish version 2 deployment", publishVersion2Deployment("1", "testname", bpmnExample, svgExample))
+
+	t.Run("check version 2 camunda request", checkCamundaRequest(requests, "testname", bpmnExample, svgExample))
+
+	t.Run("publish version 2 invalid deployment", publishVersion2Deployment("1", "testname", "invalid", svgExample))
+
+	t.Run("check version 2 invalid camunda request", checkCamundaRequest(requests, "testname", createBlankProcess(), createBlankSvg()))
 }
 
-func checkVersion1CamundaRequest(requests chan mocks.Request, expectedName string, expectedXml string, expectedSvg string) func(t *testing.T) {
+func checkCamundaRequest(requests chan mocks.Request, expectedName string, expectedXml string, expectedSvg string) func(t *testing.T) {
 	return func(t *testing.T) {
 		if len(requests) != 1 {
 			t.Error(len(requests))
@@ -94,10 +102,6 @@ func removeProcessId(xml string) string {
 	return result
 }
 
-func TestRemoveProcessId(t *testing.T) {
-	t.Log(removeProcessId(createBlankProcess()))
-}
-
 func parseCamundaMessage(payload []byte) (xml string, svg string, name string, user string, err error) {
 	cleanPl := strings.ReplaceAll(string(payload), "\r", "")
 	form := map[string]string{}
@@ -136,11 +140,39 @@ func publishVersion1Deployment(id string, name string, xml string, svg string) f
 			Command: "PUT",
 			Id:      id,
 			Owner:   "test",
-			Deployment: DeploymentMessage{
-				Id:   id,
-				Xml:  xml,
-				Svg:  svg,
-				Name: name,
+			Deployment: map[string]interface{}{
+				"id":   id,
+				"xml":  xml,
+				"svg":  svg,
+				"name": name,
+			},
+		})
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		err = cqrs.Publish(Config.DeploymentTopic, id, msg)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	}
+}
+
+func publishVersion2Deployment(id string, name string, xml string, svg string) func(t *testing.T) {
+	return func(t *testing.T) {
+		msg, err := json.Marshal(DeploymentCommand{
+			Command: "PUT",
+			Id:      id,
+			Owner:   "test",
+			Deployment: map[string]interface{}{
+				"version": "2",
+				"id":      id,
+				"name":    name,
+				"diagram": map[string]interface{}{
+					"xml_deployed": xml,
+					"svg":          svg,
+				},
 			},
 		})
 		if err != nil {
