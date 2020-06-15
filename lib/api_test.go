@@ -18,28 +18,30 @@ package lib
 
 import (
 	"encoding/json"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/mocks"
 	"net/http/httptest"
 	"testing"
 )
 
 func TestDeploymentStart(t *testing.T) {
-	cqrs = SilentKafkaMock{}
+	cqrs = mocks.Kafka()
 
-	pgCloser, _, _, pgStr, err := testHelper_getPgDependency("vid_relations")
+	pgCloser, _, _, pgStr, err := docker.Helper_getPgDependency("vid_relations")
 	defer pgCloser()
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	camundaPgCloser, _, camundaPgIp, _, err := testHelper_getPgDependency("camunda")
+	camundaPgCloser, _, camundaPgIp, _, err := docker.Helper_getPgDependency("camunda")
 	defer camundaPgCloser()
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	camundaCloser, camundaPort, _, err := testHelper_getCamundaDependency(camundaPgIp, "5432")
+	camundaCloser, camundaPort, _, err := docker.Helper_getCamundaDependency(camundaPgIp, "5432")
 	defer camundaCloser()
 	if err != nil {
 		t.Error(err)

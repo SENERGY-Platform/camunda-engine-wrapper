@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/kafka"
 	"log"
 	"time"
 )
@@ -34,7 +35,12 @@ func main() {
 		log.Fatal("unable to load config", err)
 	}
 
-	err = lib.InitEventSourcing()
+	cqrs, err := kafka.Init(lib.Config.ZookeeperUrl, lib.Config.KafkaGroup, lib.Config.KafkaDebug)
+	if err != nil {
+		log.Fatal("unable to init kafka connection", err)
+	}
+
+	err = lib.InitEventSourcing(cqrs)
 	if err != nil {
 		log.Fatal("unable to start eventsourcing", err)
 	}

@@ -18,6 +18,7 @@ package lib
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/etree"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/kafka"
 	"log"
@@ -27,16 +28,6 @@ import (
 )
 
 var cqrs kafka.Interface
-
-type AbstractProcess struct {
-	Xml                     string      `json:"xml"`
-	Name                    string      `json:"name"`
-	AbstractTasks           interface{} `json:"abstract_tasks"`
-	AbstractDataExportTasks interface{} `json:"abstract_data_export_tasks"`
-	ReceiveTasks            interface{} `json:"receive_tasks"`
-	MsgEvents               interface{} `json:"msg_events"`
-	TimeEvents              interface{} `json:"time_events"`
-}
 
 type DeploymentMessage struct {
 	Id   string `json:"id"`
@@ -59,11 +50,8 @@ type KafkaIncidentsCommand struct {
 	ProcessInstanceId   string `json:"process_instance_id,omitempty"`
 }
 
-func InitEventSourcing() (err error) {
-	cqrs, err = kafka.Init(Config.ZookeeperUrl, Config.KafkaGroup, Config.KafkaDebug)
-	if err != nil {
-		return err
-	}
+func InitEventSourcing(kafka kafka.Interface) (err error) {
+	cqrs = kafka
 	err = cqrs.Consume(Config.DeploymentTopic, func(delivery []byte) error {
 		maintenanceLock.RLock()
 		defer maintenanceLock.RUnlock()
@@ -201,11 +189,16 @@ func createBlankProcess() string {
 	return strings.Replace(templ, "PROCESSID", "id_"+strconv.FormatInt(time.Now().Unix(), 10), 1)
 }
 
-func validateXml(xml string) bool {
-	if xml == "" {
+func validateXml(xmlStr string) bool {
+	if xmlStr == "" {
 		return false
 	}
-	err := etree.NewDocument().ReadFromString(xml)
+	err := etree.NewDocument().ReadFromString(xmlStr)
+	if err != nil {
+		log.Println("ERROR: unable to parse xml", err)
+		return false
+	}
+	err = xml.Unmarshal([]byte(xmlStr), new(interface{}))
 	if err != nil {
 		log.Println("ERROR: unable to parse xml", err)
 		return false

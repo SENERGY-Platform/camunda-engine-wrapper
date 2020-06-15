@@ -17,14 +17,11 @@
 package lib
 
 import (
-	"database/sql"
 	"encoding/json"
-	"errors"
-	"fmt"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/mocks"
 	"github.com/SmartEnergyPlatform/jwt-http-router"
-	"github.com/ory/dockertest"
 	"log"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 )
@@ -37,44 +34,28 @@ const jwt jwt_http_router.JwtImpersonate = `Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgO
 var jwtPayload = jwt_http_router.Jwt{}
 var _ = jwt_http_router.GetJWTPayload(string(jwt), &jwtPayload)
 
-type SilentKafkaMock struct {
-}
-
-func (k SilentKafkaMock) Consume(topic string, listener func(delivery []byte) error) (err error) {
-	return nil
-}
-
-func (k SilentKafkaMock) Publish(topic string, key string, payload []byte) error {
-	return nil
-}
-
-func (k SilentKafkaMock) Close() {
-	return
-}
-
 func TestVid(t *testing.T) {
-	cqrs = SilentKafkaMock{}
-
-	pgCloser, _, _, pgStr, err := testHelper_getPgDependency("vid_relations")
+	cqrs = mocks.Kafka()
+	pgCloser, _, _, pgStr, err := docker.Helper_getPgDependency("vid_relations")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	defer pgCloser()
+
+	camundaPgCloser, _, camundaPgIp, _, err := docker.Helper_getPgDependency("camunda")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-
-	camundaPgCloser, _, camundaPgIp, _, err := testHelper_getPgDependency("camunda")
 	defer camundaPgCloser()
-	if err != nil {
-		t.Error(err)
-		return
-	}
 
-	camundaCloser, camundaPort, _, err := testHelper_getCamundaDependency(camundaPgIp, "5432")
-	defer camundaCloser()
+	camundaCloser, camundaPort, _, err := docker.Helper_getCamundaDependency(camundaPgIp, "5432")
 	if err != nil {
 		t.Error(err)
 		return
 	}
+	defer camundaCloser()
 
 	err = LoadConfig("../config.json")
 	if err != nil {
@@ -291,65 +272,6 @@ func TestVid(t *testing.T) {
 		t.Error("unexpected result:", deployments)
 		return
 	}
-}
-
-func testHelper_getPgDependency(dbName string) (closer func(), hostPort string, ipAddress string, pgStr string, err error) {
-	pool, err := dockertest.NewPool("")
-	if err != nil {
-		return func() {}, "", "", "", err
-	}
-	log.Println("start postgres db")
-	pg, err := pool.Run("postgres", "latest", []string{"POSTGRES_DB=" + dbName, "POSTGRES_PASSWORD=pw", "POSTGRES_USER=usr"})
-	if err != nil {
-		return func() {}, "", "", "", err
-	}
-	hostPort = pg.GetPort("5432/tcp")
-	pgStr = fmt.Sprintf("postgres://usr:pw@localhost:%s/%s?sslmode=disable", hostPort, dbName)
-	err = pool.Retry(func() error {
-		log.Println("try pg connection...")
-		var err error
-		db, err = sql.Open("postgres", pgStr)
-		if err != nil {
-			return err
-		}
-		return db.Ping()
-	})
-	return func() { pg.Close() }, hostPort, pg.Container.NetworkSettings.IPAddress, pgStr, err
-}
-
-func testHelper_getCamundaDependency(pgIp string, pgPort string) (closer func(), hostPort string, ipAddress string, err error) {
-	pool, err := dockertest.NewPool("")
-	if err != nil {
-		return func() {}, "", "", err
-	}
-	log.Println("start process engine")
-	camunda, err := pool.Run("fgseitsrancher.wifa.intern.uni-leipzig.de:5000/process-engine", "unstable", []string{
-		"DB_PASSWORD=pw",
-		"DB_URL=jdbc:postgresql://" + pgIp + ":" + pgPort + "/camunda",
-		"DB_PORT=" + pgPort,
-		"DB_NAME=camunda",
-		"DB_HOST=" + pgIp,
-		"DB_DRIVER=org.postgresql.Driver",
-		"DB_USERNAME=usr",
-		"DATABASE=postgres",
-	})
-	if err != nil {
-		return func() {}, "", "", err
-	}
-	hostPort = camunda.GetPort("8080/tcp")
-	err = pool.Retry(func() error {
-		log.Println("try camunda connection...")
-		resp, err := http.Get("http://localhost:" + hostPort + "/engine-rest/metrics")
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode != 200 {
-			log.Println("unexpectet response code", resp.StatusCode, resp.Status)
-			return errors.New("unexpectet response code: " + resp.Status)
-		}
-		return nil
-	})
-	return func() { camunda.Close() }, hostPort, camunda.Container.NetworkSettings.IPAddress, err
 }
 
 func testHelper_putProcess(vid string, name string, owner string) error {
