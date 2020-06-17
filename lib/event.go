@@ -32,10 +32,11 @@ import (
 var cqrs kafka.Interface
 
 type DeploymentV1 struct {
-	Id   string `json:"id"`
-	Xml  string `json:"xml"`
-	Svg  string `json:"svg"`
-	Name string `json:"name"`
+	Id      string `json:"id"`
+	Version string `json:"version"`
+	Xml     string `json:"xml"`
+	Svg     string `json:"svg"`
+	Name    string `json:"name"`
 }
 
 type DeploymentV2 struct {
