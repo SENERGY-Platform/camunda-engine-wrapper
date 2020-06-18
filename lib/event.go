@@ -32,16 +32,14 @@ import (
 var cqrs kafka.Interface
 
 type DeploymentV1 struct {
-	Id      string `json:"id"`
-	Version string `json:"version"`
-	Xml     string `json:"xml"`
-	Svg     string `json:"svg"`
-	Name    string `json:"name"`
+	Id   string `json:"id"`
+	Xml  string `json:"xml"`
+	Svg  string `json:"svg"`
+	Name string `json:"name"`
 }
 
 type DeploymentV2 struct {
 	Id      string  `json:"id"`
-	Version string  `json:"version"`
 	Name    string  `json:"name"`
 	Diagram Diagram `json:"diagram"`
 }
@@ -52,10 +50,11 @@ type Diagram struct {
 }
 
 type DeploymentCommand struct {
-	Command    string                 `json:"command"`
-	Id         string                 `json:"id"`
-	Owner      string                 `json:"owner"`
-	Deployment map[string]interface{} `json:"deployment"`
+	Command      string        `json:"command"`
+	Id           string        `json:"id"`
+	Owner        string        `json:"owner"`
+	Deployment   *DeploymentV1 `json:"deployment"`
+	DeploymentV2 *DeploymentV2 `json:"deployment_v2"`
 }
 
 type KafkaIncidentsCommand struct {
@@ -103,33 +102,21 @@ func parsePutCommand(command DeploymentCommand) (owner string, id string, name s
 			err = fmt.Errorf("recovered error %v", r)
 		}
 	}()
-	switch command.Deployment["version"] {
-	case nil:
+	if command.Deployment != nil {
 		return parseV1Command(command)
-	case "":
-		return parseV1Command(command)
-	case "1":
-		return parseV1Command(command)
-	case "2":
+	} else if command.DeploymentV2 != nil {
 		return parseV2Command(command)
-	default:
-		err = errors.New("unknown version")
-		return
 	}
+	err = errors.New("unknown version")
+	return
 }
 
 func parseV1Command(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, err error) {
-	return command.Owner, command.Id, command.Deployment["name"].(string), command.Deployment["xml"].(string), command.Deployment["svg"].(string), nil
+	return command.Owner, command.Id, command.Deployment.Name, command.Deployment.Xml, command.Deployment.Svg, nil
 }
 
 func parseV2Command(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, err error) {
-	temp, err := json.Marshal(command.Deployment)
-	if err != nil {
-		return owner, id, name, xml, svg, err
-	}
-	deployment := DeploymentV2{}
-	err = json.Unmarshal(temp, &deployment)
-	return command.Owner, command.Id, deployment.Name, deployment.Diagram.XmlDeployed, deployment.Diagram.Svg, err
+	return command.Owner, command.Id, command.DeploymentV2.Name, command.DeploymentV2.Diagram.XmlDeployed, command.DeploymentV2.Diagram.Svg, err
 }
 
 func handleDeploymentDelete(vid string) error {

@@ -150,9 +150,17 @@ func parseCamundaMessage(payload []byte) (xml string, svg string, name string, u
 	return
 }
 
+type TestDeploymentCommand struct {
+	Command      string      `json:"command"`
+	Id           string      `json:"id"`
+	Owner        string      `json:"owner"`
+	Deployment   interface{} `json:"deployment"`
+	DeploymentV2 interface{} `json:"deployment_v2"`
+}
+
 func publishVersion1Deployment(id string, name string, xml string, svg string) func(t *testing.T) {
 	return func(t *testing.T) {
-		msg, err := json.Marshal(DeploymentCommand{
+		msg, err := json.Marshal(TestDeploymentCommand{
 			Command: "PUT",
 			Id:      id,
 			Owner:   "test",
@@ -177,7 +185,7 @@ func publishVersion1Deployment(id string, name string, xml string, svg string) f
 
 func publishExplVersion1Deployment(version string, id string, name string, xml string, svg string) func(t *testing.T) {
 	return func(t *testing.T) {
-		msg, err := json.Marshal(DeploymentCommand{
+		msg, err := json.Marshal(TestDeploymentCommand{
 			Command: "PUT",
 			Id:      id,
 			Owner:   "test",
@@ -203,14 +211,13 @@ func publishExplVersion1Deployment(version string, id string, name string, xml s
 
 func publishVersion2Deployment(id string, name string, xml string, svg string) func(t *testing.T) {
 	return func(t *testing.T) {
-		msg, err := json.Marshal(DeploymentCommand{
+		msg, err := json.Marshal(TestDeploymentCommand{
 			Command: "PUT",
 			Id:      id,
 			Owner:   "test",
-			Deployment: map[string]interface{}{
-				"version": "2",
-				"id":      id,
-				"name":    name,
+			DeploymentV2: map[string]interface{}{
+				"id":   id,
+				"name": name,
 				"diagram": map[string]interface{}{
 					"xml_deployed": xml,
 					"svg":          svg,
