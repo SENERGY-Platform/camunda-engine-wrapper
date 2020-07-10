@@ -55,6 +55,7 @@ type DeploymentCommand struct {
 	Owner        string        `json:"owner"`
 	Deployment   *DeploymentV1 `json:"deployment"`
 	DeploymentV2 *DeploymentV2 `json:"deployment_v2"`
+	Source       string        `json:"source,omitempty"`
 }
 
 type KafkaIncidentsCommand struct {
@@ -78,11 +79,11 @@ func InitEventSourcing(kafka kafka.Interface) (err error) {
 		log.Println("cqrs receive ", string(delivery))
 		switch command.Command {
 		case "PUT":
-			owner, id, name, xml, svg, err := parsePutCommand(command)
+			owner, id, name, xml, svg, source, err := parsePutCommand(command)
 			if err != nil {
 				return err
 			}
-			return handleDeploymentCreate(owner, id, name, xml, svg)
+			return handleDeploymentCreate(owner, id, name, xml, svg, source)
 		case "POST":
 			log.Println("WARNING: deprecated event type POST")
 			return nil
@@ -96,7 +97,7 @@ func InitEventSourcing(kafka kafka.Interface) (err error) {
 	return err
 }
 
-func parsePutCommand(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, err error) {
+func parsePutCommand(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, source string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("recovered error %v", r)
@@ -111,12 +112,12 @@ func parsePutCommand(command DeploymentCommand) (owner string, id string, name s
 	return
 }
 
-func parseV1Command(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, err error) {
-	return command.Owner, command.Id, command.Deployment.Name, command.Deployment.Xml, command.Deployment.Svg, nil
+func parseV1Command(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, source string, err error) {
+	return command.Owner, command.Id, command.Deployment.Name, command.Deployment.Xml, command.Deployment.Svg, command.Source, nil
 }
 
-func parseV2Command(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, err error) {
-	return command.Owner, command.Id, command.DeploymentV2.Name, command.DeploymentV2.Diagram.XmlDeployed, command.DeploymentV2.Diagram.Svg, err
+func parseV2Command(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, source string, err error) {
+	return command.Owner, command.Id, command.DeploymentV2.Name, command.DeploymentV2.Diagram.XmlDeployed, command.DeploymentV2.Diagram.Svg, command.Source, err
 }
 
 func handleDeploymentDelete(vid string) error {
@@ -186,7 +187,7 @@ func PublishIncidentDeleteByProcessInstanceEvent(instanceId string, definitionId
 	return cqrs.Publish(Config.IncidentTopic, definitionId, payload)
 }
 
-func handleDeploymentCreate(owner string, id string, name string, xml string, svg string) (err error) {
+func handleDeploymentCreate(owner string, id string, name string, xml string, svg string, source string) (err error) {
 	err = cleanupExistingDeployment(id)
 	if err != nil {
 		return err
@@ -199,7 +200,7 @@ func handleDeploymentCreate(owner string, id string, name string, xml string, sv
 	if Config.Debug {
 		log.Println("deploy process", id, name, xml)
 	}
-	deploymentId, err := DeployProcess(name, xml, svg, owner)
+	deploymentId, err := DeployProcess(name, xml, svg, owner, source)
 	if err != nil {
 		log.Println("WARNING: unable to deploy process to camunda ", err)
 		return err

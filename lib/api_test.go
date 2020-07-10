@@ -79,3 +79,88 @@ func TestDeploymentStart(t *testing.T) {
 	}
 	t.Log(processinstance)
 }
+
+func TestDeploymentStartWithSource(t *testing.T) {
+	cqrs = mocks.Kafka()
+
+	pgCloser, _, _, pgStr, err := docker.Helper_getPgDependency("vid_relations")
+	defer pgCloser()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	camundaPgCloser, _, camundaPgIp, _, err := docker.Helper_getPgDependency("camunda")
+	defer camundaPgCloser()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	camundaCloser, camundaPort, _, err := docker.Helper_getCamundaDependency(camundaPgIp, "5432")
+	defer camundaCloser()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = LoadConfig("../config.json")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	Config.PgConn = pgStr
+	Config.ProcessEngineUrl = "http://localhost:" + camundaPort
+
+	httpServer := httptest.NewServer(getRoutes())
+	defer httpServer.Close()
+
+	//put process
+	err = testHelper_putProcessWithSource("1", "n11", jwtPayload.UserId, "")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	t.Run("check source = ''", CheckDeploymentList(httpServer.URL, "", 1))
+	t.Run("check source = 'sepl'", CheckDeploymentList(httpServer.URL, "sepl", 1))
+	t.Run("check source = 'generated'", CheckDeploymentList(httpServer.URL, "generated", 0))
+
+	err = testHelper_putProcessWithSource("2", "n2", jwtPayload.UserId, "generated")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	t.Run("check source = ''", CheckDeploymentList(httpServer.URL, "", 2))
+	t.Run("check source = 'sepl'", CheckDeploymentList(httpServer.URL, "sepl", 1))
+	t.Run("check source = 'generated'", CheckDeploymentList(httpServer.URL, "generated", 1))
+
+	err = testHelper_deleteProcess("1")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	t.Run("check source = ''", CheckDeploymentList(httpServer.URL, "", 1))
+	t.Run("check source = 'sepl'", CheckDeploymentList(httpServer.URL, "sepl", 0))
+	t.Run("check source = 'generated'", CheckDeploymentList(httpServer.URL, "generated", 1))
+}
+
+func CheckDeploymentList(url string, source string, expectedCount int) func(t *testing.T) {
+	return func(t *testing.T) {
+		path := "/deployment"
+		if source != "" {
+			path = path + "?source=" + source
+		}
+		list := []interface{}{}
+		err := jwt.GetJSON(url+path, &list)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(list) != expectedCount {
+			t.Fatal(len(list), expectedCount, list)
+		}
+	}
+}

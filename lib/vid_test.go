@@ -275,7 +275,11 @@ func TestVid(t *testing.T) {
 }
 
 func testHelper_putProcess(vid string, name string, owner string) error {
-	return handleDeploymentCreate(owner, vid, name, bpmnExample, svgExample)
+	return handleDeploymentCreate(owner, vid, name, bpmnExample, svgExample, "")
+}
+
+func testHelper_putProcessWithSource(vid string, name string, owner string, source string) error {
+	return handleDeploymentCreate(owner, vid, name, bpmnExample, svgExample, source)
 }
 
 func testHelper_deleteProcess(vid string) error {
