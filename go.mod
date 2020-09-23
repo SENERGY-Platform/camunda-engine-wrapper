@@ -6,7 +6,9 @@ require (
 	github.com/SENERGY-Platform/external-task-worker v0.0.0-20200604080003-bd632fd1ac84 // indirect
 	github.com/SmartEnergyPlatform/jwt-http-router v0.0.0-20190318131115-1c2a98f99363
 	github.com/SmartEnergyPlatform/util v0.0.0-20181018070938-b26ca656886c
+	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
 	github.com/cenkalti/backoff v2.1.0+incompatible // indirect
+	github.com/coocood/freecache v1.1.0
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
