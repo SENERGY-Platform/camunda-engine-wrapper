@@ -38,7 +38,7 @@ func InitApi() {
 }
 
 func getRoutes() *jwt_http_router.Router {
-	router := jwt_http_router.New(jwt_http_router.JwtConfig{PubRsa: Config.JwtPubRsa, ForceAuth: Config.ForceAuth == "true", ForceUser: Config.ForceUser == "true"})
+	router := jwt_http_router.New(jwt_http_router.JwtConfig{ForceAuth: true, ForceUser: true})
 
 	router.GET("/", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
 		response.To(writer).Json(map[string]string{"status": "OK"})

@@ -31,10 +31,6 @@ type ConfigStruct struct {
 	ServerPort string
 	LogLevel   string
 
-	JwtPubRsa string
-	ForceUser string
-	ForceAuth string
-
 	ZookeeperUrl string
 	KafkaGroup   string
 	KafkaDebug   bool

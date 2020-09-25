@@ -6,6 +6,7 @@ import (
 )
 
 func Wrapper() {
+	log.Println("start wrapper")
 	cqrs, err := kafka.Init(Config.ZookeeperUrl, Config.KafkaGroup, Config.KafkaDebug)
 	if err != nil {
 		log.Fatal("unable to init kafka connection", err)

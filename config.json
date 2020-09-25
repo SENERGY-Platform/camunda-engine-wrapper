@@ -1,8 +1,6 @@
 {
     "ServerPort" : "8080",
     "LogLevel" : "CALL",
-    "ForceUser": "true",
-    "ForceAuth": "true",
     "ProcessEngineUrl": "http://process-engine:8080",
 
     "ZookeeperUrl": "zk",

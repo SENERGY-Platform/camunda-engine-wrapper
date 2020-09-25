@@ -14,6 +14,7 @@ import (
 //and remove all virtual id relations without process deployments
 //can lead to a lost update, if called while a process is deploying using a other instance of this program
 func ClearUnlinkedDeployments(pgConn string, deploymentTopic string) error {
+	log.Println("clear unlinked deployments")
 	cqrs, err := kafka.Init(lib.Config.ZookeeperUrl, lib.Config.KafkaGroup, lib.Config.KafkaDebug)
 	if err != nil {
 		return err

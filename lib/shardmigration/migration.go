@@ -10,6 +10,7 @@ import (
 )
 
 func Run(camundaUrl string, pgConnStr string, limit int) (err error) {
+	log.Println("start shard migration")
 	s, err := shards.New(pgConnStr, cache.None)
 	if err != nil {
 		return err
