@@ -20,14 +20,19 @@ import (
 	"flag"
 	"fmt"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/kafka"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shardmigration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vidcleanup"
 	"log"
-	"time"
 )
 
 func main() {
 	defer fmt.Println("exit application")
 	configLocation := flag.String("config", "config.json", "configuration file")
+
+	migrateShard := flag.String("migrate_shard", "", "if set this program will only migrate the users of the given camunda-engine to the shard database")
+
+	vidCleanup := flag.Bool("vid_cleanup", false, "if true, the program will only clean the vid-database and camunda from inconsistencies")
+
 	flag.Parse()
 
 	err := lib.LoadConfig(*configLocation)
@@ -35,28 +40,17 @@ func main() {
 		log.Fatal("unable to load config", err)
 	}
 
-	cqrs, err := kafka.Init(lib.Config.ZookeeperUrl, lib.Config.KafkaGroup, lib.Config.KafkaDebug)
-	if err != nil {
-		log.Fatal("unable to init kafka connection", err)
+	if *migrateShard != "" {
+		err = shardmigration.Run(*migrateShard, lib.Config.PgConn, 100)
+		if err != nil {
+			log.Fatal("unable to do shard migration:", err)
+		}
+	} else if *vidCleanup {
+		err = vidcleanup.ClearUnlinkedDeployments(lib.Config.PgConn, lib.Config.DeploymentTopic)
+		if err != nil {
+			log.Fatal("unable to do vid cleanup:", err)
+		}
+	} else {
+		lib.Wrapper()
 	}
-
-	err = lib.InitEventSourcing(cqrs)
-	if err != nil {
-		log.Fatal("unable to start eventsourcing", err)
-	}
-
-	defer lib.CloseEventSourcing()
-
-	if lib.Config.MaintenanceTime > 0 {
-		log.Println("MAINTENANCE: ", lib.ClearUnlinkedDeployments())
-		ticker := time.NewTicker(time.Duration(lib.Config.MaintenanceTime) * time.Hour)
-		defer ticker.Stop()
-		go func() {
-			for tick := range ticker.C {
-				log.Println("MAINTENANCE: ", tick, lib.ClearUnlinkedDeployments())
-			}
-		}()
-	}
-
-	lib.InitApi()
 }

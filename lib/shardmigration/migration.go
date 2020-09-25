@@ -38,6 +38,7 @@ func Run(camundaUrl string, pgConnStr string, limit int) (err error) {
 
 	log.Println("map", len(tenantSet), "tenants to", camundaUrl)
 	for tenant, _ := range tenantSet {
+		log.Println("add", tenant, "to", camundaUrl)
 		err = s.SetShardForUser(tenant, camundaUrl)
 		if err != nil {
 			return err

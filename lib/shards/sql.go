@@ -20,3 +20,5 @@ const SqlEnsureShard = `INSERT INTO Shard(Address) VALUES ($1) ON CONFLICT DO NO
 const SqlShardUserCount = `SELECT COUNT(ShardsMapping.UserId), Shard.Address
 	FROM Shard LEFT JOIN ShardsMapping ON Shard.Address = ShardsMapping.ShardAddress
 	GROUP BY Shard.Address;`
+
+const SQLListShards = `SELECT Address FROM Shard`

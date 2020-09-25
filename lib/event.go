@@ -68,8 +68,6 @@ type KafkaIncidentsCommand struct {
 func InitEventSourcing(kafka kafka.Interface) (err error) {
 	cqrs = kafka
 	err = cqrs.Consume(Config.DeploymentTopic, func(delivery []byte) error {
-		maintenanceLock.RLock()
-		defer maintenanceLock.RUnlock()
 		command := DeploymentCommand{}
 		err = json.Unmarshal(delivery, &command)
 		if err != nil {
@@ -88,7 +86,7 @@ func InitEventSourcing(kafka kafka.Interface) (err error) {
 			log.Println("WARNING: deprecated event type POST")
 			return nil
 		case "DELETE":
-			return handleDeploymentDelete(command.Id)
+			return handleDeploymentDelete(command.Id, command.Owner)
 		default:
 			log.Println("WARNING: unknown event type", string(delivery))
 			return nil
@@ -120,7 +118,7 @@ func parseV2Command(command DeploymentCommand) (owner string, id string, name st
 	return command.Owner, command.Id, command.DeploymentV2.Name, command.DeploymentV2.Diagram.XmlDeployed, command.DeploymentV2.Diagram.Svg, command.Source, err
 }
 
-func handleDeploymentDelete(vid string) error {
+func handleDeploymentDelete(vid string, userId string) error {
 	id, exists, err := getDeploymentId(vid)
 	if err != nil {
 		return err
@@ -129,7 +127,7 @@ func handleDeploymentDelete(vid string) error {
 		return nil
 	}
 
-	err = deleteIncidentsByDeploymentId(id)
+	err = deleteIncidentsByDeploymentId(id, userId)
 	if err != nil {
 		return err
 	}
@@ -138,7 +136,12 @@ func handleDeploymentDelete(vid string) error {
 	if err != nil {
 		return err
 	}
-	err = RemoveProcess(id)
+	if userId != "" {
+		err = RemoveProcess(id, userId)
+	} else {
+		err = RemoveProcessFromAllShards(id)
+	}
+	err = RemoveProcess(id, userId)
 	if err != nil {
 		rollback()
 	} else {
@@ -147,8 +150,8 @@ func handleDeploymentDelete(vid string) error {
 	return err
 }
 
-func deleteIncidentsByDeploymentId(id string) (err error) {
-	definitions, err := getRawDefinitionsByDeployment(id)
+func deleteIncidentsByDeploymentId(id string, userId string) (err error) {
+	definitions, err := getRawDefinitionsByDeployment(id, userId)
 	if err != nil {
 		return err
 	}
@@ -188,7 +191,7 @@ func PublishIncidentDeleteByProcessInstanceEvent(instanceId string, definitionId
 }
 
 func handleDeploymentCreate(owner string, id string, name string, xml string, svg string, source string) (err error) {
-	err = cleanupExistingDeployment(id)
+	err = cleanupExistingDeployment(id, owner)
 	if err != nil {
 		return err
 	}
@@ -211,7 +214,7 @@ func handleDeploymentCreate(owner string, id string, name string, xml string, sv
 	err = saveVidRelation(id, deploymentId)
 	if err != nil {
 		log.Println("WARNING: unable to publish deployment saga \n", err, "\nremove deployed process")
-		removeErr := RemoveProcess(deploymentId)
+		removeErr := RemoveProcess(deploymentId, owner)
 		if removeErr != nil {
 			log.Println("ERROR: unable to remove deployed process", deploymentId, err)
 		}
@@ -248,26 +251,17 @@ func validateXml(xmlStr string) bool {
 	return true
 }
 
-func cleanupExistingDeployment(vid string) error {
+func cleanupExistingDeployment(vid string, userId string) error {
 	exists, err := vidExists(vid)
 	if err != nil {
 		return err
 	}
 	if exists {
-		return handleDeploymentDelete(vid)
+		return handleDeploymentDelete(vid, userId)
 	}
 	return nil
 }
 
 func CloseEventSourcing() {
 	cqrs.Close()
-}
-
-func PublishDeploymentDelete(id string) error {
-	command := DeploymentCommand{Id: id, Command: "DELETE"}
-	payload, err := json.Marshal(command)
-	if err != nil {
-		return err
-	}
-	return cqrs.Publish(Config.DeploymentTopic, id, payload)
 }

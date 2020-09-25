@@ -3,6 +3,8 @@ package lib
 import (
 	"context"
 	"encoding/json"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cache"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/mocks"
 	"strings"
@@ -30,7 +32,16 @@ func TestEvents(t *testing.T) {
 	}
 
 	camundaUrl, requests := mocks.CamundaServer(ctx, &wg)
-	Config.ProcessEngineUrl = camundaUrl
+	s, err := shards.New(Config.PgConn, cache.None)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = s.EnsureShard(camundaUrl)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	err = InitEventSourcing(mocks.Kafka())
 	if err != nil {

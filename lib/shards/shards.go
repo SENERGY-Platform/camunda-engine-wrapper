@@ -168,3 +168,20 @@ func addShardForUser(tx Tx, userId string, shardAddress string) (err error) {
 	_, err = tx.Exec(SqlCreateUserShard, userId, shardAddress)
 	return
 }
+
+func (this *Shards) GetShards() (result []string, err error) {
+	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
+	rows, err := this.db.QueryContext(ctx, SQLListShards)
+	if err != nil {
+		return result, err
+	}
+	for rows.Next() {
+		var temp string
+		err = rows.Scan(&temp)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, temp)
+	}
+	return result, nil
+}

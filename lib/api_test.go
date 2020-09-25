@@ -18,6 +18,8 @@ package lib
 
 import (
 	"encoding/json"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cache"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/mocks"
 	"net/http/httptest"
@@ -55,7 +57,16 @@ func TestDeploymentStart(t *testing.T) {
 	}
 
 	Config.PgConn = pgStr
-	Config.ProcessEngineUrl = "http://localhost:" + camundaPort
+	s, err := shards.New(Config.PgConn, cache.None)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = s.EnsureShard("http://localhost:" + camundaPort)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	httpServer := httptest.NewServer(getRoutes())
 	defer httpServer.Close()
@@ -111,7 +122,16 @@ func TestDeploymentStartWithSource(t *testing.T) {
 	}
 
 	Config.PgConn = pgStr
-	Config.ProcessEngineUrl = "http://localhost:" + camundaPort
+	s, err := shards.New(Config.PgConn, cache.None)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = s.EnsureShard("http://localhost:" + camundaPort)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	httpServer := httptest.NewServer(getRoutes())
 	defer httpServer.Close()
@@ -137,7 +157,7 @@ func TestDeploymentStartWithSource(t *testing.T) {
 	t.Run("check source = 'sepl'", CheckDeploymentList(httpServer.URL, "sepl", 1))
 	t.Run("check source = 'generated'", CheckDeploymentList(httpServer.URL, "generated", 1))
 
-	err = testHelper_deleteProcess("1")
+	err = testHelper_deleteProcess("1", jwtPayload.UserId)
 	if err != nil {
 		t.Error(err)
 		return

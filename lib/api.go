@@ -51,7 +51,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		err := startProcess(id)
+		err := startProcess(id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -72,7 +72,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := startProcessGetId(id)
+		result, err := startProcessGetId(id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -89,7 +89,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := getDeployment(id)
+		result, err := getDeployment(id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on getDeployment", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -120,7 +120,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		definitions, err := getDefinitionByDeploymentVid(id)
+		definitions, err := getDefinitionByDeploymentVid(id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on getDeploymentByDef", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -131,7 +131,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "no definition for deployment found", http.StatusInternalServerError)
 			return
 		}
-		result, err := startProcessGetId(definitions[0].Id)
+		result, err := startProcessGetId(definitions[0].Id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -148,7 +148,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := getDefinitionByDeploymentVid(id)
+		result, err := getDefinitionByDeploymentVid(id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on getDeploymentByDef", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -180,7 +180,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := getProcessDefinition(id)
+		result, err := getProcessDefinition(id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on getProcessDefinition", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -197,7 +197,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := getProcessDefinitionDiagram(id)
+		result, err := getProcessDefinitionDiagram(id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on getProcessDefinitionDiagram", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -322,7 +322,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := getProcessInstanceHistoryByProcessDefinition(id)
+		result, err := getProcessInstanceHistoryByProcessDefinition(id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on processinstanceHistoryByDefinition", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -340,7 +340,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := getProcessInstanceHistoryByProcessDefinitionFinished(id)
+		result, err := getProcessInstanceHistoryByProcessDefinitionFinished(id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on processinstanceHistoryByDefinition", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -357,7 +357,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := getProcessInstanceHistoryByProcessDefinitionUnfinished(id)
+		result, err := getProcessInstanceHistoryByProcessDefinitionUnfinished(id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on processinstanceHistoryByDefinition", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -381,7 +381,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		err = removeProcessInstanceHistory(id)
+		err = removeProcessInstanceHistory(id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on removeProcessInstanceHistory", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -398,7 +398,7 @@ func getRoutes() *jwt_http_router.Router {
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		err := removeProcessInstance(id)
+		err := removeProcessInstance(id, jwt.UserId)
 		if err != nil {
 			log.Println("ERROR: error on removeProcessInstance", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)

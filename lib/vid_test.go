@@ -18,6 +18,8 @@ package lib
 
 import (
 	"encoding/json"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cache"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/mocks"
 	"github.com/SmartEnergyPlatform/jwt-http-router"
@@ -64,12 +66,21 @@ func TestVid(t *testing.T) {
 	}
 
 	Config.PgConn = pgStr
-	Config.ProcessEngineUrl = "http://localhost:" + camundaPort
+	s, err := shards.New(Config.PgConn, cache.None)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = s.EnsureShard("http://localhost:" + camundaPort)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	httpServer := httptest.NewServer(getRoutes())
 	defer httpServer.Close()
 
-	db, err := GetDB()
+	v, err := GetVid()
 	if err != nil {
 		t.Error(err)
 		return
@@ -82,7 +93,7 @@ func TestVid(t *testing.T) {
 		return
 	}
 	//check relations and process
-	byVid, byDeplId, err := getVidRelations(db)
+	byVid, byDeplId, err := v.GetRelations()
 	log.Println(byVid, byDeplId)
 	if len(byVid) != 1 || byVid["1"] == "" {
 		t.Error("unexpected result:", byVid)
@@ -112,7 +123,7 @@ func TestVid(t *testing.T) {
 	}
 
 	//check relations and process (name is updated; no new processes)
-	byVid, byDeplId, err = getVidRelations(db)
+	byVid, byDeplId, err = v.GetRelations()
 	log.Println(byVid, byDeplId)
 	if len(byVid) != 1 || byVid["1"] == "" {
 		t.Error("unexpected result:", byVid)
@@ -136,14 +147,14 @@ func TestVid(t *testing.T) {
 	}
 
 	//delete by vid
-	err = testHelper_deleteProcess("1")
+	err = testHelper_deleteProcess("1", jwtPayload.UserId)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//check relations and process (removed)
-	byVid, byDeplId, err = getVidRelations(db)
+	byVid, byDeplId, err = v.GetRelations()
 	log.Println(byVid, byDeplId)
 	if len(byVid) != 0 {
 		t.Error("unexpected result:", byVid)
@@ -181,7 +192,7 @@ func TestVid(t *testing.T) {
 	}
 
 	//check relations and process (update relation and add process)
-	byVid, byDeplId, err = getVidRelations(db)
+	byVid, byDeplId, err = v.GetRelations()
 	log.Println(byVid, byDeplId)
 	if len(byVid) != 1 || byVid["v2"] == "d2" || byVid["v2"] == "" {
 		t.Error("unexpected result:", byVid)
@@ -212,14 +223,14 @@ func TestVid(t *testing.T) {
 	}
 
 	//delete added relation by "event"
-	err = testHelper_deleteProcess("v3")
+	err = testHelper_deleteProcess("v3", jwtPayload.UserId)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//check relations and process (removed)
-	byVid, byDeplId, err = getVidRelations(db)
+	byVid, byDeplId, err = v.GetRelations()
 	log.Println(byVid, byDeplId)
 	if len(byVid) != 1 || byVid["v2"] == "d2" || byVid["v2"] == "" {
 		t.Error("unexpected result:", byVid)
@@ -243,14 +254,14 @@ func TestVid(t *testing.T) {
 	}
 
 	//delete not existing relation (vid) by "event"
-	err = testHelper_deleteProcess("v4")
+	err = testHelper_deleteProcess("v4", jwtPayload.UserId)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	//check relations and process (no change)
-	byVid, byDeplId, err = getVidRelations(db)
+	byVid, byDeplId, err = v.GetRelations()
 	log.Println(byVid, byDeplId)
 	if len(byVid) != 1 || byVid["v2"] == "d2" || byVid["v2"] == "" {
 		t.Error("unexpected result:", byVid)
@@ -282,6 +293,6 @@ func testHelper_putProcessWithSource(vid string, name string, owner string, sour
 	return handleDeploymentCreate(owner, vid, name, bpmnExample, svgExample, source)
 }
 
-func testHelper_deleteProcess(vid string) error {
-	return handleDeploymentDelete(vid)
+func testHelper_deleteProcess(vid string, userId string) error {
+	return handleDeploymentDelete(vid, userId)
 }

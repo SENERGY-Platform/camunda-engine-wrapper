@@ -35,8 +35,6 @@ type ConfigStruct struct {
 	ForceUser string
 	ForceAuth string
 
-	ProcessEngineUrl string
-
 	ZookeeperUrl string
 	KafkaGroup   string
 	KafkaDebug   bool
@@ -44,8 +42,7 @@ type ConfigStruct struct {
 	DeploymentTopic string
 	IncidentTopic   string
 
-	PgConn          string
-	MaintenanceTime int64 //in hours
+	PgConn string
 
 	Debug bool
 }

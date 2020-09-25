@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package lib
+package vid
 
 import (
 	"database/sql"
-	"sync"
 
 	_ "github.com/lib/pq"
 )
-
-var db *sql.DB
-var once sync.Once
 
 var CreateVidTable = `CREATE TABLE IF NOT EXISTS VidRelation (
 	ID					SERIAL PRIMARY KEY,
@@ -41,17 +37,11 @@ type DbInterface interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func GetDB() (dbInstance *sql.DB, err error) {
-	once.Do(func() {
-		db, err = sql.Open("postgres", Config.PgConn)
-		if err != nil {
-			return
-		}
-		_, err = db.Exec(CreateVidTable)
-	})
+func InitDb(pgConn string) (db *sql.DB, err error) {
+	db, err = sql.Open("postgres", pgConn)
+	if err != nil {
+		return
+	}
+	_, err = db.Exec(CreateVidTable)
 	return db, err
-}
-
-func CloseDb() {
-	db.Close()
 }
