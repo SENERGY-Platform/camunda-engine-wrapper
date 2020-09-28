@@ -25,7 +25,7 @@ func TestEvents(t *testing.T) {
 	defer wg.Wait()
 	defer cancel()
 
-	Config.PgConn, err = docker.Postgres(ctx, &wg)
+	Config.PgConn, err = docker.Postgres(ctx, &wg, "test")
 	if err != nil {
 		t.Error(err)
 		return

@@ -17,7 +17,7 @@ func TestMigrate(t *testing.T) {
 	defer wg.Wait()
 	defer cancel()
 
-	pgConn, err := docker.Postgres(ctx, &wg)
+	pgConn, err := docker.Postgres(ctx, &wg, "test")
 	if err != nil {
 		t.Error(err)
 		return

@@ -20,9 +20,11 @@ import (
 	"flag"
 	"fmt"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/kafka"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shardmigration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vidcleanup"
 	"log"
+	"time"
 )
 
 func main() {
@@ -46,7 +48,11 @@ func main() {
 			log.Fatal("unable to do shard migration:", err)
 		}
 	} else if *vidCleanup {
-		err = vidcleanup.ClearUnlinkedDeployments(lib.Config.PgConn, lib.Config.DeploymentTopic)
+		cqrs, err := kafka.Init(lib.Config.ZookeeperUrl, lib.Config.KafkaGroup, lib.Config.KafkaDebug)
+		if err != nil {
+			log.Fatal("unable to connect to kafka for do vid cleanup:", err)
+		}
+		err = vidcleanup.ClearUnlinkedDeployments(lib.Config.PgConn, lib.Config.DeploymentTopic, cqrs, 24*time.Hour)
 		if err != nil {
 			log.Fatal("unable to do vid cleanup:", err)
 		}

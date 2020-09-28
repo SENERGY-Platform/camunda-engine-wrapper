@@ -10,18 +10,22 @@ import (
 	"sync"
 )
 
-func Postgres(ctx context.Context, wg *sync.WaitGroup) (conStr string, err error) {
-	dbName := "test"
+func Postgres(ctx context.Context, wg *sync.WaitGroup, dbname string) (conStr string, err error) {
+	conStr, _, _, err = PostgresWithNetwork(ctx, wg, dbname)
+	return
+}
+
+func PostgresWithNetwork(ctx context.Context, wg *sync.WaitGroup, dbname string) (conStr string, ip string, port string, err error) {
 	pool, err := dockertest.NewPool("")
 	container, err := pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: "postgres",
 		Tag:        "11.2",
-		Env:        []string{"POSTGRES_DB=" + dbName, "POSTGRES_PASSWORD=pw", "POSTGRES_USER=usr"},
+		Env:        []string{"POSTGRES_DB=" + dbname, "POSTGRES_PASSWORD=pw", "POSTGRES_USER=usr"},
 	}, func(config *docker.HostConfig) {
 		config.Tmpfs = map[string]string{"/var/lib/postgresql/data": "rw"}
 	})
 	if err != nil {
-		return "", err
+		return "", ip, port, err
 	}
 	wg.Add(1)
 	go func() {
@@ -30,7 +34,9 @@ func Postgres(ctx context.Context, wg *sync.WaitGroup) (conStr string, err error
 		container.Close()
 		wg.Done()
 	}()
-	conStr = fmt.Sprintf("postgres://usr:pw@localhost:%s/%s?sslmode=disable", container.GetPort("5432/tcp"), dbName)
+	ip = container.Container.NetworkSettings.IPAddress
+	port = "5432"
+	conStr = fmt.Sprintf("postgres://usr:pw@%s:%s/%s?sslmode=disable", ip, port, dbname)
 	err = pool.Retry(func() error {
 		var err error
 		log.Println("try connecting to pg")

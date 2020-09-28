@@ -1,7 +1,6 @@
 package vidcleanup
 
 import (
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/kafka"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
@@ -13,16 +12,14 @@ import (
 //should be called periodically or on startup, to remove all process deployments which are not referenced by a virtual id (remove dead deployments)
 //and remove all virtual id relations without process deployments
 //can lead to a lost update, if called while a process is deploying using a other instance of this program
-func ClearUnlinkedDeployments(pgConn string, deploymentTopic string) error {
+//to ensure that no deployments are deleted which are in the process of being created, the deploymentAgeBuffer can be used to define a minimal age before a deployment may be deleted
+func ClearUnlinkedDeployments(pgConn string, deploymentTopic string, cqrs kafka.Interface, deploymentAgeBuffer time.Duration) error {
 	log.Println("clear unlinked deployments")
-	cqrs, err := kafka.Init(lib.Config.ZookeeperUrl, lib.Config.KafkaGroup, lib.Config.KafkaDebug)
-	if err != nil {
-		return err
-	}
 	s, err := shards.New(pgConn, cache.None)
 	if err != nil {
 		return err
 	}
+
 	v, err := vid.New(pgConn)
 	if err != nil {
 		return err
@@ -52,7 +49,7 @@ func ClearUnlinkedDeployments(pgConn string, deploymentTopic string) error {
 				return err
 			}
 			age := time.Since(deplTime)
-			if _, ok := byDeplId[depl.Id]; !ok && age > 24*time.Hour {
+			if _, ok := byDeplId[depl.Id]; !ok && age > deploymentAgeBuffer {
 				err = removeProcess(depl.Id, shard)
 				if err != nil {
 					log.Println("WARNING: unable to remove process while clearing unlinked deployments: ", depl.Id, depl.Name, err)
