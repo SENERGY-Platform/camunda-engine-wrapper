@@ -10,7 +10,7 @@
 | KafkaDebug                | KAFKA_DEBUG               | more logs from kafka                                                 |
 | DeploymentTopic           | DEPLOYMENT_TOPIC          | kafka topic of deployments                                                                                        |
 | IncidentTopic             | INCIDENT_TOPIC            | kafka topic of incidents                                                                                                                          |
-| PgConn                    | PG_CONN                   | connection string to postgres database                                                                                                                          |
+| PgConn                    | PG_CONN                   | connection string to postgres database (e.g. postgres://usr:pw@databasip:5432/shards?sslmode=disable)                                                                                                                         |
 | Debug                     | DEBUG                     | more logs                                                      |
 
 ## Wrapper

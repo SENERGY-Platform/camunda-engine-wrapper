@@ -39,10 +39,6 @@ func (this *Kafka) Consume(topic string, listener func(delivery []byte) error) (
 	if err != nil {
 		return err
 	}
-	err = consumer.start()
-	if err != nil {
-		return err
-	}
 	this.consumers = append(this.consumers, consumer)
 	return nil
 }
