@@ -38,7 +38,7 @@ type Shards struct {
 	cache cache.Cache
 }
 
-var ErrorNotFound = errors.New("not found")
+var ErrorNotFound = errors.New("no shard assigned to user")
 
 const CachePrefix = "user-shard."
 
@@ -170,8 +170,15 @@ func addShardForUser(tx Tx, userId string, shardAddress string) (err error) {
 }
 
 func (this *Shards) GetShards() (result []string, err error) {
+	err = this.cache.Use("shards", func() (interface{}, error) {
+		return getShards(this.db)
+	}, &result)
+	return
+}
+
+func getShards(tx Tx) (result []string, err error) {
 	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
-	rows, err := this.db.QueryContext(ctx, SQLListShards)
+	rows, err := tx.QueryContext(ctx, SQLListShards)
 	if err != nil {
 		return result, err
 	}
