@@ -17,6 +17,9 @@ func Postgres(ctx context.Context, wg *sync.WaitGroup, dbname string) (conStr st
 
 func PostgresWithNetwork(ctx context.Context, wg *sync.WaitGroup, dbname string) (conStr string, ip string, port string, err error) {
 	pool, err := dockertest.NewPool("")
+	if err != nil {
+		return "", ip, port, err
+	}
 	container, err := pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: "postgres",
 		Tag:        "11.2",
