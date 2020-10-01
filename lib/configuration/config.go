@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 InfAI (CC SES)
+ * Copyright 2019 InfAI (CC SES)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package lib
+package configuration
 
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/pkg/errors"
 	"os"
 	"reflect"
 	"regexp"
@@ -27,42 +27,33 @@ import (
 	"strings"
 )
 
-type ConfigStruct struct {
-	ServerPort string
-	LogLevel   string
+type Config struct {
+	ServerPort string `json:"server_port"`
 
-	ZookeeperUrl string
-	KafkaGroup   string
-	KafkaDebug   bool
+	ZookeeperUrl string `json:"zookeeper_url"`
+	KafkaGroup   string `json:"kafka_group"`
 
-	DeploymentTopic string
-	IncidentTopic   string
+	DeploymentTopic string `json:"deployment_topic"`
+	IncidentTopic   string `json:"incident_topic"`
 
-	PgConn string
+	WrapperDb  string `json:"wrapper_db"`
+	ShardingDb string `json:"sharding_sb"`
 
-	Debug bool
+	Debug bool `json:"debug"`
 }
 
-type ConfigType *ConfigStruct
-
-var Config ConfigType
-
-func LoadConfig(location string) error {
-	file, error := os.Open(location)
-	if error != nil {
-		log.Println("error on config load: ", error)
-		return error
+//loads config from json in location and used environment variables (e.g ZookeeperUrl --> ZOOKEEPER_URL)
+func LoadConfig(location string) (config Config, err error) {
+	file, err := os.Open(location)
+	if err != nil {
+		return config, errors.WithStack(err)
 	}
-	decoder := json.NewDecoder(file)
-	configuration := ConfigStruct{}
-	error = decoder.Decode(&configuration)
-	if error != nil {
-		log.Println("invalid config json: ", error)
-		return error
+	err = json.NewDecoder(file).Decode(&config)
+	if err != nil {
+		return config, errors.WithStack(err)
 	}
-	HandleEnvironmentVars(&configuration)
-	Config = &configuration
-	return nil
+	handleEnvironmentVars(&config)
+	return config, nil
 }
 
 var camel = regexp.MustCompile("(^[^A-Z]*|[A-Z]*)([A-Z][^A-Z]+|$)")
@@ -81,7 +72,7 @@ func fieldNameToEnvName(s string) string {
 }
 
 // preparations for docker
-func HandleEnvironmentVars(config ConfigType) {
+func handleEnvironmentVars(config *Config) {
 	configValue := reflect.Indirect(reflect.ValueOf(config))
 	configType := configValue.Type()
 	for index := 0; index < configType.NumField(); index++ {

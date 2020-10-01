@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package lib
+package model
 
 type Variable struct {
 	Value     interface{} `json:"value"`

@@ -1,19 +1,23 @@
-package lib
+package events
 
 import (
 	"context"
 	"encoding/json"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cache"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/mocks"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"strings"
 	"sync"
 	"testing"
 )
 
 func TestEvents(t *testing.T) {
-	err := LoadConfig("../config.json")
+	config, err := configuration.LoadConfig("../../config.json")
 	if err != nil {
 		t.Error(err)
 		return
@@ -25,14 +29,15 @@ func TestEvents(t *testing.T) {
 	defer wg.Wait()
 	defer cancel()
 
-	Config.PgConn, err = docker.Postgres(ctx, &wg, "test")
+	config.ShardingDb, err = docker.Postgres(ctx, &wg, "test")
 	if err != nil {
 		t.Error(err)
 		return
 	}
+	config.WrapperDb = config.ShardingDb
 
 	camundaUrl, requests := mocks.CamundaServer(ctx, &wg)
-	s, err := shards.New(Config.PgConn, cache.None)
+	s, err := shards.New(config.ShardingDb, cache.None)
 	if err != nil {
 		t.Error(err)
 		return
@@ -43,45 +48,51 @@ func TestEvents(t *testing.T) {
 		return
 	}
 
-	err = InitEventSourcing(mocks.Kafka())
+	v, err := vid.New(config.WrapperDb)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	defer CloseEventSourcing()
+	c := camunda.New(v, s)
 
-	t.Run("publish version 1 deployment", publishVersion1Deployment("1", "testname", bpmnExample, svgExample))
+	e, err := New(config, mocks.Kafka(), v, c)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
-	t.Run("check version 1 camunda request", checkCamundaRequest(requests, "testname", bpmnExample, svgExample))
+	t.Run("publish version 1 deployment", publishVersion1Deployment(e, "1", "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("publish version 1 invalid deployment", publishVersion1Deployment("1", "testname", "invalid", svgExample))
+	t.Run("check version 1 camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("check version 1 invalid camunda request", checkCamundaRequest(requests, "testname", createBlankProcess(), createBlankSvg()))
+	t.Run("publish version 1 invalid deployment", publishVersion1Deployment(e, "1", "testname", "invalid", helper.SvgExample))
 
-	t.Run("publish version 2 deployment", publishVersion2Deployment("1", "testname", bpmnExample, svgExample))
+	t.Run("check version 1 invalid camunda request", checkCamundaRequest(requests, "testname", camunda.CreateBlankProcess(), camunda.CreateBlankSvg()))
 
-	t.Run("check version 2 camunda request", checkCamundaRequest(requests, "testname", bpmnExample, svgExample))
+	t.Run("publish version 2 deployment", publishVersion2Deployment(e, "1", "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("publish version 2 invalid deployment", publishVersion2Deployment("1", "testname", "invalid", svgExample))
+	t.Run("check version 2 camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("check version 2 invalid camunda request", checkCamundaRequest(requests, "testname", createBlankProcess(), createBlankSvg()))
+	t.Run("publish version 2 invalid deployment", publishVersion2Deployment(e, "1", "testname", "invalid", helper.SvgExample))
 
-	t.Run("publish explicit version 1 deployment", publishExplVersion1Deployment("1", "3", "testname", bpmnExample, svgExample))
+	t.Run("check version 2 invalid camunda request", checkCamundaRequest(requests, "testname", camunda.CreateBlankProcess(), camunda.CreateBlankSvg()))
 
-	t.Run("check explicit version 1 camunda request", checkCamundaRequest(requests, "testname", bpmnExample, svgExample))
+	t.Run("publish explicit version 1 deployment", publishExplVersion1Deployment(e, "1", "3", "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("publish explicit version 1 invalid deployment", publishExplVersion1Deployment("1", "3", "testname", "invalid", svgExample))
+	t.Run("check explicit version 1 camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("check explicit version 1 invalid camunda request", checkCamundaRequest(requests, "testname", createBlankProcess(), createBlankSvg()))
+	t.Run("publish explicit version 1 invalid deployment", publishExplVersion1Deployment(e, "1", "3", "testname", "invalid", helper.SvgExample))
 
-	t.Run("publish explicit version '' deployment", publishExplVersion1Deployment("", "3", "testname", bpmnExample, svgExample))
+	t.Run("check explicit version 1 invalid camunda request", checkCamundaRequest(requests, "testname", camunda.CreateBlankProcess(), camunda.CreateBlankSvg()))
 
-	t.Run("check explicit version '' camunda request", checkCamundaRequest(requests, "testname", bpmnExample, svgExample))
+	t.Run("publish explicit version '' deployment", publishExplVersion1Deployment(e, "", "3", "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("publish explicit version '' invalid deployment", publishExplVersion1Deployment("", "3", "testname", "invalid", svgExample))
+	t.Run("check explicit version '' camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("check explicit version '' invalid camunda request", checkCamundaRequest(requests, "testname", createBlankProcess(), createBlankSvg()))
+	t.Run("publish explicit version '' invalid deployment", publishExplVersion1Deployment(e, "", "3", "testname", "invalid", helper.SvgExample))
+
+	t.Run("check explicit version '' invalid camunda request", checkCamundaRequest(requests, "testname", camunda.CreateBlankProcess(), camunda.CreateBlankSvg()))
 }
 
 func checkCamundaRequest(requests chan mocks.Request, expectedName string, expectedXml string, expectedSvg string) func(t *testing.T) {
@@ -169,7 +180,7 @@ type TestDeploymentCommand struct {
 	DeploymentV2 interface{} `json:"deployment_v2"`
 }
 
-func publishVersion1Deployment(id string, name string, xml string, svg string) func(t *testing.T) {
+func publishVersion1Deployment(events *Events, id string, name string, xml string, svg string) func(t *testing.T) {
 	return func(t *testing.T) {
 		msg, err := json.Marshal(TestDeploymentCommand{
 			Command: "PUT",
@@ -186,7 +197,7 @@ func publishVersion1Deployment(id string, name string, xml string, svg string) f
 			t.Error(err)
 			return
 		}
-		err = cqrs.Publish(Config.DeploymentTopic, id, msg)
+		err = events.cqrs.Publish(events.deploymentTopic, id, msg)
 		if err != nil {
 			t.Error(err)
 			return
@@ -194,7 +205,7 @@ func publishVersion1Deployment(id string, name string, xml string, svg string) f
 	}
 }
 
-func publishExplVersion1Deployment(version string, id string, name string, xml string, svg string) func(t *testing.T) {
+func publishExplVersion1Deployment(events *Events, version string, id string, name string, xml string, svg string) func(t *testing.T) {
 	return func(t *testing.T) {
 		msg, err := json.Marshal(TestDeploymentCommand{
 			Command: "PUT",
@@ -212,7 +223,7 @@ func publishExplVersion1Deployment(version string, id string, name string, xml s
 			t.Error(err)
 			return
 		}
-		err = cqrs.Publish(Config.DeploymentTopic, id, msg)
+		err = events.cqrs.Publish(events.deploymentTopic, id, msg)
 		if err != nil {
 			t.Error(err)
 			return
@@ -220,7 +231,7 @@ func publishExplVersion1Deployment(version string, id string, name string, xml s
 	}
 }
 
-func publishVersion2Deployment(id string, name string, xml string, svg string) func(t *testing.T) {
+func publishVersion2Deployment(events *Events, id string, name string, xml string, svg string) func(t *testing.T) {
 	return func(t *testing.T) {
 		msg, err := json.Marshal(TestDeploymentCommand{
 			Command: "PUT",
@@ -239,7 +250,7 @@ func publishVersion2Deployment(id string, name string, xml string, svg string) f
 			t.Error(err)
 			return
 		}
-		err = cqrs.Publish(Config.DeploymentTopic, id, msg)
+		err = events.cqrs.Publish(events.deploymentTopic, id, msg)
 		if err != nil {
 			t.Error(err)
 			return

@@ -3,8 +3,8 @@ package vidcleanup
 import (
 	"context"
 	"encoding/json"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/mocks"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"

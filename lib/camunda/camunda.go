@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package lib
+package camunda
 
 import (
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"io/ioutil"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,12 +36,21 @@ import (
 	"github.com/SmartEnergyPlatform/util/http/request"
 )
 
-func startProcess(processDefinitionId string, userId string) (err error) {
-	shard, err := GetUserShard(userId)
+type Camunda struct {
+	shards *shards.Shards
+	vid    *vid.Vid
+}
+
+func New(vid *vid.Vid, shards *shards.Shards) *Camunda {
+	return &Camunda{vid: vid, shards: shards}
+}
+
+func (this *Camunda) StartProcess(processDefinitionId string, userId string) (err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return err
 	}
-	startResult := ProcessInstance{}
+	startResult := model.ProcessInstance{}
 	var code int
 	err, _, code = request.Post(shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/start", map[string]string{}, &startResult)
 	if err != nil {
@@ -50,8 +63,8 @@ func startProcess(processDefinitionId string, userId string) (err error) {
 	return
 }
 
-func startProcessGetId(processDefinitionId string, userId string) (result ProcessInstance, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) StartProcessGetId(processDefinitionId string, userId string) (result model.ProcessInstance, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -64,12 +77,12 @@ func startProcessGetId(processDefinitionId string, userId string) (result Proces
 	return
 }
 
-func checkProcessDefinitionAccess(id string, userId string) (err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) CheckProcessDefinitionAccess(id string, userId string) (err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return err
 	}
-	definition := ProcessDefinition{}
+	definition := model.ProcessDefinition{}
 	err = request.Get(shard+"/engine-rest/process-definition/"+url.QueryEscape(id), &definition)
 	if err == nil && definition.TenantId != userId {
 		err = errors.New("access denied")
@@ -77,19 +90,19 @@ func checkProcessDefinitionAccess(id string, userId string) (err error) {
 	return
 }
 
-func checkDeploymentAccess(vid string, userId string) (err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) CheckDeploymentAccess(vid string, userId string) (err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return err
 	}
-	id, exists, err := getDeploymentId(vid)
+	id, exists, err := this.vid.GetDeploymentId(vid)
 	if err != nil {
 		return err
 	}
 	if !exists {
 		return UnknownVid
 	}
-	wrapper := Deployment{}
+	wrapper := model.Deployment{}
 	err = request.Get(shard+"/engine-rest/deployment/"+url.QueryEscape(id), &wrapper)
 	if err != nil {
 		return err
@@ -103,12 +116,12 @@ func checkDeploymentAccess(vid string, userId string) (err error) {
 	return
 }
 
-func checkProcessInstanceAccess(id string, userId string) (err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) CheckProcessInstanceAccess(id string, userId string) (err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return err
 	}
-	wrapper := ProcessInstance{}
+	wrapper := model.ProcessInstance{}
 	err = request.Get(shard+"/engine-rest/process-instance/"+url.QueryEscape(id), &wrapper)
 	if err == nil && wrapper.TenantId != userId {
 		err = errors.New("access denied")
@@ -116,12 +129,12 @@ func checkProcessInstanceAccess(id string, userId string) (err error) {
 	return
 }
 
-func checkHistoryAccess(id string, userId string) (definitionId string, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) CheckHistoryAccess(id string, userId string) (definitionId string, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return definitionId, err
 	}
-	wrapper := HistoricProcessInstance{}
+	wrapper := model.HistoricProcessInstance{}
 	err = request.Get(shard+"/engine-rest/history/process-instance/"+url.QueryEscape(id), &wrapper)
 	if err == nil && wrapper.TenantId != userId {
 		err = errors.New("access denied")
@@ -129,9 +142,9 @@ func checkHistoryAccess(id string, userId string) (definitionId string, err erro
 	return wrapper.ProcessDefinitionId, err
 }
 
-func removeProcessInstance(id string, userId string) (err error) {
+func (this *Camunda) RemoveProcessInstance(id string, userId string) (err error) {
 	////DELETE "/engine-rest/process-instance/" + processInstanceId
-	shard, err := GetUserShard(userId)
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return err
 	}
@@ -152,8 +165,8 @@ func removeProcessInstance(id string, userId string) (err error) {
 	return
 }
 
-func removeProcessInstanceHistory(id string, userId string) (err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) RemoveProcessInstanceHistory(id string, userId string) (err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return err
 	}
@@ -175,8 +188,8 @@ func removeProcessInstanceHistory(id string, userId string) (err error) {
 	return
 }
 
-func getProcessInstanceHistoryByProcessDefinition(id string, userId string) (result HistoricProcessInstances, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetProcessInstanceHistoryByProcessDefinition(id string, userId string) (result model.HistoricProcessInstances, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -184,8 +197,8 @@ func getProcessInstanceHistoryByProcessDefinition(id string, userId string) (res
 	err = request.Get(shard+"/engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id), &result)
 	return
 }
-func getProcessInstanceHistoryByProcessDefinitionFinished(id string, userId string) (result HistoricProcessInstances, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetProcessInstanceHistoryByProcessDefinitionFinished(id string, userId string) (result model.HistoricProcessInstances, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -193,8 +206,8 @@ func getProcessInstanceHistoryByProcessDefinitionFinished(id string, userId stri
 	err = request.Get(shard+"/engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id)+"&finished=true", &result)
 	return
 }
-func getProcessInstanceHistoryByProcessDefinitionUnfinished(id string, userId string) (result HistoricProcessInstances, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetProcessInstanceHistoryByProcessDefinitionUnfinished(id string, userId string) (result model.HistoricProcessInstances, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -203,8 +216,8 @@ func getProcessInstanceHistoryByProcessDefinitionUnfinished(id string, userId st
 	return
 }
 
-func getProcessInstanceHistoryList(userId string) (result HistoricProcessInstances, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetProcessInstanceHistoryList(userId string) (result model.HistoricProcessInstances, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -213,8 +226,8 @@ func getProcessInstanceHistoryList(userId string) (result HistoricProcessInstanc
 	return
 }
 
-func getFilteredProcessInstanceHistoryList(userId string, query url.Values) (result HistoricProcessInstances, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetFilteredProcessInstanceHistoryList(userId string, query url.Values) (result model.HistoricProcessInstances, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -223,8 +236,8 @@ func getFilteredProcessInstanceHistoryList(userId string, query url.Values) (res
 	return
 }
 
-func getProcessInstanceHistoryListFinished(userId string) (result HistoricProcessInstances, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetProcessInstanceHistoryListFinished(userId string) (result model.HistoricProcessInstances, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -232,8 +245,8 @@ func getProcessInstanceHistoryListFinished(userId string) (result HistoricProces
 	err = request.Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&finished=true", &result)
 	return
 }
-func getProcessInstanceHistoryListUnfinished(userId string) (result HistoricProcessInstances, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetProcessInstanceHistoryListUnfinished(userId string) (result model.HistoricProcessInstances, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -241,8 +254,8 @@ func getProcessInstanceHistoryListUnfinished(userId string) (result HistoricProc
 	err = request.Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&unfinished=true", &result)
 	return
 }
-func getProcessInstanceCount(userId string) (result Count, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetProcessInstanceCount(userId string) (result model.Count, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -250,8 +263,8 @@ func getProcessInstanceCount(userId string) (result Count, err error) {
 	err = request.Get(shard+"/engine-rest/process-instance/count?tenantIdIn="+url.QueryEscape(userId), &result)
 	return
 }
-func getProcessInstanceList(userId string) (result ProcessInstances, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetProcessInstanceList(userId string) (result model.ProcessInstances, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -260,8 +273,8 @@ func getProcessInstanceList(userId string) (result ProcessInstances, err error) 
 	return
 }
 
-func getProcessDefinition(id string, userId string) (result ProcessDefinition, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetProcessDefinition(id string, userId string) (result model.ProcessDefinition, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -270,11 +283,11 @@ func getProcessDefinition(id string, userId string) (result ProcessDefinition, e
 	if err != nil {
 		return
 	}
-	err = setVid(&result)
+	err = this.vid.SetVid(&result)
 	return
 }
-func getProcessDefinitionDiagram(id string, userId string) (resp *http.Response, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetProcessDefinitionDiagram(id string, userId string) (resp *http.Response, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return resp, err
 	}
@@ -282,13 +295,13 @@ func getProcessDefinitionDiagram(id string, userId string) (resp *http.Response,
 	resp, err = http.Get(shard + "/engine-rest/process-definition/" + url.QueryEscape(id) + "/diagram")
 	return
 }
-func getDeploymentList(userId string, params url.Values) (result Deployments, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetDeploymentList(userId string, params url.Values) (result model.Deployments, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
 	// "/engine-rest/deployment?tenantIdIn="+userId
-	temp := Deployments{}
+	temp := model.Deployments{}
 	params.Del("tenantIdIn")
 	path := shard + "/engine-rest/deployment?tenantIdIn=" + url.QueryEscape(userId) + "&" + params.Encode()
 	err = request.Get(path, &temp)
@@ -296,7 +309,7 @@ func getDeploymentList(userId string, params url.Values) (result Deployments, er
 		return
 	}
 	for i := 0; i < len(temp); i++ {
-		err = setVid(&temp[i])
+		err = this.vid.SetVid(&temp[i])
 		if err != nil {
 			log.Println("WARNING: unable to find virtual id for process; ignore process", temp[i].Id, temp[i].Name, err)
 		} else {
@@ -310,8 +323,8 @@ var UnknownVid = errors.New("unknown vid")
 var CamundaDeploymentUnknown = errors.New("deployment unknown in camunda")
 var AccessDenied = errors.New("access denied")
 
-func getDefinitionByDeploymentVid(vid string, userId string) (result ProcessDefinitions, err error) {
-	id, exists, err := getDeploymentId(vid)
+func (this *Camunda) GetDefinitionByDeploymentVid(vid string, userId string) (result model.ProcessDefinitions, err error) {
+	id, exists, err := this.vid.GetDeploymentId(vid)
 	if err != nil {
 		return result, err
 	}
@@ -319,12 +332,12 @@ func getDefinitionByDeploymentVid(vid string, userId string) (result ProcessDefi
 		return result, UnknownVid
 	}
 	//"/engine-rest/process-definition?deploymentId=
-	result, err = getRawDefinitionsByDeployment(id, userId)
+	result, err = this.GetRawDefinitionsByDeployment(id, userId)
 	if err != nil {
 		return
 	}
 	for i := 0; i < len(result); i++ {
-		err = setVid(&result[i])
+		err = this.vid.SetVid(&result[i])
 		if err != nil {
 			return
 		}
@@ -332,8 +345,8 @@ func getDefinitionByDeploymentVid(vid string, userId string) (result ProcessDefi
 	return
 }
 
-func getRawDefinitionsByDeployment(deploymentId string, userId string) (result ProcessDefinitions, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetRawDefinitionsByDeployment(deploymentId string, userId string) (result model.ProcessDefinitions, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -341,12 +354,12 @@ func getRawDefinitionsByDeployment(deploymentId string, userId string) (result P
 	return
 }
 
-func getDeployment(vid string, userId string) (result Deployment, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetDeployment(vid string, userId string) (result model.Deployment, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
-	deploymentId, exists, err := getDeploymentId(vid)
+	deploymentId, exists, err := this.vid.GetDeploymentId(vid)
 	if err != nil {
 		return result, err
 	}
@@ -358,11 +371,11 @@ func getDeployment(vid string, userId string) (result Deployment, err error) {
 	if err != nil {
 		return
 	}
-	err = setVid(&result)
+	err = this.vid.SetVid(&result)
 	return
 }
 
-func getDeploymentCountByShard(deploymentId string, shard string) (result Count, err error) {
+func (this *Camunda) GetDeploymentCountByShard(deploymentId string, shard string) (result model.Count, err error) {
 	err = request.Get(shard+"/engine-rest/deployment/count?id="+url.QueryEscape(deploymentId), &result)
 	return
 }
@@ -383,8 +396,8 @@ func buildPayLoad(name string, xml string, svg string, boundary string, owner st
 }
 
 //returns original deploymentId (not vid)
-func DeployProcess(name string, xml string, svg string, owner string, source string) (deploymentId string, err error) {
-	responseWrapper, err := deployProcess(name, xml, svg, owner, source)
+func (this *Camunda) DeployProcess(name string, xml string, svg string, owner string, source string) (deploymentId string, err error) {
+	responseWrapper, err := this.deployProcess(name, xml, svg, owner, source)
 	if err != nil {
 		log.Println("ERROR: unable to decode process engine deployment response", err)
 		return deploymentId, err
@@ -395,7 +408,7 @@ func DeployProcess(name string, xml string, svg string, owner string, source str
 		log.Println("ERROR: unable to interpret process engine deployment response", responseWrapper)
 		if responseWrapper["type"] == "ProcessEngineException" {
 			log.Println("DEBUG: try deploying placeholder process")
-			responseWrapper, err = deployProcess(name, createBlankProcess(), createBlankSvg(), owner, source)
+			responseWrapper, err = this.deployProcess(name, CreateBlankProcess(), CreateBlankSvg(), owner, source)
 			deploymentId, ok = responseWrapper["id"].(string)
 			if !ok {
 				log.Println("ERROR: unable to deploy placeholder process", responseWrapper)
@@ -414,8 +427,8 @@ func DeployProcess(name string, xml string, svg string, owner string, source str
 	return
 }
 
-func deployProcess(name string, xml string, svg string, owner string, source string) (result map[string]interface{}, err error) {
-	shard, err := GetUserShard(owner)
+func (this *Camunda) deployProcess(name string, xml string, svg string, owner string, source string) (result map[string]interface{}, err error) {
+	shard, err := this.shards.EnsureShardForUser(owner)
 	if err != nil {
 		return result, err
 	}
@@ -432,16 +445,16 @@ func deployProcess(name string, xml string, svg string, owner string, source str
 }
 
 //uses original deploymentId (not vid)
-func RemoveProcess(deploymentId string, userId string) (err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) RemoveProcess(deploymentId string, userId string) (err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return err
 	}
-	return removeProcessForShard(deploymentId, shard)
+	return this.RemoveProcessForShard(deploymentId, shard)
 }
 
-func removeProcessForShard(deploymentId string, shard string) (err error) {
-	count, err := getDeploymentCountByShard(deploymentId, shard)
+func (this *Camunda) RemoveProcessForShard(deploymentId string, shard string) (err error) {
+	count, err := this.GetDeploymentCountByShard(deploymentId, shard)
 	if err != nil {
 		return err
 	}
@@ -455,17 +468,13 @@ func removeProcessForShard(deploymentId string, shard string) (err error) {
 	return
 }
 
-func RemoveProcessFromAllShards(deploymentId string) (err error) {
-	s, err := GetShards()
-	if err != nil {
-		return err
-	}
-	shards, err := s.GetShards()
+func (this *Camunda) RemoveProcessFromAllShards(deploymentId string) (err error) {
+	shards, err := this.shards.GetShards()
 	if err != nil {
 		return err
 	}
 	for _, shard := range shards {
-		err = removeProcessForShard(deploymentId, shard)
+		err = this.RemoveProcessForShard(deploymentId, shard)
 		if err != nil {
 			return err
 		}
@@ -473,15 +482,15 @@ func RemoveProcessFromAllShards(deploymentId string) (err error) {
 	return nil
 }
 
-func getExtendedDeploymentList(userId string, params url.Values) (result []ExtendedDeployment, err error) {
-	deployments, err := getDeploymentList(userId, params)
+func (this *Camunda) GetExtendedDeploymentList(userId string, params url.Values) (result []model.ExtendedDeployment, err error) {
+	deployments, err := this.GetDeploymentList(userId, params)
 	if err != nil {
 		return result, err
 	}
 	for _, deployment := range deployments {
-		extended, err := getExtendedDeployment(deployment, userId)
+		extended, err := this.GetExtendedDeployment(deployment, userId)
 		if err != nil {
-			result = append(result, ExtendedDeployment{Deployment: deployment, Error: err.Error()})
+			result = append(result, model.ExtendedDeployment{Deployment: deployment, Error: err.Error()})
 		} else {
 			result = append(result, extended)
 		}
@@ -489,8 +498,8 @@ func getExtendedDeploymentList(userId string, params url.Values) (result []Exten
 	return
 }
 
-func getExtendedDeployment(deployment Deployment, userId string) (result ExtendedDeployment, err error) {
-	definition, err := getDefinitionByDeploymentVid(deployment.Id, userId)
+func (this *Camunda) GetExtendedDeployment(deployment model.Deployment, userId string) (result model.ExtendedDeployment, err error) {
+	definition, err := this.GetDefinitionByDeploymentVid(deployment.Id, userId)
 	if err != nil {
 		return result, err
 	}
@@ -500,7 +509,7 @@ func getExtendedDeployment(deployment Deployment, userId string) (result Extende
 	if len(definition) > 1 {
 		return result, errors.New("more than one definition for given deployment")
 	}
-	svgResp, err := getProcessDefinitionDiagram(definition[0].Id, userId)
+	svgResp, err := this.GetProcessDefinitionDiagram(definition[0].Id, userId)
 	if err != nil {
 		return result, err
 	}
@@ -508,11 +517,11 @@ func getExtendedDeployment(deployment Deployment, userId string) (result Extende
 	if err != nil {
 		return result, err
 	}
-	return ExtendedDeployment{Deployment: deployment, Diagram: string(svg), DefinitionId: definition[0].Id}, nil
+	return model.ExtendedDeployment{Deployment: deployment, Diagram: string(svg), DefinitionId: definition[0].Id}, nil
 }
 
-func getProcessInstanceHistoryListWithTotal(userId string, searchtype string, searchvalue string, limit string, offset string, sortby string, sortdirection string, finished bool) (result HistoricProcessInstancesWithTotal, err error) {
-	shard, err := GetUserShard(userId)
+func (this *Camunda) GetProcessInstanceHistoryListWithTotal(userId string, searchtype string, searchvalue string, limit string, offset string, sortby string, sortdirection string, finished bool) (result model.HistoricProcessInstancesWithTotal, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
@@ -538,7 +547,7 @@ func getProcessInstanceHistoryListWithTotal(userId string, searchtype string, se
 		params["unfinished"] = []string{"true"}
 	}
 
-	temp := HistoricProcessInstances{}
+	temp := model.HistoricProcessInstances{}
 	err = request.Get(shard+"/engine-rest/history/process-instance?"+params.Encode(), &temp)
 	if err != nil {
 		return
@@ -547,8 +556,19 @@ func getProcessInstanceHistoryListWithTotal(userId string, searchtype string, se
 		result.Data = append(result.Data, process)
 	}
 
-	count := Count{}
+	count := model.Count{}
 	err = request.Get(shard+"/engine-rest/history/process-instance/count?"+params.Encode(), &count)
 	result.Total = count.Count
 	return
+}
+
+func CreateBlankSvg() string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.2" id="Layer_1" x="0px" y="0px" viewBox="0 0 20 16" xml:space="preserve">
+<path fill="#D61F33" d="M10,0L0,16h20L10,0z M11,13.908H9v-2h2V13.908z M9,10.908v-6h2v6H9z"/>
+</svg>`
+}
+
+func CreateBlankProcess() string {
+	templ := `<bpmn:definitions xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:bpmn='http://www.omg.org/spec/BPMN/20100524/MODEL' xmlns:bpmndi='http://www.omg.org/spec/BPMN/20100524/DI' xmlns:dc='http://www.omg.org/spec/DD/20100524/DC' id='Definitions_1' targetNamespace='http://bpmn.io/schema/bpmn'><bpmn:process id='PROCESSID' isExecutable='true'><bpmn:startEvent id='StartEvent_1'/></bpmn:process><bpmndi:BPMNDiagram id='BPMNDiagram_1'><bpmndi:BPMNPlane id='BPMNPlane_1' bpmnElement='PROCESSID'><bpmndi:BPMNShape id='_BPMNShape_StartEvent_2' bpmnElement='StartEvent_1'><dc:Bounds x='173' y='102' width='36' height='36'/></bpmndi:BPMNShape></bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>`
+	return strings.Replace(templ, "PROCESSID", "id_"+strconv.FormatInt(time.Now().Unix(), 10), 1)
 }

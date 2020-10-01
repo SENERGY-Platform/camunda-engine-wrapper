@@ -2,7 +2,7 @@ package shards
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cache"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
 	"reflect"
 	"sync"

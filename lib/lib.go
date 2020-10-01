@@ -1,23 +1,56 @@
 package lib
 
 import (
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/kafka"
-	"log"
+	"context"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/api"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 )
 
-func Wrapper() {
-	log.Println("start wrapper")
-	cqrs, err := kafka.Init(Config.ZookeeperUrl, Config.KafkaGroup, Config.KafkaDebug)
+func Wrapper(parentCtx context.Context, config configuration.Config) (err error) {
+	ctx, cancel := context.WithCancel(parentCtx)
+	defer func() {
+		if err != nil {
+			cancel()
+		}
+	}()
+
+	v, err := vid.New(config.WrapperDb)
 	if err != nil {
-		log.Fatal("unable to init kafka connection", err)
+		return err
 	}
 
-	err = InitEventSourcing(cqrs)
+	s, err := shards.New(config.ShardingDb, cache.New(&cache.CacheConfig{L1Expiration: 60}))
 	if err != nil {
-		log.Fatal("unable to start eventsourcing", err)
+		return err
 	}
 
-	defer CloseEventSourcing()
+	c := camunda.New(v, s)
 
-	InitApi()
+	cqrs, err := kafka.Init(config.ZookeeperUrl, config.KafkaGroup, config.Debug)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		<-ctx.Done()
+		cqrs.Close()
+	}()
+
+	e, err := events.New(config, cqrs, v, c)
+	if err != nil {
+		return err
+	}
+
+	err = api.Start(ctx, config, c, e)
+	if err != nil {
+		return
+	}
+
+	return nil
 }

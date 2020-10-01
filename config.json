@@ -1,17 +1,10 @@
 {
-    "ServerPort" : "8080",
-    "LogLevel" : "CALL",
-    "ProcessEngineUrl": "http://process-engine:8080",
-
-    "ZookeeperUrl": "zk",
-    "KafkaGroup": "camunda-engine-wrapper",
-    "KafkaDebug": false,
-
-    "DeploymentTopic": "deployments",
-    "IncidentTopic":"camunda_incident",
-
-    "PgConn": "postgres://user:password@host/dbname?sslmode=disable",
-    "MaintenanceTime": 0,
-
-    "Debug": true
+    "server_port":"8080",
+    "zookeeper_url":"zk",
+    "kafka_group":"camunda-engine-wrapper",
+    "deployment_topic":"deployments",
+    "incident_topic":"camunda_incident",
+    "wrapper_db":"postgres://user:password@host/dbname?sslmode=disable",
+    "sharding_sb":"postgres://user:password@host/dbname?sslmode=disable",
+    "debug":false
 }

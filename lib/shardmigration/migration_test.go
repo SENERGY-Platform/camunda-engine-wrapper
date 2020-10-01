@@ -2,8 +2,8 @@ package shardmigration
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/mocks"
 	"sync"

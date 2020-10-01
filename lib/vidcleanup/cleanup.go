@@ -1,9 +1,9 @@
 package vidcleanup
 
 import (
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cache"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/kafka"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"log"
 	"time"

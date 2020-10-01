@@ -2,8 +2,8 @@ package shardmigration
 
 import (
 	"encoding/json"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"log"
 	"net/http"
 	"strconv"

@@ -2,7 +2,7 @@ package vidcleanup
 
 import (
 	"encoding/json"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/kafka"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
 )
 
 func removeVidByEvent(cqrs kafka.Interface, topic string, vid string) error {

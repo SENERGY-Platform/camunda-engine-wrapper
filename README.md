@@ -3,15 +3,14 @@
 
 | config.json              | env                      | desc                                                                                                                      |
 |--------------------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| ServerPort                | SERVER_PORT               | port of wrapper api                                                                                             |
-| LogLevel                  | LOG_LEVEL                 | decides which api calls should be logged (DEBUG, CALL, NONE)                                                     |
-| ZookeeperUrl              | ZOOKEEPER_URL             | url to zookeeper                                                                                                          |
-| KafkaGroup                | KAFKA_GROUP               | used kafka consumer group                                                                                        |
-| KafkaDebug                | KAFKA_DEBUG               | more logs from kafka                                                 |
-| DeploymentTopic           | DEPLOYMENT_TOPIC          | kafka topic of deployments                                                                                        |
-| IncidentTopic             | INCIDENT_TOPIC            | kafka topic of incidents                                                                                                                          |
-| PgConn                    | PG_CONN                   | connection string to postgres database (e.g. postgres://usr:pw@databasip:5432/shards?sslmode=disable)                                                                                                                         |
-| Debug                     | DEBUG                     | more logs                                                      |
+| server_port                | SERVER_PORT               | port of wrapper api                                                                                             |
+| zookeeper_url              | ZOOKEEPER_URL             | url to zookeeper                                                                                                          |
+| kafka_group                | KAFKA_GROUP               | used kafka consumer group                                                                                        |
+| deployment_topic           | DEPLOYMENT_TOPIC          | kafka topic of deployments                                                                                        |
+| incident_topic             | INCIDENT_TOPIC            | kafka topic of incidents                                                                                                                          |
+| wrapper_db                 | WRAPPER_DB                | connection string to postgres database to store virtual ids (e.g. postgres://usr:pw@databasip:5432/shards?sslmode=disable)                                                                                                                         |
+| sharding_sb                | SHARDING_DB               | connection string to postgres database to store sharding information (e.g. postgres://usr:pw@databasip:5432/shards?sslmode=disable)                                                                                                                         |
+| debug                      | DEBUG                     | more logs                                                      |
 
 ## Wrapper
 to run the api wrapper normally, call the program without any additional flags
