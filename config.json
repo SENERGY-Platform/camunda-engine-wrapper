@@ -5,6 +5,6 @@
     "deployment_topic":"deployments",
     "incident_topic":"camunda_incident",
     "wrapper_db":"postgres://user:password@host/dbname?sslmode=disable",
-    "sharding_sb":"postgres://user:password@host/dbname?sslmode=disable",
+    "sharding_db":"postgres://user:password@host/dbname?sslmode=disable",
     "debug":false
 }

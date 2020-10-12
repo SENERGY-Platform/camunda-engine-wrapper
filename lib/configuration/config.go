@@ -37,7 +37,7 @@ type Config struct {
 	IncidentTopic   string `json:"incident_topic"`
 
 	WrapperDb  string `json:"wrapper_db"`
-	ShardingDb string `json:"sharding_sb"`
+	ShardingDb string `json:"sharding_db"`
 
 	Debug bool `json:"debug"`
 }
