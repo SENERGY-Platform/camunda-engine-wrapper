@@ -17,11 +17,13 @@
 package api
 
 import (
+	"encoding/json"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"io"
@@ -47,7 +49,10 @@ func V1Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		err := c.StartProcess(id, jwt.UserId)
+
+		inputs := parseQueryParameter(request.URL.Query())
+
+		err := c.StartProcess(id, jwt.UserId, inputs)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -68,7 +73,10 @@ func V1Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := c.StartProcessGetId(id, jwt.UserId)
+
+		inputs := parseQueryParameter(request.URL.Query())
+
+		result, err := c.StartProcessGetId(id, jwt.UserId, inputs)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -127,7 +135,10 @@ func V1Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 			http.Error(writer, "no definition for deployment found", http.StatusInternalServerError)
 			return
 		}
-		result, err := c.StartProcessGetId(definitions[0].Id, jwt.UserId)
+
+		inputs := parseQueryParameter(request.URL.Query())
+
+		result, err := c.StartProcessGetId(definitions[0].Id, jwt.UserId, inputs)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -402,4 +413,21 @@ func V1Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		}
 		response.To(writer).Text("ok")
 	})
+}
+
+func parseQueryParameter(query url.Values) (result map[string]interface{}) {
+	if len(query) == 0 {
+		return map[string]interface{}{}
+	}
+	result = map[string]interface{}{}
+	for key, _ := range query {
+		var val interface{}
+		temp := query.Get(key)
+		err := json.Unmarshal([]byte(temp), &val)
+		if err != nil {
+			val = temp
+		}
+		result[key] = val
+	}
+	return result
 }

@@ -17,6 +17,7 @@
 package camunda
 
 import (
+	"bytes"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
@@ -45,35 +46,79 @@ func New(vid *vid.Vid, shards *shards.Shards) *Camunda {
 	return &Camunda{vid: vid, shards: shards}
 }
 
-func (this *Camunda) StartProcess(processDefinitionId string, userId string) (err error) {
+func (this *Camunda) StartProcess(processDefinitionId string, userId string, parameter map[string]interface{}) (err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return err
 	}
-	startResult := model.ProcessInstance{}
-	var code int
-	err, _, code = request.Post(shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/start", map[string]string{}, &startResult)
+
+	message := createStartMessage(parameter)
+
+	b := new(bytes.Buffer)
+	err = json.NewEncoder(b).Encode(message)
 	if err != nil {
 		return
 	}
-	if code != http.StatusOK {
-		err = errors.New("error on process start (status != 200)")
+	req, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/start", b)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		temp, _ := ioutil.ReadAll(resp.Body)
+		err = errors.New(resp.Status + " " + string(temp))
 		return
 	}
-	return
+	return nil
 }
 
-func (this *Camunda) StartProcessGetId(processDefinitionId string, userId string) (result model.ProcessInstance, err error) {
+func createStartMessage(parameter map[string]interface{}) map[string]interface{} {
+	if len(parameter) == 0 {
+		return map[string]interface{}{}
+	}
+	variables := map[string]interface{}{}
+	for key, val := range parameter {
+		variables[key] = map[string]interface{}{
+			"value": val,
+		}
+	}
+	return map[string]interface{}{"variables": variables}
+}
+
+func (this *Camunda) StartProcessGetId(processDefinitionId string, userId string, parameter map[string]interface{}) (result model.ProcessInstance, err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
-	var code int
-	err, _, code = request.Post(shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/start", map[string]string{}, &result)
-	if err == nil && code != http.StatusOK {
-		err = errors.New("error on process start (status != 200)")
+
+	message := createStartMessage(parameter)
+
+	b := new(bytes.Buffer)
+	err = json.NewEncoder(b).Encode(message)
+	if err != nil {
 		return
 	}
+	req, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/start", b)
+	if err != nil {
+		return result, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return result, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		temp, _ := ioutil.ReadAll(resp.Body)
+		err = errors.New(resp.Status + " " + string(temp))
+		return
+	}
+	err = json.NewDecoder(resp.Body).Decode(&result)
 	return
 }
 

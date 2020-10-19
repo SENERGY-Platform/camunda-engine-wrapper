@@ -43,6 +43,7 @@ func Helper_getPgDependency(dbName string) (closer func(), hostPort string, ipAd
 	return func() { pg.Close() }, hostPort, pg.Container.NetworkSettings.IPAddress, pgStr, err
 }
 
+//deprecated
 func Helper_getCamundaDependency(pgIp string, pgPort string) (closer func(), hostPort string, ipAddress string, err error) {
 	pool, err := dockertest.NewPool("")
 	if err != nil {
