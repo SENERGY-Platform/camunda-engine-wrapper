@@ -59,7 +59,7 @@ func (this *Camunda) StartProcess(processDefinitionId string, userId string, par
 	if err != nil {
 		return
 	}
-	req, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/start", b)
+	req, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/submit-form", b)
 	if err != nil {
 		return err
 	}
@@ -90,6 +90,29 @@ func createStartMessage(parameter map[string]interface{}) map[string]interface{}
 	return map[string]interface{}{"variables": variables}
 }
 
+func (this *Camunda) GetProcessParameters(processDefinitionId string, userId string) (result map[string]model.Variable, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
+	if err != nil {
+		return result, err
+	}
+	req, err := http.NewRequest("GET", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/form-variables", nil)
+	if err != nil {
+		return result, err
+	}
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return result, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		temp, _ := ioutil.ReadAll(resp.Body)
+		err = errors.New(resp.Status + " " + string(temp))
+		return
+	}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	return
+}
+
 func (this *Camunda) StartProcessGetId(processDefinitionId string, userId string, parameter map[string]interface{}) (result model.ProcessInstance, err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
@@ -103,7 +126,7 @@ func (this *Camunda) StartProcessGetId(processDefinitionId string, userId string
 	if err != nil {
 		return
 	}
-	req, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/start", b)
+	req, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/submit-form", b)
 	if err != nil {
 		return result, err
 	}
