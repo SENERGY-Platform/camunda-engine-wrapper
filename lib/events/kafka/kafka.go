@@ -1,8 +1,7 @@
 package kafka
 
 import (
-	"errors"
-	"github.com/segmentio/kafka-go"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka/topicconfig"
 	"github.com/wvanbergen/kazoo-go"
 	"io/ioutil"
 	"log"
@@ -56,62 +55,18 @@ func getBroker(zkUrl string) (brokers []string, err error) {
 	}
 }
 
-func GetKafkaController(zkUrl string) (controller string, err error) {
-	zookeeper := kazoo.NewConfig()
-	zookeeper.Logger = log.New(ioutil.Discard, "", 0)
-	zk, chroot := kazoo.ParseConnectionString(zkUrl)
-	zookeeper.Chroot = chroot
-	kz, err := kazoo.NewKazoo(zk, zookeeper)
-	if err != nil {
-		return controller, err
-	}
-	controllerId, err := kz.Controller()
-	if err != nil {
-		return controller, err
-	}
-	brokers, err := kz.Brokers()
-	if err != nil {
-		return controller, err
-	}
-	return brokers[controllerId], err
-}
-
 func InitTopic(zkUrl string, topics ...string) (err error) {
-	return InitTopicWithConfig(zkUrl, 1, 1, topics...)
-}
-
-func InitTopicWithConfig(zkUrl string, numPartitions int, replicationFactor int, topics ...string) (err error) {
-	controller, err := GetKafkaController(zkUrl)
-	if err != nil {
-		log.Println("ERROR: unable to find controller", err)
-		return err
-	}
-	if controller == "" {
-		log.Println("ERROR: unable to find controller")
-		return errors.New("unable to find controller")
-	}
-	initConn, err := kafka.Dial("tcp", controller)
-	if err != nil {
-		log.Println("ERROR: while init topic connection ", err)
-		return err
-	}
-	defer initConn.Close()
 	for _, topic := range topics {
-		err = initConn.CreateTopics(kafka.TopicConfig{
-			Topic:             topic,
-			NumPartitions:     numPartitions,
-			ReplicationFactor: replicationFactor,
-			ConfigEntries: []kafka.ConfigEntry{
-				{ConfigName: "retention.ms", ConfigValue: "-1"},
-				{ConfigName: "retention.bytes", ConfigValue: "-1"},
-				{ConfigName: "cleanup.policy", ConfigValue: "compact"},
-				{ConfigName: "delete.retention.ms", ConfigValue: "86400000"},
-				{ConfigName: "segment.ms", ConfigValue: "604800000"},
-				{ConfigName: "min.cleanable.dirty.ratio", ConfigValue: "0.1"},
-			},
+		err = topicconfig.EnsureWithZk(zkUrl, topic, map[string]string{
+			"retention.ms":              "-1",
+			"retention.bytes":           "-1",
+			"cleanup.policy":            "compact",
+			"delete.retention.ms":       "86400000",
+			"segment.ms":                "604800000",
+			"min.cleanable.dirty.ratio": "0.1",
 		})
 		if err != nil {
-			return
+			return err
 		}
 	}
 	return nil

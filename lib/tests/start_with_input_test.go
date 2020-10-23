@@ -10,6 +10,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/server"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -32,7 +33,7 @@ func TestGetParameter(t *testing.T) {
 		return
 	}
 
-	config, wrapperUrl, _, e, err := helper.CreateTestEnv(ctx, &wg, config)
+	config, wrapperUrl, _, e, err := server.CreateTestEnv(ctx, &wg, config)
 	if err != nil {
 		t.Error(err)
 		return
@@ -64,7 +65,7 @@ func TestStartWithInput(t *testing.T) {
 		return
 	}
 
-	config, wrapperUrl, shard, e, err := helper.CreateTestEnv(ctx, &wg, config)
+	config, wrapperUrl, shard, e, err := server.CreateTestEnv(ctx, &wg, config)
 	if err != nil {
 		t.Error(err)
 		return
@@ -120,7 +121,7 @@ func TestStartWithInputForm(t *testing.T) {
 		return
 	}
 
-	config, wrapperUrl, shard, e, err := helper.CreateTestEnv(ctx, &wg, config)
+	config, wrapperUrl, shard, e, err := server.CreateTestEnv(ctx, &wg, config)
 	if err != nil {
 		t.Error(err)
 		return
