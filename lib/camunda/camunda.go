@@ -380,6 +380,7 @@ func (this *Camunda) GetDeploymentList(userId string, params url.Values) (result
 		err = this.vid.SetVid(&temp[i])
 		if err != nil {
 			log.Println("WARNING: unable to find virtual id for process; ignore process", temp[i].Id, temp[i].Name, err)
+			err = nil
 		} else {
 			result = append(result, temp[i])
 		}
@@ -559,6 +560,7 @@ func (this *Camunda) GetExtendedDeploymentList(userId string, params url.Values)
 		extended, err := this.GetExtendedDeployment(deployment, userId)
 		if err != nil {
 			result = append(result, model.ExtendedDeployment{Deployment: deployment, Error: err.Error()})
+			err = nil
 		} else {
 			result = append(result, extended)
 		}
