@@ -22,14 +22,11 @@ import (
 	"fmt"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shardmigration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vidcleanup"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 func main() {
@@ -37,8 +34,6 @@ func main() {
 	configLocation := flag.String("config", "config.json", "configuration file")
 
 	migrateShard := flag.String("migrate_shard", "", "if set this program will only migrate the users of the given camunda-engine to the shard database")
-
-	vidCleanup := flag.Bool("vid_cleanup", false, "if true, the program will only clean the vid-database and camunda from inconsistencies")
 
 	flag.Parse()
 
@@ -51,15 +46,6 @@ func main() {
 		err = shardmigration.Run(*migrateShard, config.ShardingDb, 100)
 		if err != nil {
 			log.Fatal("unable to do shard migration:", err)
-		}
-	} else if *vidCleanup {
-		cqrs, err := kafka.Init(config.ZookeeperUrl, config.KafkaGroup, config.Debug)
-		if err != nil {
-			log.Fatal("unable to connect to kafka for do vid cleanup:", err)
-		}
-		err = vidcleanup.ClearUnlinkedDeployments(config.WrapperDb, config.DeploymentTopic, cqrs, 24*time.Hour)
-		if err != nil {
-			log.Fatal("unable to do vid cleanup:", err)
 		}
 	} else {
 		wrapper(config)
