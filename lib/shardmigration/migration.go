@@ -9,23 +9,23 @@ import (
 	"strconv"
 )
 
-func Run(camundaUrl string, pgConnStr string, limit int) (err error) {
+func Run(camundaUrl string, pgConnStr string, batchSize int) (err error) {
 	log.Println("start shard migration")
 	s, err := shards.New(pgConnStr, cache.None)
 	if err != nil {
 		return err
 	}
 	offset := 0
-	count := limit
+	count := batchSize
 	tenantSet := map[string]bool{}
 	log.Println("load tenants from camunda deployments")
-	for count == limit {
-		tenants, err := getDeploymentTenants(camundaUrl, limit, offset)
+	for count == batchSize {
+		tenants, err := getDeploymentTenants(camundaUrl, batchSize, offset)
 		if err != nil {
 			return err
 		}
 		count = len(tenants)
-		offset = offset + limit
+		offset = offset + batchSize
 		for _, tenant := range tenants {
 			tenantSet[tenant] = true
 		}

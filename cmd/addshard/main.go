@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 InfAI (CC SES)
+ * Copyright 2021 InfAI (CC SES)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,40 +17,29 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"fmt"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shardmigration"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
-	defer fmt.Println("exit application")
 	configLocation := flag.String("config", "config.json", "configuration file")
 
 	flag.Parse()
+
+	args := flag.Args()
+	if len(args) != 1 {
+		log.Fatal("expect the camunda-url as argument, got", args)
+	}
 
 	config, err := configuration.LoadConfig(*configLocation)
 	if err != nil {
 		log.Fatal("unable to load config", err)
 	}
 
-	wrapper(config)
-}
-
-func wrapper(config configuration.Config) {
-	ctx, cancel := context.WithCancel(context.Background())
-	err := lib.Wrapper(ctx, config)
+	err = shardmigration.Run(args[0], config.ShardingDb, 100)
 	if err != nil {
-		log.Fatalf("FATAL: %+v", err)
+		log.Fatal("unable to do shard migration:", err)
 	}
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
-	sig := <-shutdown
-	log.Println("received shutdown signal", sig)
-	cancel()
 }
