@@ -15,5 +15,5 @@
 # limitations under the License.
 #
 
-complete -W "unlinked-vid unlinked-pid remove-vid remove-pid" cleanup
+complete -W "list-unlinked-vid list-unlinked-pid remove-vid remove-pid" cleanup
 

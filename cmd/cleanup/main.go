@@ -29,8 +29,8 @@ import (
 	"time"
 )
 
-const FindUnlinkedVidArg = "unlinked-vid"
-const FindUnlinkedPidArg = "unlinked-pid"
+const FindUnlinkedVidArg = "list-unlinked-vid"
+const FindUnlinkedPidArg = "list-unlinked-pid"
 const RemoveVidArg = "remove-vid"
 const RemovePidArg = "remove-pid"
 

@@ -25,14 +25,14 @@ to run the api wrapper normally, call the program without any additional flags
 ## Vid Consistence Cleanup
 - use the cleanup executable to find and remove unlinked vid and processes
 - sub commands are
-    - unlinked-vid: lists unlinked vid 
-    - unlinked-pid: lists unlinked processes
+    - list-unlinked-vid: lists unlinked vid 
+    - list-unlinked-pid: lists unlinked processes
     - remove-vid: removes given vid
     - remove-pid: removes given processes
 - all config variables (except `ServerPort` and `LogLevel` ar used)
 
 ```
-./cleanup remove-vid $(./cleanup unlinked-vid)
+./cleanup remove-vid $(./cleanup list-unlinked-vid)
 ```
 
 ## Docker
