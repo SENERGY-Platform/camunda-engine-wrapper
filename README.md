@@ -20,16 +20,19 @@ to run the api wrapper normally, call the program without any additional flags
 
 ## New Shard
 - ensure that the config-variable `sharding_db` is set (env or json)
-- call this program with the `migrate_shard` flag set to the url of the new camunda instance
-```
-./camunda-engine-wrapper -migrate_shard=http://shard_url:8080
-```
+- call `./addshard http://shard-url:8080`
 
 ## Vid Consistence Cleanup
-- to clean inconsistent data this Program can be called with the `vid_cleanup` flag
+- use the cleanup executable to find and remove unlinked vid and processes
+- sub commands are
+    - unlinked-vid: lists unlinked vid 
+    - unlinked-pid: lists unlinked processes
+    - remove-vid: removes given vid
+    - remove-pid: removes given processes
 - all config variables (except `ServerPort` and `LogLevel` ar used)
+
 ```
-./camunda-engine-wrapper -vid_cleanup
+./cleanup remove-vid $(./cleanup unlinked-vid)
 ```
 
 ## Docker
