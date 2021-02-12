@@ -44,6 +44,7 @@ func main() {
 		log.Fatal("missing args")
 	}
 
+	configuration.LogEnvConfig = false
 	config, err := configuration.LoadConfig(*configLocation)
 	if err != nil {
 		log.Fatal("unable to load config", err)
