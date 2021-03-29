@@ -22,7 +22,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"os"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -87,7 +86,7 @@ func (this *Consumer) start() error {
 		Topic:          this.topic,
 		MaxWait:        1 * time.Second,
 		Logger:         log.New(ioutil.Discard, "", 0),
-		ErrorLogger:    log.New(os.Stderr, "[KAFKA-ERROR]", 0),
+		ErrorLogger:    log.New(ioutil.Discard, "", 0),
 	})
 	go func() {
 		for {
