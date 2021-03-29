@@ -87,7 +87,7 @@ func (this *Consumer) start() error {
 		Topic:          this.topic,
 		MaxWait:        1 * time.Second,
 		Logger:         log.New(ioutil.Discard, "", 0),
-		ErrorLogger:    log.New(os.Stderr, "[KAFKA]", 0),
+		ErrorLogger:    log.New(os.Stderr, "[KAFKA-ERROR]", 0),
 	})
 	go func() {
 		for {
