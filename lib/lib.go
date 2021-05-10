@@ -32,7 +32,7 @@ func Wrapper(parentCtx context.Context, config configuration.Config) (err error)
 
 	c := camunda.New(v, s)
 
-	cqrs, err := kafka.Init(config.ZookeeperUrl, config.KafkaGroup, config.Debug)
+	cqrs, err := kafka.Init(config.KafkaUrl, config.KafkaGroup, config.Debug)
 	if err != nil {
 		return err
 	}

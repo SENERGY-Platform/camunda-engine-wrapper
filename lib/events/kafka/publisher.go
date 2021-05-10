@@ -17,7 +17,7 @@ func (this *Kafka) Publish(topic string, key string, payload []byte) error {
 	publ, ok := this.publishers[topic]
 	if !ok {
 		var err error
-		publ, err = NewPublisher(this.zk, topic, this.debug)
+		publ, err = NewPublisher(this.kafkaBootstrapUrl, topic, this.debug)
 		if err != nil {
 			return err
 		}
@@ -30,8 +30,8 @@ type Publisher struct {
 	writer *kafka.Writer
 }
 
-func NewPublisher(zookeeperUrl string, topic string, debug bool) (*Publisher, error) {
-	broker, err := GetBroker(zookeeperUrl)
+func NewPublisher(kafkaBootstrapUrl string, topic string, debug bool) (*Publisher, error) {
+	broker, err := GetBroker(kafkaBootstrapUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -67,11 +67,11 @@ func getProducer(broker []string, topic string, debug bool) (writer *kafka.Write
 	} else {
 		logger = log.New(ioutil.Discard, "", 0)
 	}
-	writer = kafka.NewWriter(kafka.WriterConfig{
-		Brokers:     broker,
+	writer = &kafka.Writer{
+		Addr:        kafka.TCP(broker...),
 		Topic:       topic,
 		MaxAttempts: 10,
 		Logger:      logger,
-	})
+	}
 	return writer, err
 }

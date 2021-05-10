@@ -14,26 +14,26 @@ import (
 )
 
 type Events struct {
-	zookeeperUrl    string
-	kafkaGroupId    string
-	deploymentTopic string
-	incidentsTopic  string
-	debug           bool
-	vid             *vid.Vid
-	camunda         *camunda.Camunda
-	cqrs            kafka.Interface
+	kafkaBootstrapUrl string
+	kafkaGroupId      string
+	deploymentTopic   string
+	incidentsTopic    string
+	debug             bool
+	vid               *vid.Vid
+	camunda           *camunda.Camunda
+	cqrs              kafka.Interface
 }
 
 func New(config configuration.Config, cqrs kafka.Interface, vid *vid.Vid, camunda *camunda.Camunda) (events *Events, err error) {
 	events = &Events{
-		zookeeperUrl:    config.ZookeeperUrl,
-		kafkaGroupId:    config.KafkaGroup,
-		deploymentTopic: config.DeploymentTopic,
-		incidentsTopic:  config.IncidentTopic,
-		debug:           config.Debug,
-		vid:             vid,
-		camunda:         camunda,
-		cqrs:            cqrs,
+		kafkaBootstrapUrl: config.KafkaUrl,
+		kafkaGroupId:      config.KafkaGroup,
+		deploymentTopic:   config.DeploymentTopic,
+		incidentsTopic:    config.IncidentTopic,
+		debug:             config.Debug,
+		vid:               vid,
+		camunda:           camunda,
+		cqrs:              cqrs,
 	}
 	err = events.init()
 	return

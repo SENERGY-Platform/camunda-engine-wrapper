@@ -1,6 +1,6 @@
 {
     "server_port":"8080",
-    "zookeeper_url":"zk",
+    "kafka_url":"kafka:9092",
     "kafka_group":"camunda-engine-wrapper",
     "deployment_topic":"deployments",
     "incident_topic":"camunda_incident",

@@ -32,8 +32,8 @@ var LogEnvConfig = true
 type Config struct {
 	ServerPort string `json:"server_port"`
 
-	ZookeeperUrl string `json:"zookeeper_url"`
-	KafkaGroup   string `json:"kafka_group"`
+	KafkaUrl   string `json:"kafka_url"`
+	KafkaGroup string `json:"kafka_group"`
 
 	DeploymentTopic string `json:"deployment_topic"`
 	IncidentTopic   string `json:"incident_topic"`
@@ -44,7 +44,6 @@ type Config struct {
 	Debug bool `json:"debug"`
 }
 
-//loads config from json in location and used environment variables (e.g ZookeeperUrl --> ZOOKEEPER_URL)
 func LoadConfig(location string) (config Config, err error) {
 	file, err := os.Open(location)
 	if err != nil {

@@ -24,7 +24,7 @@ import (
 )
 
 func RemoveVid(config configuration.Config, ids []string) error {
-	cqrs, err := kafka.Init(config.ZookeeperUrl, config.KafkaGroup, config.Debug)
+	cqrs, err := kafka.Init(config.KafkaUrl, config.KafkaGroup, config.Debug)
 	if err != nil {
 		return err
 	}

@@ -14,7 +14,7 @@ require (
 	github.com/ory/dockertest/v3 v3.6.0
 	github.com/pkg/errors v0.8.1
 	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da // indirect
-	github.com/segmentio/kafka-go v0.3.4
+	github.com/segmentio/kafka-go v0.4.15
 	github.com/wvanbergen/kazoo-go v0.0.0-20180202103751-f72d8611297a
 	gotest.tools v2.2.0+incompatible // indirect
 )

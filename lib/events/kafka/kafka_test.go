@@ -22,13 +22,13 @@ func TestKafka(t *testing.T) {
 	zookeeperUrl := zkIp + ":2181"
 
 	//kafka
-	closeKafka, err := KafkaContainer(pool, zookeeperUrl)
+	kafkaUrl, closeKafka, err := KafkaContainer(pool, zookeeperUrl)
 	defer closeKafka()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	kafka, err := Init(zookeeperUrl, "test", true)
+	kafka, err := Init(kafkaUrl, "test", true)
 	if err != nil {
 		t.Fatal(err)
 	}

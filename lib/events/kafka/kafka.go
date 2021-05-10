@@ -2,26 +2,27 @@ package kafka
 
 import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka/topicconfig"
-	"github.com/wvanbergen/kazoo-go"
-	"io/ioutil"
+	"github.com/segmentio/kafka-go"
 	"log"
+	"net"
+	"strconv"
 	"sync"
 )
 
 type Kafka struct {
-	mux        sync.Mutex
-	zk         string
-	group      string
-	broker     []string
-	consumers  []*Consumer
-	publishers map[string]*Publisher
-	debug      bool
+	mux               sync.Mutex
+	kafkaBootstrapUrl string
+	group             string
+	broker            []string
+	consumers         []*Consumer
+	publishers        map[string]*Publisher
+	debug             bool
 }
 
-func Init(zookeeperUrl string, group string, debug bool) (Interface, error) {
-	k := Kafka{zk: zookeeperUrl, group: group, debug: debug, publishers: map[string]*Publisher{}}
+func Init(kafkaBootstrapUrl string, group string, debug bool) (Interface, error) {
+	k := Kafka{kafkaBootstrapUrl: kafkaBootstrapUrl, group: group, debug: debug, publishers: map[string]*Publisher{}}
 	var err error
-	k.broker, err = GetBroker(zookeeperUrl)
+	k.broker, err = GetBroker(kafkaBootstrapUrl)
 	return &k, err
 }
 
@@ -39,25 +40,29 @@ func (this *Kafka) Close() {
 	}
 }
 
-func GetBroker(zk string) (brokers []string, err error) {
-	return getBroker(zk)
+func GetBroker(bootstrapUrl string) (brokers []string, err error) {
+	return getBroker(bootstrapUrl)
 }
 
-func getBroker(zkUrl string) (brokers []string, err error) {
-	zookeeper := kazoo.NewConfig()
-	zookeeper.Logger = log.New(ioutil.Discard, "", 0)
-	zk, chroot := kazoo.ParseConnectionString(zkUrl)
-	zookeeper.Chroot = chroot
-	if kz, err := kazoo.NewKazoo(zk, zookeeper); err != nil {
-		return brokers, err
-	} else {
-		return kz.BrokerList()
+func getBroker(bootstrapUrl string) (result []string, err error) {
+	conn, err := kafka.Dial("tcp", bootstrapUrl)
+	if err != nil {
+		return result, err
 	}
+	defer conn.Close()
+	brokers, err := conn.Brokers()
+	if err != nil {
+		return result, err
+	}
+	for _, broker := range brokers {
+		result = append(result, net.JoinHostPort(broker.Host, strconv.Itoa(broker.Port)))
+	}
+	return result, nil
 }
 
-func InitTopic(zkUrl string, topics ...string) (err error) {
+func InitTopic(bootstrapUrl string, topics ...string) (err error) {
 	for _, topic := range topics {
-		err = topicconfig.EnsureWithZk(zkUrl, topic, map[string]string{
+		err = topicconfig.Ensure(bootstrapUrl, topic, map[string]string{
 			"retention.ms":              "-1",
 			"retention.bytes":           "-1",
 			"cleanup.policy":            "compact",
