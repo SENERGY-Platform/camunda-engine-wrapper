@@ -46,8 +46,8 @@ func Camunda(ctx context.Context, wg *sync.WaitGroup, pgIp string, pgPort string
 			return err
 		}
 		if resp.StatusCode != 200 {
-			log.Println("unexpectet response code", resp.StatusCode, resp.Status)
-			return errors.New("unexpectet response code: " + resp.Status)
+			log.Println("unexpected response code", resp.StatusCode, resp.Status)
+			return errors.New("unexpected response code: " + resp.Status)
 		}
 		return nil
 	})
