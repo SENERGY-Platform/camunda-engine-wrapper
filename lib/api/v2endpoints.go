@@ -17,6 +17,7 @@
 package api
 
 import (
+	"encoding/json"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
@@ -307,5 +308,60 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 			return
 		}
 		response.To(writer).Text("ok")
+	})
+
+	router.DELETE("/v2/process-instances", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+		ids := []string{}
+		err := json.NewDecoder(request.Body).Decode(&ids)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		for _, id := range ids {
+			if err := c.CheckProcessInstanceAccess(id, jwt.UserId); err != nil {
+				log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+				http.Error(writer, "Access denied", http.StatusUnauthorized)
+				return
+			}
+			err := c.RemoveProcessInstance(id, jwt.UserId)
+			if err != nil {
+				log.Println("ERROR: error on removeProcessInstance", err)
+				http.Error(writer, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+		response.To(writer).Text("ok")
+		return
+	})
+
+	router.DELETE("/v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+		ids := []string{}
+		err := json.NewDecoder(request.Body).Decode(&ids)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		for _, id := range ids {
+			definitionId, err := c.CheckHistoryAccess(id, jwt.UserId)
+			if err != nil {
+				log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+				http.Error(writer, "Access denied", http.StatusUnauthorized)
+				return
+			}
+			err = e.PublishIncidentDeleteByProcessInstanceEvent(id, definitionId)
+			if err != nil {
+				log.Println("ERROR: error on PublishIncidentDeleteByProcessInstanceEvent", err)
+				http.Error(writer, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			err = c.RemoveProcessInstanceHistory(id, jwt.UserId)
+			if err != nil {
+				log.Println("ERROR: error on removeProcessInstanceHistory", err)
+				http.Error(writer, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+		response.To(writer).Text("ok")
+		return
 	})
 }
