@@ -17,6 +17,10 @@ const SqlCreateUserShard = "INSERT INTO ShardsMapping (UserId, ShardAddress) VAL
 
 const SqlEnsureShard = `INSERT INTO Shard(Address) VALUES ($1) ON CONFLICT DO NOTHING;`
 
+const SqlDeleteShard = `DELETE FROM Shard WHERE Address = $1;`
+
+const SqlDeleteShardUsers = "DELETE FROM ShardsMapping WHERE ShardAddress = $1;"
+
 const SqlShardUserCount = `SELECT COUNT(ShardsMapping.UserId), Shard.Address
 	FROM Shard LEFT JOIN ShardsMapping ON Shard.Address = ShardsMapping.ShardAddress
 	GROUP BY Shard.Address;`

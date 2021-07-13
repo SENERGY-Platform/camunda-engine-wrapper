@@ -176,6 +176,23 @@ func (this *Shards) GetShards() (result []string, err error) {
 	return
 }
 
+func (this *Shards) RemoveShard(shard string) (err error) {
+	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
+	tx, err := this.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(SqlDeleteShardUsers, shard)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(SqlDeleteShard, shard)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 func getShards(tx Tx) (result []string, err error) {
 	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
 	rows, err := tx.QueryContext(ctx, SQLListShards)

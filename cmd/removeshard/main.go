@@ -38,7 +38,7 @@ func main() {
 		log.Fatal("unable to load config", err)
 	}
 
-	err = shardmigration.Add(args[0], config.ShardingDb, 100)
+	err = shardmigration.Remove(args[0], config.ShardingDb)
 	if err != nil {
 		log.Fatal("unable to do shard migration:", err)
 	}

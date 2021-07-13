@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func Run(camundaUrl string, pgConnStr string, batchSize int) (err error) {
+func Add(camundaUrl string, pgConnStr string, batchSize int) (err error) {
 	log.Println("start shard migration")
 	s, err := shards.New(pgConnStr, cache.None)
 	if err != nil {
@@ -45,6 +45,23 @@ func Run(camundaUrl string, pgConnStr string, batchSize int) (err error) {
 			return err
 		}
 	}
+	log.Println("done")
+	return nil
+}
+
+func Remove(camundaUrl string, pgConnStr string) (err error) {
+	log.Println("start shard migration")
+	s, err := shards.New(pgConnStr, cache.None)
+	if err != nil {
+		return err
+	}
+
+	log.Println("remove entry of", camundaUrl, " in Shard table")
+	err = s.RemoveShard(camundaUrl)
+	if err != nil {
+		return err
+	}
+
 	log.Println("done")
 	return nil
 }
