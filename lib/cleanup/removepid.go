@@ -37,13 +37,12 @@ func RemovePid(ids map[string][]string) error {
 
 func removeProcess(shard string, deploymentId string) (err error) {
 	fmt.Println("remove pid", shard, deploymentId)
-	client := &http.Client{}
 	url := shard + "/engine-rest/deployment/" + deploymentId + "?cascade=true&skipIoMappings=true"
 	request, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return err
 	}
-	resp, err := client.Do(request)
+	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return err
 	}

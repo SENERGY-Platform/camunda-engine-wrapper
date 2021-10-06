@@ -20,11 +20,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"log"
+	"net/http"
 	"os"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var LogEnvConfig = true
@@ -42,6 +45,8 @@ type Config struct {
 	ShardingDb string `json:"sharding_db"`
 
 	Debug bool `json:"debug"`
+
+	HttpTimeout string `json:"http_timeout"`
 }
 
 func LoadConfig(location string) (config Config, err error) {
@@ -54,6 +59,7 @@ func LoadConfig(location string) (config Config, err error) {
 		return config, errors.WithStack(err)
 	}
 	handleEnvironmentVars(&config)
+	setDefaultHttpClient(config)
 	return config, nil
 }
 
@@ -117,5 +123,13 @@ func handleEnvironmentVars(config *Config) {
 				configValue.FieldByName(fieldName).Set(reflect.ValueOf(value))
 			}
 		}
+	}
+}
+
+func setDefaultHttpClient(config Config) {
+	var err error
+	http.DefaultClient.Timeout, err = time.ParseDuration(config.HttpTimeout)
+	if err != nil {
+		log.Println("WARNING: invalid http timeout --> no timeouts\n", err)
 	}
 }

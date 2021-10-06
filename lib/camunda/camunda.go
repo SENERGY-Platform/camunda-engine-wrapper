@@ -64,8 +64,7 @@ func (this *Camunda) StartProcess(processDefinitionId string, userId string, par
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	client := http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -99,8 +98,7 @@ func (this *Camunda) GetProcessParameters(processDefinitionId string, userId str
 	if err != nil {
 		return result, err
 	}
-	client := http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return result, err
 	}
@@ -131,8 +129,7 @@ func (this *Camunda) StartProcessGetId(processDefinitionId string, userId string
 		return result, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	client := http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return result, err
 	}
@@ -216,12 +213,11 @@ func (this *Camunda) RemoveProcessInstance(id string, userId string) (err error)
 	if err != nil {
 		return err
 	}
-	client := &http.Client{}
 	request, err := http.NewRequest("DELETE", shard+"/engine-rest/process-instance/"+url.QueryEscape(id)+"?skipIoMappings=true", nil)
 	if err != nil {
 		return
 	}
-	resp, err := client.Do(request)
+	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return
 	}
@@ -239,12 +235,11 @@ func (this *Camunda) RemoveProcessInstanceHistory(id string, userId string) (err
 		return err
 	}
 	//DELETE "/engine-rest/history/process-instance/" + processInstanceId
-	client := &http.Client{}
 	request, err := http.NewRequest("DELETE", shard+"/engine-rest/history/process-instance/"+url.QueryEscape(id), nil)
 	if err != nil {
 		return
 	}
-	resp, err := client.Do(request)
+	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return
 	}
@@ -530,11 +525,13 @@ func (this *Camunda) RemoveProcessForShard(deploymentId string, shard string) (e
 	if count.Count == 0 {
 		return nil
 	}
-	client := &http.Client{}
 	url := shard + "/engine-rest/deployment/" + deploymentId + "?cascade=true&skipIoMappings=true"
 	request, err := http.NewRequest("DELETE", url, nil)
-	_, err = client.Do(request)
-	return
+	if err != nil {
+		return err
+	}
+	_, err = http.DefaultClient.Do(request)
+	return err
 }
 
 func (this *Camunda) RemoveProcessFromAllShards(deploymentId string) (err error) {

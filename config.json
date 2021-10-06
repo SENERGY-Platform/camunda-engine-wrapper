@@ -6,5 +6,6 @@
     "incident_topic":"camunda_incident",
     "wrapper_db":"postgres://user:password@host/dbname?sslmode=disable",
     "sharding_db":"postgres://user:password@host/dbname?sslmode=disable",
-    "debug":false
+    "debug":false,
+    "http_timeout": "30s"
 }
