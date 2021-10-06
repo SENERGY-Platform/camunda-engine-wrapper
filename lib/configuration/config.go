@@ -46,7 +46,9 @@ type Config struct {
 
 	Debug bool `json:"debug"`
 
-	HttpTimeout string `json:"http_timeout"`
+	HttpClientTimeout     string `json:"http_client_timeout"`
+	HttpServerTimeout     string `json:"http_server_timeout"`
+	HttpServerReadTimeout string `json:"http_server_read_timeout"`
 }
 
 func LoadConfig(location string) (config Config, err error) {
@@ -128,7 +130,7 @@ func handleEnvironmentVars(config *Config) {
 
 func setDefaultHttpClient(config Config) {
 	var err error
-	http.DefaultClient.Timeout, err = time.ParseDuration(config.HttpTimeout)
+	http.DefaultClient.Timeout, err = time.ParseDuration(config.HttpClientTimeout)
 	if err != nil {
 		log.Println("WARNING: invalid http timeout --> no timeouts\n", err)
 	}
