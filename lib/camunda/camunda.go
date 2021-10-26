@@ -224,7 +224,9 @@ func (this *Camunda) RemoveProcessInstance(id string, userId string) (err error)
 	defer resp.Body.Close()
 	if !(resp.StatusCode == 200 || resp.StatusCode == 204) {
 		msg, _ := ioutil.ReadAll(resp.Body)
-		err = errors.New("error on delete in engine for " + shard + "/engine-rest/process-instance/" + url.QueryEscape(id) + ": " + resp.Status + " " + string(msg))
+		u, _ := url.Parse(shard)
+		u.User = &url.Userinfo{}
+		err = errors.New("error on delete in engine for " + u.String() + "/engine-rest/process-instance/" + url.QueryEscape(id) + ": " + resp.Status + " " + string(msg))
 	}
 	return
 }
@@ -235,7 +237,9 @@ func (this *Camunda) RemoveProcessInstanceHistory(id string, userId string) (err
 		return err
 	}
 	//DELETE "/engine-rest/history/process-instance/" + processInstanceId
-	request, err := http.NewRequest("DELETE", shard+"/engine-rest/history/process-instance/"+url.QueryEscape(id), nil)
+	u, _ := url.Parse(shard)
+	u.User = &url.Userinfo{}
+	request, err := http.NewRequest("DELETE", u.String()+"/engine-rest/history/process-instance/"+url.QueryEscape(id), nil)
 	if err != nil {
 		return
 	}

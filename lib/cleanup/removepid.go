@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 )
 
 func RemovePid(ids map[string][]string) error {
@@ -36,7 +37,9 @@ func RemovePid(ids map[string][]string) error {
 }
 
 func removeProcess(shard string, deploymentId string) (err error) {
-	fmt.Println("remove pid", shard, deploymentId)
+	anonymousShard, _ := url.Parse(shard)
+	anonymousShard.User = &url.Userinfo{}
+	fmt.Println("remove pid", anonymousShard.String(), deploymentId)
 	url := shard + "/engine-rest/deployment/" + deploymentId + "?cascade=true&skipIoMappings=true"
 	request, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
@@ -48,7 +51,7 @@ func removeProcess(shard string, deploymentId string) (err error) {
 	}
 	if resp.StatusCode >= 300 {
 		temp, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(fmt.Sprint("unable to delete ", shard, " ", deploymentId, " ", resp.StatusCode, " ", string(temp)))
+		return errors.New(fmt.Sprint("unable to delete ", anonymousShard.String(), " ", deploymentId, " ", resp.StatusCode, " ", string(temp)))
 	}
 	return
 }
