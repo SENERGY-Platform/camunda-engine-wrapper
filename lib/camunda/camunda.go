@@ -21,6 +21,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
+	"io"
 	"io/ioutil"
 	"net/url"
 	"strconv"
@@ -631,6 +632,38 @@ func (this *Camunda) GetProcessInstanceHistoryListWithTotal(userId string, searc
 	err = request.Get(shard+"/engine-rest/history/process-instance/count?"+params.Encode(), &count)
 	result.Total = count.Count
 	return
+}
+
+func (this *Camunda) SendEventTrigger(userId string, request []byte) (response []byte, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
+	if err != nil {
+		return response, err
+	}
+	//ensure userId in message
+	msg := map[string]interface{}{}
+	err = json.Unmarshal(request, &msg)
+	if err != nil {
+		return response, err
+	}
+	msg["tenantId"] = userId
+	requestWIthUserId, err := json.Marshal(msg)
+	if err != nil {
+		return response, err
+	}
+
+	resp, err := http.Post(shard+"/engine-rest/message", "application/json", bytes.NewBuffer(requestWIthUserId))
+	if err != nil {
+		return response, err
+	}
+	defer resp.Body.Close()
+	response, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return response, err
+	}
+	if resp.StatusCode >= 300 {
+		err = errors.New(string(response))
+	}
+	return response, err
 }
 
 func CreateBlankSvg() string {

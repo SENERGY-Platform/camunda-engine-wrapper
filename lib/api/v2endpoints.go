@@ -18,6 +18,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
@@ -362,6 +363,21 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 			}
 		}
 		response.To(writer).Text("ok")
+		return
+	})
+
+	router.POST("/v2/event-trigger", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+		body, err := io.ReadAll(request.Body)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		response, err := c.SendEventTrigger(jwt.UserId, body)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprint(writer, response)
 		return
 	})
 }
