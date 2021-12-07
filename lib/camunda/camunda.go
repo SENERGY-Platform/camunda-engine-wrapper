@@ -304,6 +304,22 @@ func (this *Camunda) GetFilteredProcessInstanceHistoryList(userId string, query 
 	return
 }
 
+func (this *Camunda) GetFilteredProcessInstanceHistoryListWithTotal(userId string, query url.Values) (result model.HistoricProcessInstancesWithTotal, err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
+	if err != nil {
+		return result, err
+	}
+	query.Del("tenantIdIn")
+	err = request.Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&"+query.Encode(), &result.Data)
+	if err != nil {
+		return result, err
+	}
+	count := model.Count{}
+	err = request.Get(shard+"/engine-rest/history/process-instance/count?"+query.Encode(), &count)
+	result.Total = count.Count
+	return
+}
+
 func (this *Camunda) GetProcessInstanceHistoryListFinished(userId string) (result model.HistoricProcessInstances, err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {

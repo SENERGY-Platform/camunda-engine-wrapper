@@ -263,13 +263,26 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 	})
 
 	router.GET("/v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
-		result, err := c.GetFilteredProcessInstanceHistoryList(jwt.UserId, request.URL.Query())
-		if err != nil {
-			log.Println("ERROR: error on getFilteredProcessInstanceHistoryList", err)
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
+		query := request.URL.Query()
+		if query.Get("with_total") == "true" {
+			delete(query, "with_total")
+			result, err := c.GetFilteredProcessInstanceHistoryListWithTotal(jwt.UserId, query)
+			if err != nil {
+				log.Println("ERROR: error on getFilteredProcessInstanceHistoryList", err)
+				http.Error(writer, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			response.To(writer).Json(result)
+		} else {
+			result, err := c.GetFilteredProcessInstanceHistoryList(jwt.UserId, query)
+			if err != nil {
+				log.Println("ERROR: error on getFilteredProcessInstanceHistoryList", err)
+				http.Error(writer, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			response.To(writer).Json(result)
 		}
-		response.To(writer).Json(result)
+
 	})
 
 	router.DELETE("/v2/history/process-instances/:id", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
