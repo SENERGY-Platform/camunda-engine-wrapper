@@ -200,8 +200,9 @@ func testStartProcessWithInput(wrapper string, id string, inputs map[string]inte
 			t.Error(err)
 			return
 		}
+		defer resp.Body.Close()
+		temp, _ := ioutil.ReadAll(resp.Body)
 		if resp.StatusCode != 200 {
-			temp, _ := ioutil.ReadAll(resp.Body)
 			t.Error(resp.StatusCode, string(temp))
 			return
 		}
@@ -229,8 +230,9 @@ func testStartProcessWithRawStringInput(wrapper string, id string, inputs map[st
 			t.Error(err)
 			return
 		}
+		defer resp.Body.Close()
+		temp, _ := ioutil.ReadAll(resp.Body)
 		if resp.StatusCode != 200 {
-			temp, _ := ioutil.ReadAll(resp.Body)
 			t.Error(resp.StatusCode, string(temp))
 			return
 		}
@@ -250,6 +252,7 @@ func checkProcessParameterDeclaration(wrapper string, id string, expected map[st
 			t.Error(err)
 			return
 		}
+		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
 			temp, _ := ioutil.ReadAll(resp.Body)
 			t.Error(resp.StatusCode, string(temp))

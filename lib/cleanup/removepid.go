@@ -49,8 +49,9 @@ func removeProcess(shard string, deploymentId string) (err error) {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
+	temp, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode >= 300 {
-		temp, _ := ioutil.ReadAll(resp.Body)
 		return errors.New(fmt.Sprint("unable to delete ", anonymousShard.String(), " ", deploymentId, " ", resp.StatusCode, " ", string(temp)))
 	}
 	return

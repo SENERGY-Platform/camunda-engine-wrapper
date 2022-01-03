@@ -69,8 +69,11 @@ func (this *Camunda) StartProcess(processDefinitionId string, userId string, par
 	if err != nil {
 		return err
 	}
+
+	defer resp.Body.Close()
+	temp, _ := ioutil.ReadAll(resp.Body)
+
 	if resp.StatusCode != http.StatusOK {
-		temp, _ := ioutil.ReadAll(resp.Body)
 		err = errors.New(resp.Status + " " + string(temp))
 		return
 	}
@@ -103,6 +106,7 @@ func (this *Camunda) GetProcessParameters(processDefinitionId string, userId str
 	if err != nil {
 		return result, err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		temp, _ := ioutil.ReadAll(resp.Body)
 		err = errors.New(resp.Status + " " + string(temp))
@@ -134,6 +138,7 @@ func (this *Camunda) StartProcessGetId(processDefinitionId string, userId string
 	if err != nil {
 		return result, err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		temp, _ := ioutil.ReadAll(resp.Body)
 		err = errors.New(resp.Status + " " + string(temp))
@@ -223,8 +228,8 @@ func (this *Camunda) RemoveProcessInstance(id string, userId string) (err error)
 		return
 	}
 	defer resp.Body.Close()
+	msg, _ := ioutil.ReadAll(resp.Body)
 	if !(resp.StatusCode == 200 || resp.StatusCode == 204) {
-		msg, _ := ioutil.ReadAll(resp.Body)
 		u, _ := url.Parse(shard)
 		u.User = &url.Userinfo{}
 		err = errors.New("error on delete in engine for " + u.String() + "/engine-rest/process-instance/" + url.QueryEscape(id) + ": " + resp.Status + " " + string(msg))
@@ -551,7 +556,16 @@ func (this *Camunda) RemoveProcessForShard(deploymentId string, shard string) (e
 	if err != nil {
 		return err
 	}
-	_, err = http.DefaultClient.Do(request)
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	payload, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		log.Println("ERROR:", resp.Status, string(payload))
+		err = errors.New(resp.Status)
+	}
 	return err
 }
 
