@@ -562,7 +562,7 @@ func (this *Camunda) RemoveProcessForShard(deploymentId string, shard string) (e
 	}
 	defer resp.Body.Close()
 	payload, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode >= 300 {
+	if resp.StatusCode >= 300 && resp.StatusCode != 404 {
 		log.Println("ERROR:", resp.Status, string(payload))
 		err = errors.New(resp.Status)
 	}
