@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/ory/dockertest"
+	"github.com/ory/dockertest/v3"
 	dockertestv3 "github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 	"log"

@@ -1,7 +1,7 @@
 package kafka
 
 import (
-	"github.com/ory/dockertest"
+	"github.com/ory/dockertest/v3"
 	"reflect"
 	"sync"
 	"testing"
