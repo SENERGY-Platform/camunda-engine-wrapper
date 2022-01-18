@@ -96,7 +96,7 @@ func TestVid(t *testing.T) {
 	defer httpServer.Close()
 
 	//put process
-	err = helper.PutProcess(e, "1", "n11", helper.JwtPayload.UserId)
+	err = helper.PutProcess(e, "1", "n11", helper.JwtPayload.GetUserId())
 	if err != nil {
 		t.Error(err)
 		return
@@ -108,7 +108,7 @@ func TestVid(t *testing.T) {
 		t.Error("unexpected result:", byVid)
 		return
 	}
-	resp, err := helper.Jwt.Get(httpServer.URL + "/deployment")
+	resp, err := helper.JwtGet(helper.Jwt, httpServer.URL+"/deployment")
 	if err != nil {
 		t.Error(err)
 		return
@@ -125,7 +125,7 @@ func TestVid(t *testing.T) {
 	}
 
 	//overwrite name
-	err = helper.PutProcess(e, "1", "n12", helper.JwtPayload.UserId)
+	err = helper.PutProcess(e, "1", "n12", helper.JwtPayload.GetUserId())
 	if err != nil {
 		t.Error(err)
 		return
@@ -139,7 +139,7 @@ func TestVid(t *testing.T) {
 		return
 	}
 
-	resp, err = helper.Jwt.Get(httpServer.URL + "/deployment")
+	resp, err = helper.JwtGet(helper.Jwt, httpServer.URL+"/deployment")
 	if err != nil {
 		t.Error(err)
 		return
@@ -156,7 +156,7 @@ func TestVid(t *testing.T) {
 	}
 
 	//delete by vid
-	err = helper.DeleteProcess(e, "1", helper.JwtPayload.UserId)
+	err = helper.DeleteProcess(e, "1", helper.JwtPayload.GetUserId())
 	if err != nil {
 		t.Error(err)
 		return
@@ -170,7 +170,7 @@ func TestVid(t *testing.T) {
 		return
 	}
 
-	resp, err = helper.Jwt.Get(httpServer.URL + "/deployment")
+	resp, err = helper.JwtGet(helper.Jwt, httpServer.URL+"/deployment")
 	if err != nil {
 		t.Error(err)
 		return
@@ -194,7 +194,7 @@ func TestVid(t *testing.T) {
 	}
 
 	//put process matching relation by "event"
-	err = helper.PutProcess(e, "v2", "n2", helper.JwtPayload.UserId)
+	err = helper.PutProcess(e, "v2", "n2", helper.JwtPayload.GetUserId())
 	if err != nil {
 		t.Error(err)
 		return
@@ -208,7 +208,7 @@ func TestVid(t *testing.T) {
 		return
 	}
 
-	resp, err = helper.Jwt.Get(httpServer.URL + "/deployment")
+	resp, err = helper.JwtGet(helper.Jwt, httpServer.URL+"/deployment")
 	if err != nil {
 		t.Error(err)
 		return
@@ -232,7 +232,7 @@ func TestVid(t *testing.T) {
 	}
 
 	//delete added relation by "event"
-	err = helper.DeleteProcess(e, "v3", helper.JwtPayload.UserId)
+	err = helper.DeleteProcess(e, "v3", helper.JwtPayload.GetUserId())
 	if err != nil {
 		t.Error(err)
 		return
@@ -246,7 +246,7 @@ func TestVid(t *testing.T) {
 		return
 	}
 
-	resp, err = helper.Jwt.Get(httpServer.URL + "/deployment")
+	resp, err = helper.JwtGet(helper.Jwt, httpServer.URL+"/deployment")
 	if err != nil {
 		t.Error(err)
 		return
@@ -263,7 +263,7 @@ func TestVid(t *testing.T) {
 	}
 
 	//delete not existing relation (vid) by "event"
-	err = helper.DeleteProcess(e, "v4", helper.JwtPayload.UserId)
+	err = helper.DeleteProcess(e, "v4", helper.JwtPayload.GetUserId())
 	if err != nil {
 		t.Error(err)
 		return
@@ -277,7 +277,7 @@ func TestVid(t *testing.T) {
 		return
 	}
 
-	resp, err = helper.Jwt.Get(httpServer.URL + "/deployment")
+	resp, err = helper.JwtGet(helper.Jwt, httpServer.URL+"/deployment")
 	if err != nil {
 		t.Error(err)
 		return

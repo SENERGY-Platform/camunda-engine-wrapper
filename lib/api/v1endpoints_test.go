@@ -18,6 +18,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
@@ -28,12 +29,11 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/mocks"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
-	jwt_http_router "github.com/SmartEnergyPlatform/jwt-http-router"
 	"net/http/httptest"
 	"testing"
 )
 
-const jwt jwt_http_router.JwtImpersonate = `Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsWVh1Y1NFMHVQcFpDUHhZX3Q1WEVnMlRsWUoyTVl0TWhwN1hLNThsbmJvIn0.eyJqdGkiOiIwOGM0N2E4OC0yYzc5LTQyMGYtODEwNC02NWJkOWViYmU0MWUiLCJleHAiOjE1NDY1MDcyMzMsIm5iZiI6MCwiaWF0IjoxNTQ2NTA3MTczLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiZnJvbnRlbmQiLCJzdWIiOiIzN2MyM2QzMC00YjQ4LTQyMDktOWJkNy0wMzcxZjYyYzJjZmYiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZCIsIm5vbmNlIjoiOTJjNDNjOTUtNzViMC00NmNmLTgwYWUtNDVkZDk3M2I0YjdmIiwiYXV0aF90aW1lIjoxNTQ2NTA3MDA5LCJzZXNzaW9uX3N0YXRlIjoiNWRmOTI4ZjQtMDhmMC00ZWI5LTliNjAtM2EwYWUyMmVmYzczIiwiYWNyIjoiMCIsImFsbG93ZWQtb3JpZ2lucyI6WyIqIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJjcmVhdGUtcmVhbG0iLCJhZG1pbiIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsibWFzdGVyLXJlYWxtIjp7InJvbGVzIjpbInZpZXctcmVhbG0iLCJ2aWV3LWlkZW50aXR5LXByb3ZpZGVycyIsIm1hbmFnZS1pZGVudGl0eS1wcm92aWRlcnMiLCJpbXBlcnNvbmF0aW9uIiwiY3JlYXRlLWNsaWVudCIsIm1hbmFnZS11c2VycyIsInF1ZXJ5LXJlYWxtcyIsInZpZXctYXV0aG9yaXphdGlvbiIsInF1ZXJ5LWNsaWVudHMiLCJxdWVyeS11c2VycyIsIm1hbmFnZS1ldmVudHMiLCJtYW5hZ2UtcmVhbG0iLCJ2aWV3LWV2ZW50cyIsInZpZXctdXNlcnMiLCJ2aWV3LWNsaWVudHMiLCJtYW5hZ2UtYXV0aG9yaXphdGlvbiIsIm1hbmFnZS1jbGllbnRzIiwicXVlcnktZ3JvdXBzIl19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJyb2xlcyI6WyJhZG1pbiIsImNyZWF0ZS1yZWFsbSIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iXSwicHJlZmVycmVkX3VzZXJuYW1lIjoic2VwbCJ9.cSWTHIOHkugQcVNgatbXjvDIP_Ir_QKuUuozbyweh1dJEFsZToTjJ4-5w947bLETmqiNElqXlIV8dT4c9DnPoiXAzsdSotkzKFEYEqRhjYm2obc7Wine1rVwFC4b0Tc5voIzCPNVGFlJDFYWqsPuQYNvAuCIs_A4W86AXWAuxzTyBk5gcRVBLLkFX6GErS2a_4jKd0m26Wd3qoO_j5cl2z2r0AtJ5py4PESiTRLDxEiMoahVQ4coYtX2esWoCRpkSa-beqlD8ffuKaHt95Z8AVcGjBZeSuZpVq6qY6bPBasqVdNkq-CvSnXqWnzNhvq2lUPt58Wp7jeMIJQG4015Zg`
+var jwt, _ = auth.Parse(`Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsWVh1Y1NFMHVQcFpDUHhZX3Q1WEVnMlRsWUoyTVl0TWhwN1hLNThsbmJvIn0.eyJqdGkiOiIwOGM0N2E4OC0yYzc5LTQyMGYtODEwNC02NWJkOWViYmU0MWUiLCJleHAiOjE1NDY1MDcyMzMsIm5iZiI6MCwiaWF0IjoxNTQ2NTA3MTczLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiZnJvbnRlbmQiLCJzdWIiOiIzN2MyM2QzMC00YjQ4LTQyMDktOWJkNy0wMzcxZjYyYzJjZmYiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZCIsIm5vbmNlIjoiOTJjNDNjOTUtNzViMC00NmNmLTgwYWUtNDVkZDk3M2I0YjdmIiwiYXV0aF90aW1lIjoxNTQ2NTA3MDA5LCJzZXNzaW9uX3N0YXRlIjoiNWRmOTI4ZjQtMDhmMC00ZWI5LTliNjAtM2EwYWUyMmVmYzczIiwiYWNyIjoiMCIsImFsbG93ZWQtb3JpZ2lucyI6WyIqIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJjcmVhdGUtcmVhbG0iLCJhZG1pbiIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsibWFzdGVyLXJlYWxtIjp7InJvbGVzIjpbInZpZXctcmVhbG0iLCJ2aWV3LWlkZW50aXR5LXByb3ZpZGVycyIsIm1hbmFnZS1pZGVudGl0eS1wcm92aWRlcnMiLCJpbXBlcnNvbmF0aW9uIiwiY3JlYXRlLWNsaWVudCIsIm1hbmFnZS11c2VycyIsInF1ZXJ5LXJlYWxtcyIsInZpZXctYXV0aG9yaXphdGlvbiIsInF1ZXJ5LWNsaWVudHMiLCJxdWVyeS11c2VycyIsIm1hbmFnZS1ldmVudHMiLCJtYW5hZ2UtcmVhbG0iLCJ2aWV3LWV2ZW50cyIsInZpZXctdXNlcnMiLCJ2aWV3LWNsaWVudHMiLCJtYW5hZ2UtYXV0aG9yaXphdGlvbiIsIm1hbmFnZS1jbGllbnRzIiwicXVlcnktZ3JvdXBzIl19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJyb2xlcyI6WyJhZG1pbiIsImNyZWF0ZS1yZWFsbSIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iXSwicHJlZmVycmVkX3VzZXJuYW1lIjoic2VwbCJ9.cSWTHIOHkugQcVNgatbXjvDIP_Ir_QKuUuozbyweh1dJEFsZToTjJ4-5w947bLETmqiNElqXlIV8dT4c9DnPoiXAzsdSotkzKFEYEqRhjYm2obc7Wine1rVwFC4b0Tc5voIzCPNVGFlJDFYWqsPuQYNvAuCIs_A4W86AXWAuxzTyBk5gcRVBLLkFX6GErS2a_4jKd0m26Wd3qoO_j5cl2z2r0AtJ5py4PESiTRLDxEiMoahVQ4coYtX2esWoCRpkSa-beqlD8ffuKaHt95Z8AVcGjBZeSuZpVq6qY6bPBasqVdNkq-CvSnXqWnzNhvq2lUPt58Wp7jeMIJQG4015Zg`)
 
 func TestDeploymentStart(t *testing.T) {
 	cqrs := mocks.Kafka()
@@ -97,12 +97,12 @@ func TestDeploymentStart(t *testing.T) {
 	defer httpServer.Close()
 
 	//put process
-	err = helper.PutProcess(e, "1", "n11", helper.JwtPayload.UserId)
+	err = helper.PutProcess(e, "1", "n11", helper.JwtPayload.GetUserId())
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	resp, err := jwt.Get(httpServer.URL + "/deployment/1/start")
+	resp, err := helper.JwtGet(jwt.String(), httpServer.URL+"/deployment/1/start")
 	if err != nil {
 		t.Error(err)
 		return
@@ -178,7 +178,7 @@ func TestDeploymentStartWithSource(t *testing.T) {
 	defer httpServer.Close()
 
 	//put process
-	err = helper.PutProcessWithSource(e, "1", "n11", helper.JwtPayload.UserId, "")
+	err = helper.PutProcessWithSource(e, "1", "n11", helper.JwtPayload.GetUserId(), "")
 	if err != nil {
 		t.Error(err)
 		return
@@ -188,7 +188,7 @@ func TestDeploymentStartWithSource(t *testing.T) {
 	t.Run("check source = 'sepl'", CheckDeploymentList(httpServer.URL, "sepl", 1))
 	t.Run("check source = 'generated'", CheckDeploymentList(httpServer.URL, "generated", 0))
 
-	err = helper.PutProcessWithSource(e, "2", "n2", helper.JwtPayload.UserId, "generated")
+	err = helper.PutProcessWithSource(e, "2", "n2", helper.JwtPayload.GetUserId(), "generated")
 	if err != nil {
 		t.Error(err)
 		return
@@ -198,7 +198,7 @@ func TestDeploymentStartWithSource(t *testing.T) {
 	t.Run("check source = 'sepl'", CheckDeploymentList(httpServer.URL, "sepl", 1))
 	t.Run("check source = 'generated'", CheckDeploymentList(httpServer.URL, "generated", 1))
 
-	err = helper.DeleteProcess(e, "1", helper.JwtPayload.UserId)
+	err = helper.DeleteProcess(e, "1", helper.JwtPayload.GetUserId())
 	if err != nil {
 		t.Error(err)
 		return
@@ -216,7 +216,11 @@ func CheckDeploymentList(url string, source string, expectedCount int) func(t *t
 			path = path + "?source=" + source
 		}
 		list := []interface{}{}
-		err := jwt.GetJSON(url+path, &list)
+		resp, err := helper.JwtGet(jwt.String(), url+path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = json.NewDecoder(resp.Body).Decode(&list)
 		if err != nil {
 			t.Fatal(err)
 		}

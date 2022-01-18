@@ -23,7 +23,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
-	jwt_http_router "github.com/SmartEnergyPlatform/jwt-http-router"
+	"github.com/julienschmidt/httprouter"
 	"github.com/pkg/errors"
 	"log"
 	"net/http"
@@ -33,7 +33,7 @@ import (
 	"time"
 )
 
-var endpoints = []func(config configuration.Config, router *jwt_http_router.Router, camunda *camunda.Camunda, event *events.Events){}
+var endpoints = []func(config configuration.Config, router *httprouter.Router, camunda *camunda.Camunda, event *events.Events){}
 
 func Start(ctx context.Context, config configuration.Config, camunda *camunda.Camunda, event *events.Events) (err error) {
 	defer func() {
@@ -71,12 +71,12 @@ func Start(ctx context.Context, config configuration.Config, camunda *camunda.Ca
 }
 
 func GetRouter(config configuration.Config, camunda *camunda.Camunda, event *events.Events) http.Handler {
-	jwt := jwt_http_router.New(jwt_http_router.JwtConfig{ForceAuth: true, ForceUser: true})
+	router := httprouter.New()
 	for _, e := range endpoints {
 		log.Println("add endpoint: " + runtime.FuncForPC(reflect.ValueOf(e).Pointer()).Name())
-		e(config, jwt, camunda, event)
+		e(config, router, camunda, event)
 	}
-	handler := util.NewCors(jwt)
+	handler := util.NewCors(router)
 	handler = util.NewLogger(handler)
 	return handler
 }

@@ -19,16 +19,17 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
+	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"time"
 
 	"io"
 
-	"github.com/SmartEnergyPlatform/jwt-http-router"
 	"github.com/SmartEnergyPlatform/util/http/response"
 )
 
@@ -36,19 +37,26 @@ func init() {
 	endpoints = append(endpoints, V2Endpoints)
 }
 
-func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c *camunda.Camunda, e *events.Events) {
+func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camunda.Camunda, e *events.Events) {
 
-	router.GET("/v2/process-definitions/:id/start", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.GET("/v2/process-definitions/:id/start", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
-		if err := c.CheckProcessDefinitionAccess(id, jwt.UserId); err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
+			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
 
 		inputs := parseQueryParameter(request.URL.Query())
 
-		err := c.StartProcess(id, jwt.UserId, inputs)
+		err = c.StartProcess(id, token.GetUserId(), inputs)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -62,17 +70,24 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Json([]string{})
 	})
 
-	router.GET("/v2/process-definitions/:id/start/id", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.GET("/v2/process-definitions/:id/start/id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
-		if err := c.CheckProcessDefinitionAccess(id, jwt.UserId); err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
+			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
 
 		inputs := parseQueryParameter(request.URL.Query())
 
-		result, err := c.StartProcessGetId(id, jwt.UserId, inputs)
+		result, err := c.StartProcessGetId(id, token.GetUserId(), inputs)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -81,14 +96,19 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Json(result)
 	})
 
-	router.GET("/v2/deployments/:id", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.GET("/v2/deployments/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
-		if err := c.CheckDeploymentAccess(id, jwt.UserId); err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := c.CheckDeploymentAccess(id, token.GetUserId()); err != nil {
+			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := c.GetDeployment(id, jwt.UserId)
+		result, err := c.GetDeployment(id, token.GetUserId())
 		if err != nil {
 			log.Println("ERROR: error on getDeployment", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -97,9 +117,16 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Json(result)
 	})
 
-	router.GET("/v2/deployments/:id/exists", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.GET("/v2/deployments/:id/exists", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
-		err := c.CheckDeploymentAccess(id, jwt.UserId)
+
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		err = c.CheckDeploymentAccess(id, token.GetUserId())
 		if err == camunda.UnknownVid || err == camunda.CamundaDeploymentUnknown {
 			response.To(writer).Json(false)
 			return
@@ -111,14 +138,21 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Json(true)
 	})
 
-	router.GET("/v2/deployments/:id/start", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.GET("/v2/deployments/:id/start", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
-		if err := c.CheckDeploymentAccess(id, jwt.UserId); err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := c.CheckDeploymentAccess(id, token.GetUserId()); err != nil {
+			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		definitions, err := c.GetDefinitionByDeploymentVid(id, jwt.UserId)
+		definitions, err := c.GetDefinitionByDeploymentVid(id, token.GetUserId())
 		if err != nil {
 			log.Println("ERROR: error on getDeploymentByDef", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -132,7 +166,7 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 
 		inputs := parseQueryParameter(request.URL.Query())
 
-		result, err := c.StartProcessGetId(definitions[0].Id, jwt.UserId, inputs)
+		result, err := c.StartProcessGetId(definitions[0].Id, token.GetUserId(), inputs)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -141,14 +175,21 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Json(result)
 	})
 
-	router.GET("/v2/deployments/:id/parameter", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.GET("/v2/deployments/:id/parameter", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
-		if err := c.CheckDeploymentAccess(id, jwt.UserId); err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := c.CheckDeploymentAccess(id, token.GetUserId()); err != nil {
+			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		definitions, err := c.GetDefinitionByDeploymentVid(id, jwt.UserId)
+		definitions, err := c.GetDefinitionByDeploymentVid(id, token.GetUserId())
 		if err != nil {
 			log.Println("ERROR: error on getDeploymentByDef", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -160,7 +201,7 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 			return
 		}
 
-		result, err := c.GetProcessParameters(definitions[0].Id, jwt.UserId)
+		result, err := c.GetProcessParameters(definitions[0].Id, token.GetUserId())
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -169,14 +210,21 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Json(result)
 	})
 
-	router.GET("/v2/deployments/:id/definition", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.GET("/v2/deployments/:id/definition", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
-		if err := c.CheckDeploymentAccess(id, jwt.UserId); err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, id, err)
+
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := c.CheckDeploymentAccess(id, token.GetUserId()); err != nil {
+			log.Println("WARNING: Access denied for user;", token.GetUserId(), id, err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := c.GetDefinitionByDeploymentVid(id, jwt.UserId)
+		result, err := c.GetDefinitionByDeploymentVid(id, token.GetUserId())
 		if err != nil {
 			log.Println("ERROR: error on getDeploymentByDef", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -185,12 +233,17 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Json(result)
 	})
 
-	router.GET("/v2/deployments", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
-		result, err := c.GetExtendedDeploymentList(jwt.UserId, request.URL.Query())
+	router.GET("/v2/deployments", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		result, err := c.GetExtendedDeploymentList(token.GetUserId(), request.URL.Query())
 		if err == camunda.UnknownVid {
 			log.Println("WARNING: unable to use vid for process; try repeat")
 			time.Sleep(1 * time.Second)
-			result, err = c.GetExtendedDeploymentList(jwt.UserId, request.URL.Query())
+			result, err = c.GetExtendedDeploymentList(token.GetUserId(), request.URL.Query())
 		}
 		if err != nil {
 			log.Println("ERROR: error on getDeploymentList", err)
@@ -200,14 +253,21 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Json(result)
 	})
 
-	router.GET("/v2/process-definitions/:id", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.GET("/v2/process-definitions/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
-		if err := c.CheckProcessDefinitionAccess(id, jwt.UserId); err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
+			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := c.GetProcessDefinition(id, jwt.UserId)
+		result, err := c.GetProcessDefinition(id, token.GetUserId())
 		if err != nil {
 			log.Println("ERROR: error on getProcessDefinition", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -216,14 +276,19 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Json(result)
 	})
 
-	router.GET("/v2/process-definitions/:id/diagram", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.GET("/v2/process-definitions/:id/diagram", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
-		if err := c.CheckProcessDefinitionAccess(id, jwt.UserId); err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
+			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		result, err := c.GetProcessDefinitionDiagram(id, jwt.UserId)
+		result, err := c.GetProcessDefinitionDiagram(id, token.GetUserId())
 		if err != nil {
 			log.Println("ERROR: error on getProcessDefinitionDiagram", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -242,8 +307,13 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		}
 	})
 
-	router.GET("/v2/process-instances", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
-		result, err := c.GetProcessInstanceList(jwt.UserId)
+	router.GET("/v2/process-instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		result, err := c.GetProcessInstanceList(token.GetUserId())
 		if err != nil {
 			log.Println("ERROR: error on getProcessInstanceList", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -252,8 +322,13 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Json(result)
 	})
 
-	router.GET("/v2/process-instances/count", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
-		result, err := c.GetProcessInstanceCount(jwt.UserId)
+	router.GET("/v2/process-instances/count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		result, err := c.GetProcessInstanceCount(token.GetUserId())
 		if err != nil {
 			log.Println("ERROR: error on getProcessInstanceCount", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -262,11 +337,16 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Json(result)
 	})
 
-	router.GET("/v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.GET("/v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
 		query := request.URL.Query()
 		if query.Get("with_total") == "true" {
 			delete(query, "with_total")
-			result, err := c.GetFilteredProcessInstanceHistoryListWithTotal(jwt.UserId, query)
+			result, err := c.GetFilteredProcessInstanceHistoryListWithTotal(token.GetUserId(), query)
 			if err != nil {
 				log.Println("ERROR: error on getFilteredProcessInstanceHistoryList", err)
 				http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -274,7 +354,7 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 			}
 			response.To(writer).Json(result)
 		} else {
-			result, err := c.GetFilteredProcessInstanceHistoryList(jwt.UserId, query)
+			result, err := c.GetFilteredProcessInstanceHistoryList(token.GetUserId(), query)
 			if err != nil {
 				log.Println("ERROR: error on getFilteredProcessInstanceHistoryList", err)
 				http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -285,11 +365,16 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 
 	})
 
-	router.DELETE("/v2/history/process-instances/:id", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.DELETE("/v2/history/process-instances/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
-		definitionId, err := c.CheckHistoryAccess(id, jwt.UserId)
+		token, err := auth.GetParsedToken(request)
 		if err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		definitionId, err := c.CheckHistoryAccess(id, token.GetUserId())
+		if err != nil {
+			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
@@ -299,7 +384,7 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		err = c.RemoveProcessInstanceHistory(id, jwt.UserId)
+		err = c.RemoveProcessInstanceHistory(id, token.GetUserId())
 		if err != nil {
 			log.Println("ERROR: error on removeProcessInstanceHistory", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -308,14 +393,19 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Text("ok")
 	})
 
-	router.DELETE("/v2/process-instances/:id", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.DELETE("/v2/process-instances/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
-		if err := c.CheckProcessInstanceAccess(id, jwt.UserId); err != nil {
-			log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := c.CheckProcessInstanceAccess(id, token.GetUserId()); err != nil {
+			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
-		err := c.RemoveProcessInstance(id, jwt.UserId)
+		err = c.RemoveProcessInstance(id, token.GetUserId())
 		if err != nil {
 			log.Println("ERROR: error on removeProcessInstance", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -324,20 +414,25 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		response.To(writer).Text("ok")
 	})
 
-	router.DELETE("/v2/process-instances", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.DELETE("/v2/process-instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
 		ids := []string{}
-		err := json.NewDecoder(request.Body).Decode(&ids)
+		err = json.NewDecoder(request.Body).Decode(&ids)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
 		for _, id := range ids {
-			if err := c.CheckProcessInstanceAccess(id, jwt.UserId); err != nil {
-				log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+			if err := c.CheckProcessInstanceAccess(id, token.GetUserId()); err != nil {
+				log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
 				http.Error(writer, "Access denied", http.StatusUnauthorized)
 				return
 			}
-			err := c.RemoveProcessInstance(id, jwt.UserId)
+			err := c.RemoveProcessInstance(id, token.GetUserId())
 			if err != nil {
 				log.Println("ERROR: error on removeProcessInstance", err)
 				http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -348,17 +443,22 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		return
 	})
 
-	router.DELETE("/v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.DELETE("/v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
 		ids := []string{}
-		err := json.NewDecoder(request.Body).Decode(&ids)
+		err = json.NewDecoder(request.Body).Decode(&ids)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
 		for _, id := range ids {
-			definitionId, err := c.CheckHistoryAccess(id, jwt.UserId)
+			definitionId, err := c.CheckHistoryAccess(id, token.GetUserId())
 			if err != nil {
-				log.Println("WARNING: Access denied for user;", jwt.UserId, err)
+				log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
 				http.Error(writer, "Access denied", http.StatusUnauthorized)
 				return
 			}
@@ -368,7 +468,7 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 				http.Error(writer, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			err = c.RemoveProcessInstanceHistory(id, jwt.UserId)
+			err = c.RemoveProcessInstanceHistory(id, token.GetUserId())
 			if err != nil {
 				log.Println("ERROR: error on removeProcessInstanceHistory", err)
 				http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -379,13 +479,18 @@ func V2Endpoints(config configuration.Config, router *jwt_http_router.Router, c 
 		return
 	})
 
-	router.POST("/v2/event-trigger", func(writer http.ResponseWriter, request *http.Request, params jwt_http_router.Params, jwt jwt_http_router.Jwt) {
+	router.POST("/v2/event-trigger", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
 		body, err := io.ReadAll(request.Body)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		response, err := c.SendEventTrigger(jwt.UserId, body)
+		response, err := c.SendEventTrigger(token.GetUserId(), body)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return

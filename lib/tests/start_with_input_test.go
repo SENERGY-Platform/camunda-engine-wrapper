@@ -273,7 +273,7 @@ func checkProcessParameterDeclaration(wrapper string, id string, expected map[st
 
 func testDeployProcessWithInput(e *events.Events, id string, bpmn string) func(t *testing.T) {
 	return func(t *testing.T) {
-		err := e.HandleDeploymentCreate(helper.JwtPayload.UserId, id, "processWithInput", bpmn, helper.SvgExample, "")
+		err := e.HandleDeploymentCreate(helper.JwtPayload.GetUserId(), id, "processWithInput", bpmn, helper.SvgExample, "")
 		if err != nil {
 			t.Error(err)
 			return

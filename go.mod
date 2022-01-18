@@ -2,11 +2,12 @@ module github.com/SENERGY-Platform/camunda-engine-wrapper
 
 require (
 	github.com/Shopify/sarama v1.27.2
-	github.com/SmartEnergyPlatform/jwt-http-router v0.0.0-20190318131115-1c2a98f99363
 	github.com/SmartEnergyPlatform/util v0.0.0-20181018070938-b26ca656886c
 	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/coocood/freecache v1.1.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/julienschmidt/httprouter v1.3.0
 	github.com/lib/pq v1.2.0
 	github.com/ory/dockertest/v3 v3.8.1
 	github.com/pkg/errors v0.9.1
@@ -22,7 +23,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/containerd/continuity v0.0.0-20190827140505-75bee3e2ccb6 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dgrijalva/jwt-go v3.1.0+incompatible // indirect
 	github.com/docker/cli v20.10.11+incompatible // indirect
 	github.com/docker/docker v20.10.7+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
