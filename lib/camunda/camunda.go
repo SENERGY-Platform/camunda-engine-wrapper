@@ -320,7 +320,7 @@ func (this *Camunda) GetFilteredProcessInstanceHistoryListWithTotal(userId strin
 		return result, err
 	}
 	count := model.Count{}
-	err = request.Get(shard+"/engine-rest/history/process-instance/count?"+query.Encode(), &count)
+	err = request.Get(shard+"/engine-rest/history/process-instance/count?tenantIdIn="+url.QueryEscape(userId)+"&"+query.Encode(), &count)
 	result.Total = count.Count
 	return
 }
