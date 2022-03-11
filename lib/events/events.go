@@ -11,6 +11,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"log"
+	"runtime/debug"
 )
 
 type Events struct {
@@ -41,6 +42,22 @@ func New(config configuration.Config, cqrs kafka.Interface, vid *vid.Vid, camund
 
 func (this *Events) init() (err error) {
 	err = this.cqrs.Consume(this.deploymentTopic, func(delivery []byte) error {
+		version := VersionWrapper{}
+		err := json.Unmarshal(delivery, &version)
+		if err != nil {
+			log.Println("ERROR: consumed invalid message --> ignore", err)
+			debug.PrintStack()
+			return nil
+		}
+		if version.Version != CurrentVersion {
+			log.Println("ERROR: consumed unexpected deployment version", version.Version)
+			if version.Command == "DELETE" {
+				log.Println("handle legacy delete")
+				return this.HandleDeploymentDelete(version.Id, version.Owner)
+			}
+			return nil
+		}
+
 		command := DeploymentCommand{}
 		err = json.Unmarshal(delivery, &command)
 		if err != nil {
@@ -75,20 +92,14 @@ func parsePutCommand(command DeploymentCommand) (owner string, id string, name s
 		}
 	}()
 	if command.Deployment != nil {
-		return parseV1Command(command)
-	} else if command.DeploymentV2 != nil {
-		return parseV2Command(command)
+		return parseCommand(command)
 	}
 	err = errors.New("unknown version")
 	return
 }
 
-func parseV1Command(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, source string, err error) {
-	return command.Owner, command.Id, command.Deployment.Name, command.Deployment.Xml, command.Deployment.Svg, command.Source, nil
-}
-
-func parseV2Command(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, source string, err error) {
-	return command.Owner, command.Id, command.DeploymentV2.Name, command.DeploymentV2.Diagram.XmlDeployed, command.DeploymentV2.Diagram.Svg, command.Source, err
+func parseCommand(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, source string, err error) {
+	return command.Owner, command.Id, command.Deployment.Name, command.Deployment.Diagram.XmlDeployed, command.Deployment.Diagram.Svg, command.Source, err
 }
 
 func (this *Events) HandleDeploymentDelete(vid string, userId string) error {

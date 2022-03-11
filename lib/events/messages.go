@@ -1,13 +1,9 @@
 package events
 
-type DeploymentV1 struct {
-	Id   string `json:"id"`
-	Xml  string `json:"xml"`
-	Svg  string `json:"svg"`
-	Name string `json:"name"`
-}
+const CurrentVersion int64 = 3
 
-type DeploymentV2 struct {
+type Deployment struct {
+	Version int64   `json:"version"`
 	Id      string  `json:"id"`
 	Name    string  `json:"name"`
 	Diagram Diagram `json:"diagram"`
@@ -19,12 +15,19 @@ type Diagram struct {
 }
 
 type DeploymentCommand struct {
-	Command      string        `json:"command"`
-	Id           string        `json:"id"`
-	Owner        string        `json:"owner"`
-	Deployment   *DeploymentV1 `json:"deployment"`
-	DeploymentV2 *DeploymentV2 `json:"deployment_v2"`
-	Source       string        `json:"source,omitempty"`
+	Command    string      `json:"command"`
+	Id         string      `json:"id"`
+	Owner      string      `json:"owner"`
+	Deployment *Deployment `json:"deployment"`
+	Source     string      `json:"source,omitempty"`
+	Version    int64       `json:"version"`
+}
+
+type VersionWrapper struct {
+	Command string `json:"command"`
+	Id      string `json:"id"`
+	Version int64  `json:"version"`
+	Owner   string `json:"owner"`
 }
 
 type KafkaIncidentsCommand struct {

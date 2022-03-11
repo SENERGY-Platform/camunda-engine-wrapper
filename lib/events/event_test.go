@@ -62,35 +62,37 @@ func TestEvents(t *testing.T) {
 		return
 	}
 
-	t.Run("publish version 1 deployment", publishVersion1Deployment(e, "1", "testname", helper.BpmnExample, helper.SvgExample))
+	t.Log("sub test naming schema is deprecated. only one deployment version is supported for this service")
+
+	t.Run("publish version 1 deployment", publishDeployment(e, "1", "testname", helper.BpmnExample, helper.SvgExample))
 
 	t.Run("check version 1 camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("publish version 1 invalid deployment", publishVersion1Deployment(e, "1", "testname", "invalid", helper.SvgExample))
+	t.Run("publish version 1 invalid deployment", publishDeployment(e, "1", "testname", "invalid", helper.SvgExample))
 
 	t.Run("check version 1 invalid camunda request", checkCamundaRequest(requests, "testname", camunda.CreateBlankProcess(), camunda.CreateBlankSvg()))
 
-	t.Run("publish version 2 deployment", publishVersion2Deployment(e, "1", "testname", helper.BpmnExample, helper.SvgExample))
+	t.Run("publish version 2 deployment", publishDeployment(e, "1", "testname", helper.BpmnExample, helper.SvgExample))
 
 	t.Run("check version 2 camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("publish version 2 invalid deployment", publishVersion2Deployment(e, "1", "testname", "invalid", helper.SvgExample))
+	t.Run("publish version 2 invalid deployment", publishDeployment(e, "1", "testname", "invalid", helper.SvgExample))
 
 	t.Run("check version 2 invalid camunda request", checkCamundaRequest(requests, "testname", camunda.CreateBlankProcess(), camunda.CreateBlankSvg()))
 
-	t.Run("publish explicit version 1 deployment", publishExplVersion1Deployment(e, "1", "3", "testname", helper.BpmnExample, helper.SvgExample))
+	t.Run("publish explicit version 1 deployment", publishDeployment(e, "3", "testname", helper.BpmnExample, helper.SvgExample))
 
 	t.Run("check explicit version 1 camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("publish explicit version 1 invalid deployment", publishExplVersion1Deployment(e, "1", "3", "testname", "invalid", helper.SvgExample))
+	t.Run("publish explicit version 1 invalid deployment", publishDeployment(e, "3", "testname", "invalid", helper.SvgExample))
 
 	t.Run("check explicit version 1 invalid camunda request", checkCamundaRequest(requests, "testname", camunda.CreateBlankProcess(), camunda.CreateBlankSvg()))
 
-	t.Run("publish explicit version '' deployment", publishExplVersion1Deployment(e, "", "3", "testname", helper.BpmnExample, helper.SvgExample))
+	t.Run("publish explicit version '' deployment", publishDeployment(e, "3", "testname", helper.BpmnExample, helper.SvgExample))
 
 	t.Run("check explicit version '' camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("publish explicit version '' invalid deployment", publishExplVersion1Deployment(e, "", "3", "testname", "invalid", helper.SvgExample))
+	t.Run("publish explicit version '' invalid deployment", publishDeployment(e, "3", "testname", "invalid", helper.SvgExample))
 
 	t.Run("check explicit version '' invalid camunda request", checkCamundaRequest(requests, "testname", camunda.CreateBlankProcess(), camunda.CreateBlankSvg()))
 }
@@ -173,73 +175,24 @@ func parseCamundaMessage(payload []byte) (xml string, svg string, name string, u
 }
 
 type TestDeploymentCommand struct {
-	Command      string      `json:"command"`
-	Id           string      `json:"id"`
-	Owner        string      `json:"owner"`
-	Deployment   interface{} `json:"deployment"`
-	DeploymentV2 interface{} `json:"deployment_v2"`
+	Version    int64       `json:"version"`
+	Command    string      `json:"command"`
+	Id         string      `json:"id"`
+	Owner      string      `json:"owner"`
+	Deployment interface{} `json:"deployment"`
 }
 
-func publishVersion1Deployment(events *Events, id string, name string, xml string, svg string) func(t *testing.T) {
+func publishDeployment(events *Events, id string, name string, xml string, svg string) func(t *testing.T) {
 	return func(t *testing.T) {
 		msg, err := json.Marshal(TestDeploymentCommand{
+			Version: CurrentVersion,
 			Command: "PUT",
 			Id:      id,
 			Owner:   "test",
 			Deployment: map[string]interface{}{
-				"id":   id,
-				"xml":  xml,
-				"svg":  svg,
-				"name": name,
-			},
-		})
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		err = events.cqrs.Publish(events.deploymentTopic, id, msg)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-	}
-}
-
-func publishExplVersion1Deployment(events *Events, version string, id string, name string, xml string, svg string) func(t *testing.T) {
-	return func(t *testing.T) {
-		msg, err := json.Marshal(TestDeploymentCommand{
-			Command: "PUT",
-			Id:      id,
-			Owner:   "test",
-			Deployment: map[string]interface{}{
+				"version": CurrentVersion,
 				"id":      id,
-				"version": version,
-				"xml":     xml,
-				"svg":     svg,
 				"name":    name,
-			},
-		})
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		err = events.cqrs.Publish(events.deploymentTopic, id, msg)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-	}
-}
-
-func publishVersion2Deployment(events *Events, id string, name string, xml string, svg string) func(t *testing.T) {
-	return func(t *testing.T) {
-		msg, err := json.Marshal(TestDeploymentCommand{
-			Command: "PUT",
-			Id:      id,
-			Owner:   "test",
-			DeploymentV2: map[string]interface{}{
-				"id":   id,
-				"name": name,
 				"diagram": map[string]interface{}{
 					"xml_deployed": xml,
 					"svg":          svg,

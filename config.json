@@ -2,7 +2,7 @@
     "server_port":"8080",
     "kafka_url":"kafka:9092",
     "kafka_group":"camunda-engine-wrapper",
-    "deployment_topic":"deployments",
+    "deployment_topic":"deployments_v3",
     "incident_topic":"camunda_incident",
     "wrapper_db":"postgres://user:password@host/dbname?sslmode=disable",
     "sharding_db":"postgres://user:password@host/dbname?sslmode=disable",
