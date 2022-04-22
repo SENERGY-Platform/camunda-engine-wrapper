@@ -500,11 +500,14 @@ func (this *Camunda) DeployProcess(name string, xml string, svg string, owner st
 	if !ok {
 		log.Println("ERROR: unable to interpret process engine deployment response", responseWrapper)
 		if responseWrapper["type"] == "ProcessEngineException" {
-			errMsg, _ := json.Marshal(responseWrapper)
+			msg, ok := responseWrapper["message"].(string)
+			if !ok {
+				msg = ""
+			}
 			_ = notification.Send(this.config.NotificationUrl, notification.Message{
 				UserId:  owner,
 				Title:   "Deployment Error: ProcessEngineException",
-				Message: string(errMsg),
+				Message: msg,
 			})
 			log.Println("DEBUG: try deploying placeholder process")
 			responseWrapper, err = this.deployProcess(name, CreateBlankProcess(), CreateBlankSvg(), owner, source)

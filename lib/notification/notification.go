@@ -31,6 +31,7 @@ func Send(notificationUrl string, message Message) error {
 	if notificationUrl == "" {
 		return nil
 	}
+	log.Println("send notification", notificationUrl, message)
 	b := new(bytes.Buffer)
 	err := json.NewEncoder(b).Encode(message)
 	if err != nil {
@@ -38,6 +39,7 @@ func Send(notificationUrl string, message Message) error {
 	}
 	req, err := http.NewRequest("POST", notificationUrl+"/notifications", b)
 	if err != nil {
+		log.Println("ERROR: unable to send notification", err)
 		return err
 	}
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
@@ -45,6 +47,7 @@ func Send(notificationUrl string, message Message) error {
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		log.Println("ERROR: unable to send notification", err)
 		return err
 	}
 	if resp.StatusCode >= 300 {
