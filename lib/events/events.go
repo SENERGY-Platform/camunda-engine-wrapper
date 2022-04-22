@@ -9,6 +9,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/notification"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"log"
 	"runtime/debug"
@@ -19,6 +20,7 @@ type Events struct {
 	kafkaGroupId      string
 	deploymentTopic   string
 	incidentsTopic    string
+	notificationUrl   string
 	debug             bool
 	vid               *vid.Vid
 	camunda           *camunda.Camunda
@@ -27,6 +29,7 @@ type Events struct {
 
 func New(config configuration.Config, cqrs kafka.Interface, vid *vid.Vid, camunda *camunda.Camunda) (events *Events, err error) {
 	events = &Events{
+		notificationUrl:   config.NotificationUrl,
 		kafkaBootstrapUrl: config.KafkaUrl,
 		kafkaGroupId:      config.KafkaGroup,
 		deploymentTopic:   config.DeploymentTopic,
@@ -142,6 +145,11 @@ func (this *Events) HandleDeploymentCreate(owner string, id string, name string,
 		log.Println("ERROR: got invalid xml, replace with default")
 		xml = camunda.CreateBlankProcess()
 		svg = camunda.CreateBlankSvg()
+		_ = notification.Send(this.notificationUrl, notification.Message{
+			UserId:  owner,
+			Title:   "Deployment Error: Invalid BPMN XML",
+			Message: "got invalid xml, replace with default",
+		})
 	}
 	if this.debug {
 		log.Println("deploy process", id, name, xml)

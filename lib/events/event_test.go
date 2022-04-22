@@ -54,7 +54,7 @@ func TestEvents(t *testing.T) {
 		return
 	}
 
-	c := camunda.New(v, s)
+	c := camunda.New(config, v, s)
 
 	e, err := New(config, mocks.Kafka(), v, c)
 	if err != nil {

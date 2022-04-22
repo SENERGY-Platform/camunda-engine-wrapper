@@ -84,7 +84,7 @@ func TestVid(t *testing.T) {
 		return
 	}
 
-	c := camunda.New(v, s)
+	c := camunda.New(config, v, s)
 
 	e, err := events.New(config, cqrs, v, c)
 	if err != nil {

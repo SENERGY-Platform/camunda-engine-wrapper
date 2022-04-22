@@ -19,6 +19,8 @@ package camunda
 import (
 	"bytes"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/notification"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"io"
@@ -41,10 +43,11 @@ import (
 type Camunda struct {
 	shards *shards.Shards
 	vid    *vid.Vid
+	config configuration.Config
 }
 
-func New(vid *vid.Vid, shards *shards.Shards) *Camunda {
-	return &Camunda{vid: vid, shards: shards}
+func New(config configuration.Config, vid *vid.Vid, shards *shards.Shards) *Camunda {
+	return &Camunda{config: config, vid: vid, shards: shards}
 }
 
 func (this *Camunda) StartProcess(processDefinitionId string, userId string, parameter map[string]interface{}) (err error) {
@@ -497,6 +500,12 @@ func (this *Camunda) DeployProcess(name string, xml string, svg string, owner st
 	if !ok {
 		log.Println("ERROR: unable to interpret process engine deployment response", responseWrapper)
 		if responseWrapper["type"] == "ProcessEngineException" {
+			errMsg, _ := json.Marshal(responseWrapper)
+			_ = notification.Send(this.config.NotificationUrl, notification.Message{
+				UserId:  owner,
+				Title:   "Deployment Error: ProcessEngineException",
+				Message: string(errMsg),
+			})
 			log.Println("DEBUG: try deploying placeholder process")
 			responseWrapper, err = this.deployProcess(name, CreateBlankProcess(), CreateBlankSvg(), owner, source)
 			deploymentId, ok = responseWrapper["id"].(string)

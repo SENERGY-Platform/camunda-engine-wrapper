@@ -49,6 +49,7 @@ type Config struct {
 	HttpClientTimeout     string `json:"http_client_timeout"`
 	HttpServerTimeout     string `json:"http_server_timeout"`
 	HttpServerReadTimeout string `json:"http_server_read_timeout"`
+	NotificationUrl       string `json:"notification_url"`
 }
 
 func LoadConfig(location string) (config Config, err error) {
