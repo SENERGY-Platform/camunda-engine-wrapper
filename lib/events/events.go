@@ -80,6 +80,8 @@ func (this *Events) init() (err error) {
 			return nil
 		case "DELETE":
 			return this.HandleDeploymentDelete(command.Id, command.Owner)
+		case "RIGHTS":
+			return nil
 		default:
 			log.Println("WARNING: unknown event type", string(delivery))
 			return nil
