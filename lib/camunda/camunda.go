@@ -438,6 +438,23 @@ func (this *Camunda) GetDefinitionByDeploymentVid(vid string, userId string) (re
 	return
 }
 
+func (this *Camunda) GetInstancesByDeploymentVid(vid string, userId string) (result model.ProcessInstances, err error) {
+	id, exists, err := this.vid.GetDeploymentId(vid)
+	if err != nil {
+		return result, err
+	}
+	if !exists {
+		return result, UnknownVid
+	}
+
+	shard, err := this.shards.EnsureShardForUser(userId)
+	if err != nil {
+		return result, err
+	}
+	err = request.Get(shard+"/engine-rest/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&deploymentId="+url.QueryEscape(id), &result)
+	return
+}
+
 func (this *Camunda) GetRawDefinitionsByDeployment(deploymentId string, userId string) (result model.ProcessDefinitions, err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
@@ -488,7 +505,7 @@ func buildPayLoad(name string, xml string, svg string, boundary string, owner st
 	return "--" + boundary + "\r\n" + strings.Join(segments, "--"+boundary+"\r\n") + "--" + boundary + "--\r\n"
 }
 
-//returns original deploymentId (not vid)
+// returns original deploymentId (not vid)
 func (this *Camunda) DeployProcess(name string, xml string, svg string, owner string, source string) (deploymentId string, err error) {
 	responseWrapper, err := this.deployProcess(name, xml, svg, owner, source)
 	if err != nil {
@@ -546,7 +563,7 @@ func (this *Camunda) deployProcess(name string, xml string, svg string, owner st
 	return
 }
 
-//uses original deploymentId (not vid)
+// uses original deploymentId (not vid)
 func (this *Camunda) RemoveProcess(deploymentId string, userId string) (err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {

@@ -233,6 +233,25 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		response.To(writer).Json(result)
 	})
 
+	router.GET("/v2/deployments/:id/instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		id := params.ByName("id")
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		result, err := c.GetInstancesByDeploymentVid(id, token.GetUserId())
+		if err == camunda.UnknownVid {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		response.To(writer).Json(result)
+	})
+
 	router.GET("/v2/deployments", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
