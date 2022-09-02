@@ -433,6 +433,34 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		response.To(writer).Text("ok")
 	})
 
+	router.PUT("/v2/process-instances/:id/variables/:variable_name", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		id := params.ByName("id")
+		varName := params.ByName("variable_name")
+		var varValue interface{}
+		err := json.NewDecoder(request.Body).Decode(&varValue)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := c.CheckProcessInstanceAccess(id, token.GetUserId()); err != nil {
+			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
+			http.Error(writer, "Access denied", http.StatusUnauthorized)
+			return
+		}
+		err = c.SetProcessInstanceVariable(id, token.GetUserId(), varName, varValue)
+		if err != nil {
+			log.Println("ERROR: error on variable update", err)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		response.To(writer).Text("ok")
+	})
+
 	router.DELETE("/v2/process-instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {

@@ -11,6 +11,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/server"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -150,6 +151,118 @@ func TestStartWithInputForm(t *testing.T) {
 	t.Run("check and finish task with partially unused inputs as raw string", testCheckProcessWithInputTask(shard, float64(42)))
 }
 
+func TestVarEdit(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	wg := sync.WaitGroup{}
+	defer wg.Wait()
+	defer cancel()
+
+	config, err := configuration.LoadConfig("../../config.json")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	config, wrapperUrl, shard, e, err := server.CreateTestEnv(ctx, &wg, config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	instance := model.ProcessInstance{}
+
+	idWithInput := "withInput"
+	t.Run("deploy process withInput", testDeployProcessWithInput(e, idWithInput, processWithInput))
+
+	t.Run("start withInput with debug boolean", testStartProcessWithInput(wrapperUrl, idWithInput, map[string]interface{}{"inputTemperature": 30, "debug": true}))
+	t.Run("check withInput with debug boolean", testCheckProcessVariables(shard, map[string]interface{}{"debug": true}))
+
+	t.Run("start withInput with debug string", testStartProcessWithInput(wrapperUrl, idWithInput, map[string]interface{}{"inputTemperature": 30, "debug": "true"}))
+	t.Run("check withInput with debug string", testCheckProcessVariables(shard, map[string]interface{}{"debug": "true"}))
+
+	t.Run("start withInput without debug", testStartProcessWithInput(wrapperUrl, idWithInput, map[string]interface{}{"inputTemperature": 30}))
+	t.Run("check withInput without debug", testCheckProcessVariables(shard, map[string]interface{}{"debug": nil}))
+
+	t.Run("start withInput without debug to be set as bool", testStartProcessWithInputReturnInstance(wrapperUrl, idWithInput, map[string]interface{}{"inputTemperature": 30}, &instance))
+	t.Run("set withInput debug as bool", testSetProcessVariable(wrapperUrl, instance.Id, "debug", true))
+	t.Run("check withInput without debug to be set as bool", testCheckProcessVariables(shard, map[string]interface{}{"inputTemperature": float64(30), "debug": true}))
+
+	t.Run("start withInput without debug to be set as string", testStartProcessWithInputReturnInstance(wrapperUrl, idWithInput, map[string]interface{}{"inputTemperature": 30}, &instance))
+	t.Run("set withInput debug as string", testSetProcessVariable(wrapperUrl, instance.Id, "debug", "true"))
+	t.Run("check withInput without debug to be set as string", testCheckProcessVariables(shard, map[string]interface{}{"inputTemperature": float64(30), "debug": "true"}))
+
+	idWithForm := "withForm"
+	t.Run("deploy process withForm", testDeployProcessWithInput(e, idWithForm, processWithInput))
+
+	t.Run("start withForm with debug boolean", testStartProcessWithInput(wrapperUrl, idWithForm, map[string]interface{}{"inputTemperature": 30, "debug": true}))
+	t.Run("check withForm with debug boolean", testCheckProcessVariables(shard, map[string]interface{}{"debug": true}))
+
+	t.Run("start withForm with debug string", testStartProcessWithInput(wrapperUrl, idWithForm, map[string]interface{}{"inputTemperature": 30, "debug": "true"}))
+	t.Run("check withForm with debug string", testCheckProcessVariables(shard, map[string]interface{}{"debug": "true"}))
+
+	t.Run("start withForm without debug", testStartProcessWithInput(wrapperUrl, idWithForm, map[string]interface{}{"inputTemperature": 30}))
+	t.Run("check withForm without debug", testCheckProcessVariables(shard, map[string]interface{}{"debug": nil}))
+
+	t.Run("start withForm without debug to be set as bool", testStartProcessWithInputReturnInstance(wrapperUrl, idWithForm, map[string]interface{}{"inputTemperature": 30}, &instance))
+	t.Run("set withForm debug as bool", testSetProcessVariable(wrapperUrl, instance.Id, "debug", true))
+	t.Run("check withForm without debug to be set as bool", testCheckProcessVariables(shard, map[string]interface{}{"inputTemperature": float64(30), "debug": true}))
+
+	t.Run("start withForm without debug to be set as string", testStartProcessWithInputReturnInstance(wrapperUrl, idWithForm, map[string]interface{}{"inputTemperature": 30}, &instance))
+	t.Run("set withForm debug as string", testSetProcessVariable(wrapperUrl, instance.Id, "debug", "true"))
+	t.Run("check withForm without debug to be set as string", testCheckProcessVariables(shard, map[string]interface{}{"inputTemperature": float64(30), "debug": "true"}))
+}
+
+func testSetProcessVariable(wrapperUrl string, instanceId string, varName string, varValue interface{}) func(t *testing.T) {
+	return func(t *testing.T) {
+		b := new(bytes.Buffer)
+		err := json.NewEncoder(b).Encode(varValue)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		req, err := http.NewRequest("PUT", wrapperUrl+"/v2/process-instances/"+instanceId+"/variables/"+varName, b)
+		req.Header.Set("Authorization", string(helper.Jwt))
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		defer resp.Body.Close()
+		temp, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode != 200 {
+			t.Error(resp.StatusCode, string(temp))
+			return
+		}
+	}
+}
+
+func testCheckProcessVariables(url string, expected map[string]interface{}) func(t *testing.T) {
+	return func(t *testing.T) {
+		tasks, err := fetchTestTask(url)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if len(tasks) != 1 {
+			t.Error(len(tasks), tasks)
+			return
+		}
+		for key, value := range expected {
+			actual := tasks[0].Variables[key].Value
+			if !reflect.DeepEqual(actual, value) {
+				t.Error(reflect.TypeOf(actual), actual, reflect.TypeOf(value), value)
+				return
+			}
+		}
+
+		err = completeTask(url, tasks[0].Id)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	}
+}
+
 func testCheckProcessWithInputTask(url string, expected interface{}) func(t *testing.T) {
 	return func(t *testing.T) {
 		tasks, err := fetchTestTask(url)
@@ -201,9 +314,49 @@ func testStartProcessWithInput(wrapper string, id string, inputs map[string]inte
 			return
 		}
 		defer resp.Body.Close()
-		temp, _ := ioutil.ReadAll(resp.Body)
+		temp, _ := io.ReadAll(resp.Body)
 		if resp.StatusCode != 200 {
 			t.Error(resp.StatusCode, string(temp))
+			return
+		}
+	}
+}
+
+func testStartProcessWithInputReturnInstance(wrapper string, id string, inputs map[string]interface{}, instance *model.ProcessInstance) func(t *testing.T) {
+	return func(t *testing.T) {
+		values := url.Values{}
+		for key, value := range inputs {
+			val, err := json.Marshal(value)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			values.Add(key, string(val))
+		}
+
+		req, err := http.NewRequest("GET", wrapper+"/deployment/"+id+"/start", nil)
+		if inputs != nil {
+			req, err = http.NewRequest("GET", wrapper+"/deployment/"+id+"/start?"+values.Encode(), nil)
+		}
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		req.Header.Set("Authorization", string(helper.Jwt))
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		defer resp.Body.Close()
+		temp, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode != 200 {
+			t.Error(resp.StatusCode, string(temp))
+			return
+		}
+		err = json.Unmarshal(temp, &instance)
+		if err != nil {
+			t.Error(err)
 			return
 		}
 	}

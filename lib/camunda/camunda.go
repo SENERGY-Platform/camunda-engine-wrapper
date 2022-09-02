@@ -74,7 +74,7 @@ func (this *Camunda) StartProcess(processDefinitionId string, userId string, par
 	}
 
 	defer resp.Body.Close()
-	temp, _ := ioutil.ReadAll(resp.Body)
+	temp, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		err = errors.New(resp.Status + " " + string(temp))
@@ -723,6 +723,45 @@ func (this *Camunda) SendEventTrigger(userId string, request []byte) (response [
 		err = errors.New(string(response))
 	}
 	return response, err
+}
+
+func (this *Camunda) SetProcessInstanceVariable(instanceId string, userId string, variableName string, variableValue interface{}) error {
+	shard, err := this.shards.EnsureShardForUser(userId)
+	if err != nil {
+		return err
+	}
+
+	msg := map[string]interface{}{
+		"modifications": map[string]interface{}{
+			variableName: map[string]interface{}{
+				"value": variableValue,
+			},
+		},
+	}
+	b := new(bytes.Buffer)
+	err = json.NewEncoder(b).Encode(msg)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", shard+"/engine-rest/process-instance/"+url.PathEscape(instanceId)+"/variables", b)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	temp, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode >= 300 {
+		err = errors.New(resp.Status + " " + string(temp))
+		return err
+	}
+
+	return nil
 }
 
 func CreateBlankSvg() string {
