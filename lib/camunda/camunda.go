@@ -710,6 +710,7 @@ func (this *Camunda) SendEventTrigger(userId string, request []byte) (response [
 		return response, err
 	}
 
+	log.Println("trigger event:", string(request))
 	resp, err := http.Post(shard+"/engine-rest/message", "application/json", bytes.NewBuffer(requestWIthUserId))
 	if err != nil {
 		return response, err
