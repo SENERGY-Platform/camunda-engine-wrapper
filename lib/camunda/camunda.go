@@ -21,6 +21,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/notification"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/processio"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"io"
@@ -41,13 +42,14 @@ import (
 )
 
 type Camunda struct {
-	shards *shards.Shards
-	vid    *vid.Vid
-	config configuration.Config
+	shards    *shards.Shards
+	vid       *vid.Vid
+	config    configuration.Config
+	processIo *processio.ProcessIo
 }
 
-func New(config configuration.Config, vid *vid.Vid, shards *shards.Shards) *Camunda {
-	return &Camunda{config: config, vid: vid, shards: shards}
+func New(config configuration.Config, vid *vid.Vid, shards *shards.Shards, processIo *processio.ProcessIo) *Camunda {
+	return &Camunda{config: config, vid: vid, shards: shards, processIo: processIo}
 }
 
 func (this *Camunda) StartProcess(processDefinitionId string, userId string, parameter map[string]interface{}) (err error) {
@@ -217,6 +219,13 @@ func (this *Camunda) CheckHistoryAccess(id string, userId string) (definitionId 
 }
 
 func (this *Camunda) RemoveProcessInstance(id string, userId string) (err error) {
+	if this.processIo != nil {
+		err = this.processIo.DeleteProcessInstance(id)
+		if err != nil {
+			return err
+		}
+	}
+
 	////DELETE "/engine-rest/process-instance/" + processInstanceId
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
@@ -231,7 +240,7 @@ func (this *Camunda) RemoveProcessInstance(id string, userId string) (err error)
 		return
 	}
 	defer resp.Body.Close()
-	msg, _ := ioutil.ReadAll(resp.Body)
+	msg, _ := io.ReadAll(resp.Body)
 	if !(resp.StatusCode == 200 || resp.StatusCode == 204) {
 		u, _ := url.Parse(shard)
 		u.User = &url.Userinfo{}
@@ -241,6 +250,13 @@ func (this *Camunda) RemoveProcessInstance(id string, userId string) (err error)
 }
 
 func (this *Camunda) RemoveProcessInstanceHistory(id string, userId string) (err error) {
+	if this.processIo != nil {
+		err = this.processIo.DeleteProcessInstance(id)
+		if err != nil {
+			return err
+		}
+	}
+
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return err

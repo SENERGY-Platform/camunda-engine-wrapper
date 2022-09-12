@@ -50,6 +50,12 @@ type Config struct {
 	HttpServerTimeout     string `json:"http_server_timeout"`
 	HttpServerReadTimeout string `json:"http_server_read_timeout"`
 	NotificationUrl       string `json:"notification_url"`
+
+	ProcessIoUrl string `json:"process_io_url"`
+
+	AuthEndpoint     string `json:"auth_endpoint"`
+	AuthClientId     string `json:"auth_client_id" config:"secret"`
+	AuthClientSecret string `json:"auth_client_secret" config:"secret"`
 }
 
 func LoadConfig(location string) (config Config, err error) {

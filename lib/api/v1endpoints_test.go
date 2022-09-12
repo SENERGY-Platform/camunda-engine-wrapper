@@ -85,9 +85,9 @@ func TestDeploymentStart(t *testing.T) {
 		return
 	}
 
-	c := camunda.New(config, v, s)
+	c := camunda.New(config, v, s, nil)
 
-	e, err := events.New(config, cqrs, v, c)
+	e, err := events.New(config, cqrs, v, c, nil)
 	if err != nil {
 		t.Error(err)
 		return
@@ -166,9 +166,9 @@ func TestDeploymentStartWithSource(t *testing.T) {
 		return
 	}
 
-	c := camunda.New(config, v, s)
+	c := camunda.New(config, v, s, nil)
 
-	e, err := events.New(config, cqrs, v, c)
+	e, err := events.New(config, cqrs, v, c, nil)
 	if err != nil {
 		t.Error(err)
 		return

@@ -7,6 +7,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/processio"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
@@ -30,7 +31,9 @@ func Wrapper(parentCtx context.Context, config configuration.Config) (err error)
 		return err
 	}
 
-	c := camunda.New(config, v, s)
+	processIo := processio.NewOrNil(config)
+
+	c := camunda.New(config, v, s, processIo)
 
 	cqrs, err := kafka.Init(config.KafkaUrl, config.KafkaGroup, config.Debug)
 	if err != nil {
@@ -42,7 +45,7 @@ func Wrapper(parentCtx context.Context, config configuration.Config) (err error)
 		cqrs.Close()
 	}()
 
-	e, err := events.New(config, cqrs, v, c)
+	e, err := events.New(config, cqrs, v, c, processIo)
 	if err != nil {
 		return err
 	}

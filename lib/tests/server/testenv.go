@@ -50,9 +50,9 @@ func CreateTestEnv(ctx context.Context, wg *sync.WaitGroup, initConf configurati
 		return config, wrapperUrl, shard, e, err
 	}
 
-	c := camunda.New(config, v, s)
+	c := camunda.New(config, v, s, nil)
 
-	e, err = events.New(config, mocks.Kafka(), v, c)
+	e, err = events.New(config, mocks.Kafka(), v, c, nil)
 	if err != nil {
 		return config, wrapperUrl, shard, e, err
 	}

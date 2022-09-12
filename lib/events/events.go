@@ -10,6 +10,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/notification"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/processio"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"log"
 	"runtime/debug"
@@ -25,9 +26,10 @@ type Events struct {
 	vid               *vid.Vid
 	camunda           *camunda.Camunda
 	cqrs              kafka.Interface
+	processIo         *processio.ProcessIo
 }
 
-func New(config configuration.Config, cqrs kafka.Interface, vid *vid.Vid, camunda *camunda.Camunda) (events *Events, err error) {
+func New(config configuration.Config, cqrs kafka.Interface, vid *vid.Vid, camunda *camunda.Camunda, processIo *processio.ProcessIo) (events *Events, err error) {
 	events = &Events{
 		notificationUrl:   config.NotificationUrl,
 		kafkaBootstrapUrl: config.KafkaUrl,
@@ -38,6 +40,7 @@ func New(config configuration.Config, cqrs kafka.Interface, vid *vid.Vid, camund
 		vid:               vid,
 		camunda:           camunda,
 		cqrs:              cqrs,
+		processIo:         processIo,
 	}
 	err = events.init()
 	return
@@ -117,6 +120,11 @@ func (this *Events) HandleDeploymentDelete(vid string, userId string) error {
 	}
 
 	err = this.deleteIncidentsByDeploymentId(id, userId)
+	if err != nil {
+		return err
+	}
+
+	err = this.deleteIoVariablesByDeploymentId(id, userId)
 	if err != nil {
 		return err
 	}
@@ -229,6 +237,23 @@ func (this *Events) PublishIncidentsDeleteByProcessDefinitionEvent(definitionId 
 		return err
 	}
 	return this.cqrs.Publish(this.incidentsTopic, definitionId, payload)
+}
+
+func (this *Events) deleteIoVariablesByDeploymentId(id string, userId string) (err error) {
+	if this.processIo != nil {
+		definitions, err := this.camunda.GetRawDefinitionsByDeployment(id, userId)
+		if err != nil {
+			return err
+		}
+		for _, definition := range definitions {
+			err = this.processIo.DeleteProcessDefinition(definition.Id)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	return nil
 }
 
 func (this *Events) PublishIncidentDeleteByProcessInstanceEvent(instanceId string, definitionId string) error {
