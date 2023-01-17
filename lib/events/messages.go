@@ -36,3 +36,9 @@ type KafkaIncidentsCommand struct {
 	ProcessDefinitionId string `json:"process_definition_id,omitempty"`
 	ProcessInstanceId   string `json:"process_instance_id,omitempty"`
 }
+
+type DoneNotification struct {
+	Command string `json:"command"`
+	Id      string `json:"id"`
+	Handler string `json:"handler"`
+}

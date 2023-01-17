@@ -34,6 +34,10 @@ func Kafka() *KafkaMock {
 	}
 }
 
+func (this *KafkaMock) EnsureTopic(bootstrapUrl string, topic string, config map[string]string) (err error) {
+	return nil
+}
+
 func (this *KafkaMock) Consume(topic string, listener func(msg []byte) error) (err error) {
 	this.Subscribe(topic, func(msg string) error {
 		return listener([]byte(msg))

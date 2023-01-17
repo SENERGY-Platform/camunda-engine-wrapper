@@ -17,30 +17,36 @@ import (
 )
 
 type Events struct {
-	kafkaBootstrapUrl string
-	kafkaGroupId      string
-	deploymentTopic   string
-	incidentsTopic    string
-	notificationUrl   string
-	debug             bool
-	vid               *vid.Vid
-	camunda           *camunda.Camunda
-	cqrs              kafka.Interface
-	processIo         *processio.ProcessIo
+	processDeploymentDoneTopic string
+	kafkaBootstrapUrl          string
+	kafkaGroupId               string
+	deploymentTopic            string
+	incidentsTopic             string
+	notificationUrl            string
+	debug                      bool
+	vid                        *vid.Vid
+	camunda                    *camunda.Camunda
+	cqrs                       kafka.Interface
+	processIo                  *processio.ProcessIo
 }
 
 func New(config configuration.Config, cqrs kafka.Interface, vid *vid.Vid, camunda *camunda.Camunda, processIo *processio.ProcessIo) (events *Events, err error) {
+	err = cqrs.EnsureTopic(config.KafkaUrl, config.ProcessDeploymentDoneTopic, map[string]string{"retention.ms": "604800000"})
+	if err != nil {
+		return events, err
+	}
 	events = &Events{
-		notificationUrl:   config.NotificationUrl,
-		kafkaBootstrapUrl: config.KafkaUrl,
-		kafkaGroupId:      config.KafkaGroup,
-		deploymentTopic:   config.DeploymentTopic,
-		incidentsTopic:    config.IncidentTopic,
-		debug:             config.Debug,
-		vid:               vid,
-		camunda:           camunda,
-		cqrs:              cqrs,
-		processIo:         processIo,
+		processDeploymentDoneTopic: config.ProcessDeploymentDoneTopic,
+		notificationUrl:            config.NotificationUrl,
+		kafkaBootstrapUrl:          config.KafkaUrl,
+		kafkaGroupId:               config.KafkaGroup,
+		deploymentTopic:            config.DeploymentTopic,
+		incidentsTopic:             config.IncidentTopic,
+		debug:                      config.Debug,
+		vid:                        vid,
+		camunda:                    camunda,
+		cqrs:                       cqrs,
+		processIo:                  processIo,
 	}
 	err = events.init()
 	return
@@ -181,6 +187,7 @@ func (this *Events) HandleDeploymentCreate(owner string, id string, name string,
 		}
 		return err
 	}
+	this.notifyProcessDeploymentDone(id)
 	return err
 }
 
@@ -267,4 +274,25 @@ func (this *Events) PublishIncidentDeleteByProcessInstanceEvent(instanceId strin
 		return err
 	}
 	return this.cqrs.Publish(this.incidentsTopic, definitionId, payload)
+}
+
+func (this *Events) notifyProcessDeploymentDone(id string) {
+	if this.processDeploymentDoneTopic != "" {
+		msg, err := json.Marshal(DoneNotification{
+			Command: "PUT",
+			Id:      id,
+			Handler: "github.com/SENERGY-Platform/camunda-engine-wrapper",
+		})
+		if err != nil {
+			log.Println("ERROR:", err)
+			debug.PrintStack()
+			return
+		}
+		err = this.cqrs.Publish(this.processDeploymentDoneTopic, id, msg)
+		if err != nil {
+			log.Println("ERROR:", err)
+			debug.PrintStack()
+			return
+		}
+	}
 }

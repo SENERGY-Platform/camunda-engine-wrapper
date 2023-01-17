@@ -40,6 +40,10 @@ func (this *Kafka) Close() {
 	}
 }
 
+func (this *Kafka) EnsureTopic(bootstrapUrl string, topic string, config map[string]string) (err error) {
+	return topicconfig.Ensure(bootstrapUrl, topic, config)
+}
+
 func GetBroker(bootstrapUrl string) (brokers []string, err error) {
 	return getBroker(bootstrapUrl)
 }

@@ -56,6 +56,8 @@ type Config struct {
 	AuthEndpoint     string `json:"auth_endpoint"`
 	AuthClientId     string `json:"auth_client_id" config:"secret"`
 	AuthClientSecret string `json:"auth_client_secret" config:"secret"`
+
+	ProcessDeploymentDoneTopic string `json:"process_deployment_done_topic"`
 }
 
 func LoadConfig(location string) (config Config, err error) {

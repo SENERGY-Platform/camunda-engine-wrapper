@@ -16,5 +16,7 @@
     "auth_client_id": "",
     "auth_client_secret": "",
 
-    "process_io_url": ""
+    "process_io_url": "",
+
+    "process_deployment_done_topic": "process-deployment-done"
 }

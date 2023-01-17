@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/segmentio/kafka-go"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"runtime/debug"
@@ -65,7 +65,7 @@ func getProducer(broker []string, topic string, debug bool) (writer *kafka.Write
 	if debug {
 		logger = log.New(os.Stdout, "[KAFKA-PRODUCER] ", 0)
 	} else {
-		logger = log.New(ioutil.Discard, "", 0)
+		logger = log.New(io.Discard, "", 0)
 	}
 	writer = &kafka.Writer{
 		Addr:        kafka.TCP(broker...),
