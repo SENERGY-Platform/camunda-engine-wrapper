@@ -537,12 +537,29 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		response, err := c.SendEventTrigger(token.GetUserId(), body)
+		msg := map[string]interface{}{}
+		err = json.Unmarshal(body, &msg)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		userId := token.GetUserId()
+		if token.IsAdmin() {
+			temp, ok := msg["tenantId"]
+			if ok {
+				userId, ok = temp.(string)
+				if !ok {
+					http.Error(writer, "expect string in tenantId", http.StatusBadRequest)
+					return
+				}
+			}
+		}
+		resp, err := c.SendEventTrigger(userId, msg)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprint(writer, response)
+		fmt.Fprint(writer, resp)
 		return
 	})
 }

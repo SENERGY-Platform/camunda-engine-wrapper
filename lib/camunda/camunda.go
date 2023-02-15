@@ -709,24 +709,19 @@ func (this *Camunda) GetProcessInstanceHistoryListWithTotal(userId string, searc
 	return
 }
 
-func (this *Camunda) SendEventTrigger(userId string, request []byte) (response []byte, err error) {
+func (this *Camunda) SendEventTrigger(userId string, msg map[string]interface{}) (response []byte, err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return response, err
 	}
 	//ensure userId in message
-	msg := map[string]interface{}{}
-	err = json.Unmarshal(request, &msg)
-	if err != nil {
-		return response, err
-	}
 	msg["tenantId"] = userId
 	requestWIthUserId, err := json.Marshal(msg)
 	if err != nil {
 		return response, err
 	}
 
-	log.Println("trigger event:", string(request))
+	log.Printf("trigger event: %#v\n", msg)
 	resp, err := http.Post(shard+"/engine-rest/message", "application/json", bytes.NewBuffer(requestWIthUserId))
 	if err != nil {
 		return response, err

@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-//deprecated
+// deprecated
 func Helper_getPgDependency(dbName string) (closer func(), hostPort string, ipAddress string, pgStr string, err error) {
 	pool, err := dockertestv3.NewPool("")
 	if err != nil {
@@ -43,14 +43,14 @@ func Helper_getPgDependency(dbName string) (closer func(), hostPort string, ipAd
 	return func() { pg.Close() }, hostPort, pg.Container.NetworkSettings.IPAddress, pgStr, err
 }
 
-//deprecated
+// deprecated
 func Helper_getCamundaDependency(pgIp string, pgPort string) (closer func(), hostPort string, ipAddress string, err error) {
 	pool, err := dockertest.NewPool("")
 	if err != nil {
 		return func() {}, "", "", err
 	}
 	log.Println("start process engine")
-	camunda, err := pool.Run("fgseitsrancher.wifa.intern.uni-leipzig.de:5000/process-engine", "dev", []string{
+	camunda, err := pool.Run("ghcr.io/senergy-platform/process-engine", "dev", []string{
 		"DB_PASSWORD=pw",
 		"DB_URL=jdbc:postgresql://" + pgIp + ":" + pgPort + "/camunda",
 		"DB_PORT=" + pgPort,
