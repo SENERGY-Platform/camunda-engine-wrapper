@@ -2,20 +2,21 @@ package helper
 
 import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/messages"
 	"net/http"
 )
 
 type Events interface {
-	HandleDeploymentCreate(owner string, id string, name string, xml string, svg string, source string) (err error)
+	HandleDeploymentCreate(owner string, id string, name string, xml string, svg string, source string, handling *messages.IncidentHandling) (err error)
 	HandleDeploymentDelete(vid string, userId string) error
 }
 
 func PutProcess(event Events, vid string, name string, owner string) error {
-	return event.HandleDeploymentCreate(owner, vid, name, BpmnExample, SvgExample, "")
+	return event.HandleDeploymentCreate(owner, vid, name, BpmnExample, SvgExample, "", &messages.IncidentHandling{})
 }
 
 func PutProcessWithSource(event Events, vid string, name string, owner string, source string) error {
-	return event.HandleDeploymentCreate(owner, vid, name, BpmnExample, SvgExample, source)
+	return event.HandleDeploymentCreate(owner, vid, name, BpmnExample, SvgExample, source, &messages.IncidentHandling{})
 }
 
 func DeleteProcess(event Events, vid string, userId string) error {

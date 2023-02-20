@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/messages"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
@@ -185,12 +186,12 @@ type TestDeploymentCommand struct {
 func publishDeployment(events *Events, id string, name string, xml string, svg string) func(t *testing.T) {
 	return func(t *testing.T) {
 		msg, err := json.Marshal(TestDeploymentCommand{
-			Version: CurrentVersion,
+			Version: messages.CurrentVersion,
 			Command: "PUT",
 			Id:      id,
 			Owner:   "test",
 			Deployment: map[string]interface{}{
-				"version": CurrentVersion,
+				"version": messages.CurrentVersion,
 				"id":      id,
 				"name":    name,
 				"diagram": map[string]interface{}{

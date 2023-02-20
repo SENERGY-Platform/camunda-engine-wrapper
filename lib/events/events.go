@@ -9,6 +9,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/messages"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/notification"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/processio"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
@@ -54,14 +55,14 @@ func New(config configuration.Config, cqrs kafka.Interface, vid *vid.Vid, camund
 
 func (this *Events) init() (err error) {
 	err = this.cqrs.Consume(this.deploymentTopic, func(delivery []byte) error {
-		version := VersionWrapper{}
+		version := messages.VersionWrapper{}
 		err := json.Unmarshal(delivery, &version)
 		if err != nil {
 			log.Println("ERROR: consumed invalid message --> ignore", err)
 			debug.PrintStack()
 			return nil
 		}
-		if version.Version != CurrentVersion {
+		if version.Version != messages.CurrentVersion {
 			log.Println("ERROR: consumed unexpected deployment version", version.Version)
 			if version.Command == "DELETE" {
 				log.Println("handle legacy delete")
@@ -70,7 +71,7 @@ func (this *Events) init() (err error) {
 			return nil
 		}
 
-		command := DeploymentCommand{}
+		command := messages.DeploymentCommand{}
 		err = json.Unmarshal(delivery, &command)
 		if err != nil {
 			log.Println("ERROR: unable to parse cqrs event as json \n", err, "\n --> ignore event \n", string(delivery))
@@ -79,11 +80,11 @@ func (this *Events) init() (err error) {
 		log.Println("cqrs receive ", string(delivery))
 		switch command.Command {
 		case "PUT":
-			owner, id, name, xml, svg, source, err := parsePutCommand(command)
+			owner, id, name, xml, svg, source, incidentHandling, err := parsePutCommand(command)
 			if err != nil {
 				return err
 			}
-			return this.HandleDeploymentCreate(owner, id, name, xml, svg, source)
+			return this.HandleDeploymentCreate(owner, id, name, xml, svg, source, incidentHandling)
 		case "POST":
 			log.Println("WARNING: deprecated event type POST")
 			return nil
@@ -99,7 +100,7 @@ func (this *Events) init() (err error) {
 	return err
 }
 
-func parsePutCommand(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, source string, err error) {
+func parsePutCommand(command messages.DeploymentCommand) (owner string, id string, name string, xml string, svg string, source string, inicdentHandler *messages.IncidentHandling, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("recovered error %v", r)
@@ -112,8 +113,8 @@ func parsePutCommand(command DeploymentCommand) (owner string, id string, name s
 	return
 }
 
-func parseCommand(command DeploymentCommand) (owner string, id string, name string, xml string, svg string, source string, err error) {
-	return command.Owner, command.Id, command.Deployment.Name, command.Deployment.Diagram.XmlDeployed, command.Deployment.Diagram.Svg, command.Source, err
+func parseCommand(command messages.DeploymentCommand) (owner string, id string, name string, xml string, svg string, source string, inicdentHandler *messages.IncidentHandling, err error) {
+	return command.Owner, command.Id, command.Deployment.Name, command.Deployment.Diagram.XmlDeployed, command.Deployment.Diagram.Svg, command.Source, command.Deployment.IncidentHandling, err
 }
 
 func (this *Events) HandleDeploymentDelete(vid string, userId string) error {
@@ -152,7 +153,7 @@ func (this *Events) HandleDeploymentDelete(vid string, userId string) error {
 	return err
 }
 
-func (this *Events) HandleDeploymentCreate(owner string, id string, name string, xml string, svg string, source string) (err error) {
+func (this *Events) HandleDeploymentCreate(owner string, id string, name string, xml string, svg string, source string, incidentHandling *messages.IncidentHandling) (err error) {
 	err = this.cleanupExistingDeployment(id, owner)
 	if err != nil {
 		return err
@@ -175,6 +176,35 @@ func (this *Events) HandleDeploymentCreate(owner string, id string, name string,
 		log.Println("WARNING: unable to deploy process to camunda ", err)
 		return err
 	}
+
+	if incidentHandling != nil {
+		definitions, err := this.camunda.GetRawDefinitionsByDeployment(deploymentId, owner)
+		if err != nil {
+			removeErr := this.camunda.RemoveProcess(deploymentId, owner)
+			if removeErr != nil {
+				log.Println("ERROR: unable to remove deployed process", deploymentId, removeErr, err)
+			}
+			return err
+		}
+		if len(definitions) == 0 {
+			log.Println("WARNING: no definitions for deployment found --> no incident handling deployed")
+		}
+		for _, definition := range definitions {
+			err = this.PublishIncidentHandling(messages.OnIncident{
+				ProcessDefinitionId: definition.Id,
+				Restart:             incidentHandling.Restart,
+				Notify:              incidentHandling.Notify,
+			})
+			if err != nil {
+				removeErr := this.camunda.RemoveProcess(deploymentId, owner)
+				if removeErr != nil {
+					log.Println("ERROR: unable to remove deployed process", deploymentId, removeErr, err)
+				}
+				return err
+			}
+		}
+	}
+
 	if this.debug {
 		log.Println("save vid relation", id, deploymentId)
 	}
@@ -183,7 +213,7 @@ func (this *Events) HandleDeploymentCreate(owner string, id string, name string,
 		log.Println("WARNING: unable to publish deployment saga \n", err, "\nremove deployed process")
 		removeErr := this.camunda.RemoveProcess(deploymentId, owner)
 		if removeErr != nil {
-			log.Println("ERROR: unable to remove deployed process", deploymentId, err)
+			log.Println("ERROR: unable to remove deployed process", deploymentId, removeErr, err)
 		}
 		return err
 	}
@@ -234,7 +264,7 @@ func (this *Events) deleteIncidentsByDeploymentId(id string, userId string) (err
 }
 
 func (this *Events) PublishIncidentsDeleteByProcessDefinitionEvent(definitionId string) error {
-	command := KafkaIncidentsCommand{
+	command := messages.KafkaIncidentsCommand{
 		Command:             "DELETE",
 		ProcessDefinitionId: definitionId,
 		MsgVersion:          3,
@@ -264,7 +294,7 @@ func (this *Events) deleteIoVariablesByDeploymentId(id string, userId string) (e
 }
 
 func (this *Events) PublishIncidentDeleteByProcessInstanceEvent(instanceId string, definitionId string) error {
-	command := KafkaIncidentsCommand{
+	command := messages.KafkaIncidentsCommand{
 		Command:           "DELETE",
 		ProcessInstanceId: instanceId,
 		MsgVersion:        3,
@@ -276,9 +306,26 @@ func (this *Events) PublishIncidentDeleteByProcessInstanceEvent(instanceId strin
 	return this.cqrs.Publish(this.incidentsTopic, definitionId, payload)
 }
 
+func (this *Events) PublishIncidentHandling(handing messages.OnIncident) error {
+	if handing.ProcessDefinitionId == "" {
+		return errors.New("missing ProcessDefinitionId in incident handler")
+	}
+	command := messages.KafkaIncidentsCommand{
+		Command:             "HANDLER",
+		ProcessDefinitionId: handing.ProcessDefinitionId,
+		MsgVersion:          3,
+		Handler:             &handing,
+	}
+	payload, err := json.Marshal(command)
+	if err != nil {
+		return err
+	}
+	return this.cqrs.Publish(this.incidentsTopic, handing.ProcessDefinitionId, payload)
+}
+
 func (this *Events) notifyProcessDeploymentDone(id string) {
 	if this.processDeploymentDoneTopic != "" {
-		msg, err := json.Marshal(DoneNotification{
+		msg, err := json.Marshal(messages.DoneNotification{
 			Command: "PUT",
 			Id:      id,
 			Handler: "github.com/SENERGY-Platform/camunda-engine-wrapper",

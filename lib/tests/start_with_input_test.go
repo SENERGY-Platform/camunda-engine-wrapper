@@ -9,6 +9,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/messages"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/server"
 	"io"
@@ -426,7 +427,7 @@ func checkProcessParameterDeclaration(wrapper string, id string, expected map[st
 
 func testDeployProcessWithInput(e *events.Events, id string, bpmn string) func(t *testing.T) {
 	return func(t *testing.T) {
-		err := e.HandleDeploymentCreate(helper.JwtPayload.GetUserId(), id, "processWithInput", bpmn, helper.SvgExample, "")
+		err := e.HandleDeploymentCreate(helper.JwtPayload.GetUserId(), id, "processWithInput", bpmn, helper.SvgExample, "", &messages.IncidentHandling{})
 		if err != nil {
 			t.Error(err)
 			return
@@ -453,7 +454,7 @@ func fetchTestTask(shard string) (tasks []CamundaExternalTask, err error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		temp, err := ioutil.ReadAll(resp.Body)
+		temp, err := io.ReadAll(resp.Body)
 		err = errors.New(fmt.Sprintln(endpoint, resp.Status, resp.StatusCode, string(temp), err))
 		return tasks, err
 	}
