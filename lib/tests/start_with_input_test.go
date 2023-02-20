@@ -13,7 +13,6 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/server"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -385,7 +384,7 @@ func testStartProcessWithRawStringInput(wrapper string, id string, inputs map[st
 			return
 		}
 		defer resp.Body.Close()
-		temp, _ := ioutil.ReadAll(resp.Body)
+		temp, _ := io.ReadAll(resp.Body)
 		if resp.StatusCode != 200 {
 			t.Error(resp.StatusCode, string(temp))
 			return
@@ -408,7 +407,7 @@ func checkProcessParameterDeclaration(wrapper string, id string, expected map[st
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
-			temp, _ := ioutil.ReadAll(resp.Body)
+			temp, _ := io.ReadAll(resp.Body)
 			t.Error(resp.StatusCode, string(temp))
 			return
 		}
@@ -419,7 +418,7 @@ func checkProcessParameterDeclaration(wrapper string, id string, expected map[st
 			return
 		}
 		if !reflect.DeepEqual(result, expected) {
-			t.Error(result, expected)
+			t.Errorf("result = %#v\nexpected = %#v", result, expected)
 			return
 		}
 	}

@@ -98,29 +98,6 @@ func createStartMessage(parameter map[string]interface{}) map[string]interface{}
 	return map[string]interface{}{"variables": variables}
 }
 
-func (this *Camunda) GetProcessParameters(processDefinitionId string, userId string) (result map[string]model.Variable, err error) {
-	shard, err := this.shards.EnsureShardForUser(userId)
-	if err != nil {
-		return result, err
-	}
-	req, err := http.NewRequest("GET", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/form-variables", nil)
-	if err != nil {
-		return result, err
-	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return result, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		temp, _ := ioutil.ReadAll(resp.Body)
-		err = errors.New(resp.Status + " " + string(temp))
-		return
-	}
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	return
-}
-
 func (this *Camunda) StartProcessGetId(processDefinitionId string, userId string, parameter map[string]interface{}) (result model.ProcessInstance, err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
@@ -660,7 +637,7 @@ func (this *Camunda) GetExtendedDeployment(deployment model.Deployment, userId s
 	if err != nil {
 		return result, err
 	}
-	svg, err := ioutil.ReadAll(svgResp.Body)
+	svg, err := io.ReadAll(svgResp.Body)
 	if err != nil {
 		return result, err
 	}
