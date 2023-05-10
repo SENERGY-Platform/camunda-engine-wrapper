@@ -17,6 +17,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
@@ -30,30 +31,33 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/mocks"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"net/http/httptest"
+	"sync"
 	"testing"
 )
 
 var jwt, _ = auth.Parse(`Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsWVh1Y1NFMHVQcFpDUHhZX3Q1WEVnMlRsWUoyTVl0TWhwN1hLNThsbmJvIn0.eyJqdGkiOiIwOGM0N2E4OC0yYzc5LTQyMGYtODEwNC02NWJkOWViYmU0MWUiLCJleHAiOjE1NDY1MDcyMzMsIm5iZiI6MCwiaWF0IjoxNTQ2NTA3MTczLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiZnJvbnRlbmQiLCJzdWIiOiIzN2MyM2QzMC00YjQ4LTQyMDktOWJkNy0wMzcxZjYyYzJjZmYiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJmcm9udGVuZCIsIm5vbmNlIjoiOTJjNDNjOTUtNzViMC00NmNmLTgwYWUtNDVkZDk3M2I0YjdmIiwiYXV0aF90aW1lIjoxNTQ2NTA3MDA5LCJzZXNzaW9uX3N0YXRlIjoiNWRmOTI4ZjQtMDhmMC00ZWI5LTliNjAtM2EwYWUyMmVmYzczIiwiYWNyIjoiMCIsImFsbG93ZWQtb3JpZ2lucyI6WyIqIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJjcmVhdGUtcmVhbG0iLCJhZG1pbiIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsibWFzdGVyLXJlYWxtIjp7InJvbGVzIjpbInZpZXctcmVhbG0iLCJ2aWV3LWlkZW50aXR5LXByb3ZpZGVycyIsIm1hbmFnZS1pZGVudGl0eS1wcm92aWRlcnMiLCJpbXBlcnNvbmF0aW9uIiwiY3JlYXRlLWNsaWVudCIsIm1hbmFnZS11c2VycyIsInF1ZXJ5LXJlYWxtcyIsInZpZXctYXV0aG9yaXphdGlvbiIsInF1ZXJ5LWNsaWVudHMiLCJxdWVyeS11c2VycyIsIm1hbmFnZS1ldmVudHMiLCJtYW5hZ2UtcmVhbG0iLCJ2aWV3LWV2ZW50cyIsInZpZXctdXNlcnMiLCJ2aWV3LWNsaWVudHMiLCJtYW5hZ2UtYXV0aG9yaXphdGlvbiIsIm1hbmFnZS1jbGllbnRzIiwicXVlcnktZ3JvdXBzIl19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJyb2xlcyI6WyJhZG1pbiIsImNyZWF0ZS1yZWFsbSIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iXSwicHJlZmVycmVkX3VzZXJuYW1lIjoic2VwbCJ9.cSWTHIOHkugQcVNgatbXjvDIP_Ir_QKuUuozbyweh1dJEFsZToTjJ4-5w947bLETmqiNElqXlIV8dT4c9DnPoiXAzsdSotkzKFEYEqRhjYm2obc7Wine1rVwFC4b0Tc5voIzCPNVGFlJDFYWqsPuQYNvAuCIs_A4W86AXWAuxzTyBk5gcRVBLLkFX6GErS2a_4jKd0m26Wd3qoO_j5cl2z2r0AtJ5py4PESiTRLDxEiMoahVQ4coYtX2esWoCRpkSa-beqlD8ffuKaHt95Z8AVcGjBZeSuZpVq6qY6bPBasqVdNkq-CvSnXqWnzNhvq2lUPt58Wp7jeMIJQG4015Zg`)
 
 func TestDeploymentStart(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	cqrs := mocks.Kafka()
 
-	pgCloser, _, _, pgStr, err := docker.Helper_getPgDependency("vid_relations")
-	defer pgCloser()
+	pgStr, _, _, err := docker.PostgresWithNetwork(ctx, wg, "vid_relations")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	camundaPgCloser, _, camundaPgIp, _, err := docker.Helper_getPgDependency("camunda")
-	defer camundaPgCloser()
+	_, camundaPgIp, _, err := docker.PostgresWithNetwork(ctx, wg, "camunda")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	camundaCloser, camundaPort, _, err := docker.Helper_getCamundaDependency(camundaPgIp, "5432")
-	defer camundaCloser()
+	camundaUrl, err := docker.Camunda(ctx, wg, camundaPgIp, "5432")
 	if err != nil {
 		t.Error(err)
 		return
@@ -73,7 +77,7 @@ func TestDeploymentStart(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = s.EnsureShard("http://localhost:" + camundaPort)
+	err = s.EnsureShard(camundaUrl)
 	if err != nil {
 		t.Error(err)
 		return
@@ -117,24 +121,26 @@ func TestDeploymentStart(t *testing.T) {
 }
 
 func TestDeploymentStartWithSource(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	cqrs := mocks.Kafka()
 
-	pgCloser, _, _, pgStr, err := docker.Helper_getPgDependency("vid_relations")
-	defer pgCloser()
+	pgStr, _, _, err := docker.PostgresWithNetwork(ctx, wg, "vid_relations")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	camundaPgCloser, _, camundaPgIp, _, err := docker.Helper_getPgDependency("camunda")
-	defer camundaPgCloser()
+	_, camundaPgIp, _, err := docker.PostgresWithNetwork(ctx, wg, "camunda")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	camundaCloser, camundaPort, _, err := docker.Helper_getCamundaDependency(camundaPgIp, "5432")
-	defer camundaCloser()
+	camundaUrl, err := docker.Camunda(ctx, wg, camundaPgIp, "5432")
 	if err != nil {
 		t.Error(err)
 		return
@@ -154,7 +160,7 @@ func TestDeploymentStartWithSource(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = s.EnsureShard("http://localhost:" + camundaPort)
+	err = s.EnsureShard(camundaUrl)
 	if err != nil {
 		t.Error(err)
 		return

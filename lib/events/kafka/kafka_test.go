@@ -1,7 +1,7 @@
 package kafka
 
 import (
-	"github.com/ory/dockertest/v3"
+	"context"
 	"reflect"
 	"sync"
 	"testing"
@@ -9,21 +9,19 @@ import (
 )
 
 func TestKafka(t *testing.T) {
-	pool, err := dockertest.NewPool("")
-	if err != nil {
-		t.Fatal("Could not connect to docker:", err)
-	}
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	closeZk, _, zkIp, err := ZookeeperContainer(pool)
-	defer closeZk()
+	_, zkIp, err := ZookeeperContainer(ctx, wg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	zookeeperUrl := zkIp + ":2181"
 
 	//kafka
-	kafkaUrl, closeKafka, err := KafkaContainer(pool, zookeeperUrl)
-	defer closeKafka()
+	kafkaUrl, err := KafkaContainer(ctx, wg, zookeeperUrl)
 	if err != nil {
 		t.Fatal(err)
 	}

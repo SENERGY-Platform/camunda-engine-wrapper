@@ -17,6 +17,7 @@
 package tests
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/api"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
@@ -31,28 +32,31 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"log"
 	"net/http/httptest"
+	"sync"
 	"testing"
 )
 
 func TestVid(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	cqrs := mocks.Kafka()
 
-	pgCloser, _, _, pgStr, err := docker.Helper_getPgDependency("vid_relations")
-	defer pgCloser()
+	pgStr, _, _, err := docker.PostgresWithNetwork(ctx, wg, "vid_relations")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	camundaPgCloser, _, camundaPgIp, _, err := docker.Helper_getPgDependency("camunda")
-	defer camundaPgCloser()
+	_, camundaPgIp, _, err := docker.PostgresWithNetwork(ctx, wg, "camunda")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	camundaCloser, camundaPort, _, err := docker.Helper_getCamundaDependency(camundaPgIp, "5432")
-	defer camundaCloser()
+	camundaUrl, err := docker.Camunda(ctx, wg, camundaPgIp, "5432")
 	if err != nil {
 		t.Error(err)
 		return
@@ -72,7 +76,7 @@ func TestVid(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = s.EnsureShard("http://localhost:" + camundaPort)
+	err = s.EnsureShard(camundaUrl)
 	if err != nil {
 		t.Error(err)
 		return
