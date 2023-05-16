@@ -21,8 +21,8 @@ import (
 	"errors"
 	"github.com/segmentio/kafka-go"
 	"io"
-	"io/ioutil"
 	"log"
+	"os"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -31,7 +31,7 @@ import (
 func (this *Kafka) Consume(topic string, listener func(delivery []byte) error) (err error) {
 	this.mux.Lock()
 	defer this.mux.Unlock()
-	consumer, err := NewConsumer(this.kafkaBootstrapUrl, this.group, topic, this.debug, func(topic string, msg []byte) error {
+	consumer, err := NewConsumer(this.broker, this.group, topic, this.debug, func(topic string, msg []byte) error {
 		return listener(msg)
 	}, func(err error, consumer *Consumer) {
 		debug.PrintStack()
@@ -44,23 +44,23 @@ func (this *Kafka) Consume(topic string, listener func(delivery []byte) error) (
 	return nil
 }
 
-func NewConsumer(zk string, groupid string, topic string, debug bool, listener func(topic string, msg []byte) error, errorhandler func(err error, consumer *Consumer)) (consumer *Consumer, err error) {
-	consumer = &Consumer{groupId: groupid, kafkaBootstrapUrl: zk, topic: topic, listener: listener, errorhandler: errorhandler, debug: debug}
+func NewConsumer(broker string, groupid string, topic string, debug bool, listener func(topic string, msg []byte) error, errorhandler func(err error, consumer *Consumer)) (consumer *Consumer, err error) {
+	consumer = &Consumer{groupId: groupid, broker: broker, topic: topic, listener: listener, errorhandler: errorhandler, debug: debug}
 	err = consumer.start()
 	return
 }
 
 type Consumer struct {
-	count             int
-	kafkaBootstrapUrl string
-	groupId           string
-	topic             string
-	ctx               context.Context
-	cancel            context.CancelFunc
-	listener          func(topic string, msg []byte) error
-	errorhandler      func(err error, consumer *Consumer)
-	mux               sync.Mutex
-	debug             bool
+	count        int
+	broker       string
+	groupId      string
+	topic        string
+	ctx          context.Context
+	cancel       context.CancelFunc
+	listener     func(topic string, msg []byte) error
+	errorhandler func(err error, consumer *Consumer)
+	mux          sync.Mutex
+	debug        bool
 }
 
 func (this *Consumer) Stop() {
@@ -70,24 +70,21 @@ func (this *Consumer) Stop() {
 func (this *Consumer) start() error {
 	log.Println("DEBUG: consume topic: \"" + this.topic + "\"")
 	this.ctx, this.cancel = context.WithCancel(context.Background())
-	broker, err := GetBroker(this.kafkaBootstrapUrl)
-	if err != nil {
-		log.Println("ERROR: unable to get broker list", err)
-		return err
-	}
-	err = InitTopic(this.kafkaBootstrapUrl, this.topic)
+	err := InitTopic(this.broker, this.topic)
 	if err != nil {
 		log.Println("ERROR: unable to create topic", err)
 		return err
 	}
 	r := kafka.NewReader(kafka.ReaderConfig{
-		CommitInterval: 0, //synchronous commits
-		Brokers:        broker,
-		GroupID:        this.groupId,
-		Topic:          this.topic,
-		MaxWait:        1 * time.Second,
-		Logger:         log.New(ioutil.Discard, "", 0),
-		ErrorLogger:    log.New(ioutil.Discard, "", 0),
+		CommitInterval:         0, //synchronous commits
+		Brokers:                []string{this.broker},
+		GroupID:                this.groupId,
+		Topic:                  this.topic,
+		MaxWait:                1 * time.Second,
+		Logger:                 log.New(io.Discard, "", 0),
+		ErrorLogger:            log.New(os.Stdout, "[KAFKA-ERR] ", log.LstdFlags),
+		WatchPartitionChanges:  true,
+		PartitionWatchInterval: time.Minute,
 	})
 	go func() {
 		defer r.Close()

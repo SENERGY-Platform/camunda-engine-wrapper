@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"context"
-	"errors"
 	"github.com/segmentio/kafka-go"
 	"io"
 	"log"
@@ -17,7 +16,7 @@ func (this *Kafka) Publish(topic string, key string, payload []byte) error {
 	publ, ok := this.publishers[topic]
 	if !ok {
 		var err error
-		publ, err = NewPublisher(this.kafkaBootstrapUrl, topic, this.debug)
+		publ, err = NewPublisher(this.broker, topic, this.debug)
 		if err != nil {
 			return err
 		}
@@ -30,14 +29,7 @@ type Publisher struct {
 	writer *kafka.Writer
 }
 
-func NewPublisher(kafkaBootstrapUrl string, topic string, debug bool) (*Publisher, error) {
-	broker, err := GetBroker(kafkaBootstrapUrl)
-	if err != nil {
-		return nil, err
-	}
-	if len(broker) == 0 {
-		return nil, errors.New("missing kafka broker")
-	}
+func NewPublisher(broker string, topic string, debug bool) (*Publisher, error) {
 	writer, err := getProducer(broker, topic, debug)
 	if err != nil {
 		return nil, err
@@ -60,15 +52,15 @@ func (this *Publisher) Publish(topic string, key string, payload []byte) (err er
 	return err
 }
 
-func getProducer(broker []string, topic string, debug bool) (writer *kafka.Writer, err error) {
+func getProducer(broker string, topic string, debug bool) (writer *kafka.Writer, err error) {
 	var logger *log.Logger
 	if debug {
-		logger = log.New(os.Stdout, "[KAFKA-PRODUCER] ", 0)
+		logger = log.New(os.Stdout, "[KAFKA-PRODUCER] ", log.LstdFlags)
 	} else {
 		logger = log.New(io.Discard, "", 0)
 	}
 	writer = &kafka.Writer{
-		Addr:        kafka.TCP(broker...),
+		Addr:        kafka.TCP(broker),
 		Topic:       topic,
 		MaxAttempts: 10,
 		Logger:      logger,
