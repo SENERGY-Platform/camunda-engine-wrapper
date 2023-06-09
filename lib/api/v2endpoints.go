@@ -23,6 +23,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/metrics"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
@@ -38,6 +39,12 @@ func init() {
 }
 
 func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camunda.Camunda, e *events.Events) {
+
+	m := metrics.NewMetrics("camunda_engine_wrapper")
+
+	router.GET("/metrics", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		m.ServeHTTP(writer, request)
+	})
 
 	router.GET("/v2/process-definitions/:id/start", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
@@ -527,6 +534,8 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 	})
 
 	router.POST("/v2/event-trigger", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		m.EventMessages.Inc()
+
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
