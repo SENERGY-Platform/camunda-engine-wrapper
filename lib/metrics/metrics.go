@@ -19,7 +19,6 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"log"
 	"net/http"
 )
 
@@ -49,6 +48,5 @@ func NewMetrics(prefix string) *Metrics {
 }
 
 func (this *Metrics) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	log.Printf("%v [%v] %v \n", request.RemoteAddr, request.Method, request.URL)
 	this.httphandler.ServeHTTP(writer, request)
 }
