@@ -33,15 +33,15 @@ import (
 	"time"
 )
 
-var endpoints = []func(config configuration.Config, router *httprouter.Router, camunda *camunda.Camunda, event *events.Events){}
+var endpoints = []func(config configuration.Config, router *httprouter.Router, camunda *camunda.Camunda, event *events.Events, m Metrics){}
 
-func Start(ctx context.Context, config configuration.Config, camunda *camunda.Camunda, event *events.Events) (err error) {
+func Start(ctx context.Context, config configuration.Config, camunda *camunda.Camunda, event *events.Events, m Metrics) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = errors.New(fmt.Sprint(r))
 		}
 	}()
-	router := GetRouter(config, camunda, event)
+	router := GetRouter(config, camunda, event, m)
 
 	timeout, err := time.ParseDuration(config.HttpServerTimeout)
 	if err != nil {
@@ -70,13 +70,17 @@ func Start(ctx context.Context, config configuration.Config, camunda *camunda.Ca
 	return
 }
 
-func GetRouter(config configuration.Config, camunda *camunda.Camunda, event *events.Events) http.Handler {
+func GetRouter(config configuration.Config, camunda *camunda.Camunda, event *events.Events, m Metrics) http.Handler {
 	router := httprouter.New()
 	for _, e := range endpoints {
 		log.Println("add endpoint: " + runtime.FuncForPC(reflect.ValueOf(e).Pointer()).Name())
-		e(config, router, camunda, event)
+		e(config, router, camunda, event, m)
 	}
 	handler := util.NewCors(router)
 	handler = util.NewLogger(handler)
 	return handler
+}
+
+type Metrics interface {
+	NotifyEventTrigger()
 }

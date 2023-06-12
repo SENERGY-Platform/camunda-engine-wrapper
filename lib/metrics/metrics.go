@@ -17,9 +17,12 @@
 package metrics
 
 import (
+	"context"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"log"
 	"net/http"
+	"runtime/debug"
 )
 
 type Metrics struct {
@@ -27,7 +30,7 @@ type Metrics struct {
 	httphandler   http.Handler
 }
 
-func NewMetrics(prefix string) *Metrics {
+func New() *Metrics {
 	reg := prometheus.NewRegistry()
 	m := &Metrics{
 		httphandler: promhttp.HandlerFor(
@@ -37,7 +40,7 @@ func NewMetrics(prefix string) *Metrics {
 			},
 		),
 		EventMessages: prometheus.NewCounter(prometheus.CounterOpts{
-			Name: prefix + "_event_messages",
+			Name: "camunda_engine_wrapper_event_messages",
 			Help: "count of event messages received since startup",
 		}),
 	}
@@ -49,4 +52,33 @@ func NewMetrics(prefix string) *Metrics {
 
 func (this *Metrics) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	this.httphandler.ServeHTTP(writer, request)
+}
+
+func (this *Metrics) Serve(ctx context.Context, port string) *Metrics {
+	if port == "" || port == "-" {
+		return this
+	}
+	router := http.NewServeMux()
+
+	router.Handle("/metrics", this)
+
+	server := &http.Server{Addr: ":" + port, Handler: router}
+	go func() {
+		log.Println("listening on ", server.Addr, "for /metrics")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			debug.PrintStack()
+			log.Fatal("FATAL:", err)
+		}
+	}()
+	go func() {
+		<-ctx.Done()
+		log.Println("metrics shutdown", server.Shutdown(context.Background()))
+	}()
+	return this
+}
+
+func (this *Metrics) NotifyEventTrigger() {
+	if this != nil && this.EventMessages != nil {
+		this.EventMessages.Inc()
+	}
 }

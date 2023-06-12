@@ -6,6 +6,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/metrics"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
@@ -57,7 +58,7 @@ func CreateTestEnv(ctx context.Context, wg *sync.WaitGroup, initConf configurati
 		return config, wrapperUrl, shard, e, err
 	}
 
-	httpServer := httptest.NewServer(api.GetRouter(config, c, e))
+	httpServer := httptest.NewServer(api.GetRouter(config, c, e, metrics.New()))
 	wg.Add(1)
 	go func() {
 		<-ctx.Done()

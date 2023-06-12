@@ -33,7 +33,8 @@ import (
 var LogEnvConfig = true
 
 type Config struct {
-	ServerPort string `json:"server_port"`
+	ServerPort  string `json:"server_port"`
+	MetricsPort string `json:"metrics_port"`
 
 	KafkaUrl   string `json:"kafka_url"`
 	KafkaGroup string `json:"kafka_group"`

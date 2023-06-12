@@ -7,6 +7,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/metrics"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/processio"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
@@ -50,7 +51,9 @@ func Wrapper(parentCtx context.Context, config configuration.Config) (err error)
 		return err
 	}
 
-	err = api.Start(ctx, config, c, e)
+	m := metrics.New().Serve(ctx, config.MetricsPort)
+
+	err = api.Start(ctx, config, c, e, m)
 	if err != nil {
 		return
 	}

@@ -37,7 +37,7 @@ func init() {
 	endpoints = append(endpoints, V1Endpoints)
 }
 
-func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camunda.Camunda, e *events.Events) {
+func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camunda.Camunda, e *events.Events, m Metrics) {
 
 	router.GET("/", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		response.To(writer).Json(map[string]string{"status": "OK"})

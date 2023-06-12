@@ -24,6 +24,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/metrics"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
@@ -97,7 +98,7 @@ func TestDeploymentStart(t *testing.T) {
 		return
 	}
 
-	httpServer := httptest.NewServer(GetRouter(config, c, e))
+	httpServer := httptest.NewServer(GetRouter(config, c, e, metrics.New()))
 	defer httpServer.Close()
 
 	//put process
@@ -180,7 +181,7 @@ func TestDeploymentStartWithSource(t *testing.T) {
 		return
 	}
 
-	httpServer := httptest.NewServer(GetRouter(config, c, e))
+	httpServer := httptest.NewServer(GetRouter(config, c, e, metrics.New()))
 	defer httpServer.Close()
 
 	//put process
