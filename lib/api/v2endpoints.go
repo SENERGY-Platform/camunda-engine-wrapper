@@ -29,8 +29,6 @@ import (
 	"time"
 
 	"io"
-
-	"github.com/SmartEnergyPlatform/util/http/response"
 )
 
 func init() {
@@ -67,7 +65,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		// keep empty list as output
 		// 		to keep signature of endpoint
 		// 		and ensure that no other services throw errors because of this change
-		response.To(writer).Json([]string{})
+		json.NewEncoder(writer).Encode([]string{})
 	})
 
 	router.GET("/v2/process-definitions/:id/start/id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -93,7 +91,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(result)
+		json.NewEncoder(writer).Encode(result)
 	})
 
 	router.GET("/v2/deployments/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -114,7 +112,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(result)
+		json.NewEncoder(writer).Encode(result)
 	})
 
 	router.GET("/v2/deployments/:id/exists", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -128,14 +126,14 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 
 		err = c.CheckDeploymentAccess(id, token.GetUserId())
 		if err == camunda.UnknownVid || err == camunda.CamundaDeploymentUnknown {
-			response.To(writer).Json(false)
+			json.NewEncoder(writer).Encode(false)
 			return
 		}
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(true)
+		json.NewEncoder(writer).Encode(true)
 	})
 
 	router.GET("/v2/deployments/:id/start", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -172,7 +170,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(result)
+		json.NewEncoder(writer).Encode(result)
 	})
 
 	router.GET("/v2/deployments/:id/parameter", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -207,7 +205,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(result)
+		json.NewEncoder(writer).Encode(result)
 	})
 
 	router.GET("/v2/deployments/:id/definition", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -230,7 +228,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(result)
+		json.NewEncoder(writer).Encode(result)
 	})
 
 	router.GET("/v2/deployments/:id/instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -249,7 +247,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(result)
+		json.NewEncoder(writer).Encode(result)
 	})
 
 	router.GET("/v2/deployments", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -269,7 +267,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(result)
+		json.NewEncoder(writer).Encode(result)
 	})
 
 	router.GET("/v2/process-definitions/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -292,7 +290,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(result)
+		json.NewEncoder(writer).Encode(result)
 	})
 
 	router.GET("/v2/process-definitions/:id/diagram", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -338,7 +336,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(result)
+		json.NewEncoder(writer).Encode(result)
 	})
 
 	router.GET("/v2/process-instances/count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -353,7 +351,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Json(result)
+		json.NewEncoder(writer).Encode(result)
 	})
 
 	router.GET("/v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -371,7 +369,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 				http.Error(writer, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			response.To(writer).Json(result)
+			json.NewEncoder(writer).Encode(result)
 		} else {
 			result, err := c.GetFilteredProcessInstanceHistoryList(token.GetUserId(), query)
 			if err != nil {
@@ -379,7 +377,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 				http.Error(writer, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			response.To(writer).Json(result)
+			json.NewEncoder(writer).Encode(result)
 		}
 
 	})
@@ -409,7 +407,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Text("ok")
+		json.NewEncoder(writer).Encode("ok")
 	})
 
 	router.DELETE("/v2/process-instances/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -430,7 +428,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Text("ok")
+		json.NewEncoder(writer).Encode("ok")
 	})
 
 	router.PUT("/v2/process-instances/:id/variables/:variable_name", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -458,7 +456,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.To(writer).Text("ok")
+		json.NewEncoder(writer).Encode("ok")
 	})
 
 	router.DELETE("/v2/process-instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
@@ -486,7 +484,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 				return
 			}
 		}
-		response.To(writer).Text("ok")
+		json.NewEncoder(writer).Encode("ok")
 		return
 	})
 
@@ -522,7 +520,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 				return
 			}
 		}
-		response.To(writer).Text("ok")
+		json.NewEncoder(writer).Encode("ok")
 		return
 	})
 

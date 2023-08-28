@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 InfAI (CC SES)
+ * Copyright 2023 InfAI (CC SES)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,12 @@
  * limitations under the License.
  */
 
-package cleanup
+package camunda
 
 import (
 	"encoding/json"
 	"net/http"
 )
-
-type Deployment struct {
-	Id             string `json:"id"`
-	Name           string `json:"name"`
-	Source         string `json:"source"`
-	DeploymentTime string `json:"deploymentTime"`
-	TenantId       string `json:"tenantId"`
-}
-
-type Deployments = []Deployment
-
-// returns all process deployments without replacing the deployment id with the virtual id
-func getDeploymentListAllRaw(shard string) (result Deployments, err error) {
-	path := shard + "/engine-rest/deployment"
-	err = Get(path, &result)
-	return
-}
 
 func Get(url string, result interface{}) (err error) {
 	resp, err := http.Get(url)

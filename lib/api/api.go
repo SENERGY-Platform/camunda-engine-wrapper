@@ -18,13 +18,13 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/api/util"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
 	"github.com/julienschmidt/httprouter"
-	"github.com/pkg/errors"
 	"log"
 	"net/http"
 	"reflect"

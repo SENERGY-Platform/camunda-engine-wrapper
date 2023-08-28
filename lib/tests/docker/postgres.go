@@ -40,11 +40,6 @@ func PostgresWithNetwork(ctx context.Context, wg *sync.WaitGroup, dbname string)
 		return "", "", "", err
 	}
 
-	err = Dockerlog(ctx, c, "POSTGRES-"+dbname)
-	if err != nil {
-		return "", "", "", err
-	}
-
 	wg.Add(1)
 	go func() {
 		defer wg.Done()

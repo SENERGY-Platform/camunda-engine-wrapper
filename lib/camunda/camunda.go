@@ -37,8 +37,6 @@ import (
 	"encoding/json"
 
 	"log"
-
-	"github.com/SmartEnergyPlatform/util/http/request"
 )
 
 type Camunda struct {
@@ -136,7 +134,7 @@ func (this *Camunda) CheckProcessDefinitionAccess(id string, userId string) (err
 		return err
 	}
 	definition := model.ProcessDefinition{}
-	err = request.Get(shard+"/engine-rest/process-definition/"+url.QueryEscape(id), &definition)
+	err = Get(shard+"/engine-rest/process-definition/"+url.QueryEscape(id), &definition)
 	if err == nil && definition.TenantId != userId {
 		err = errors.New("access denied")
 	}
@@ -156,7 +154,7 @@ func (this *Camunda) CheckDeploymentAccess(vid string, userId string) (err error
 		return UnknownVid
 	}
 	wrapper := model.Deployment{}
-	err = request.Get(shard+"/engine-rest/deployment/"+url.QueryEscape(id), &wrapper)
+	err = Get(shard+"/engine-rest/deployment/"+url.QueryEscape(id), &wrapper)
 	if err != nil {
 		return err
 	}
@@ -175,7 +173,7 @@ func (this *Camunda) CheckProcessInstanceAccess(id string, userId string) (err e
 		return err
 	}
 	wrapper := model.ProcessInstance{}
-	err = request.Get(shard+"/engine-rest/process-instance/"+url.QueryEscape(id), &wrapper)
+	err = Get(shard+"/engine-rest/process-instance/"+url.QueryEscape(id), &wrapper)
 	if err == nil && wrapper.TenantId != userId {
 		err = errors.New("access denied")
 	}
@@ -188,7 +186,7 @@ func (this *Camunda) CheckHistoryAccess(id string, userId string) (definitionId 
 		return definitionId, err
 	}
 	wrapper := model.HistoricProcessInstance{}
-	err = request.Get(shard+"/engine-rest/history/process-instance/"+url.QueryEscape(id), &wrapper)
+	err = Get(shard+"/engine-rest/history/process-instance/"+url.QueryEscape(id), &wrapper)
 	if err == nil && wrapper.TenantId != userId {
 		err = errors.New("access denied")
 	}
@@ -263,7 +261,7 @@ func (this *Camunda) GetProcessInstanceHistoryByProcessDefinition(id string, use
 		return result, err
 	}
 	//"/engine-rest/history/process-instance?processDefinitionId="
-	err = request.Get(shard+"/engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id), &result)
+	err = Get(shard+"/engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id), &result)
 	return
 }
 func (this *Camunda) GetProcessInstanceHistoryByProcessDefinitionFinished(id string, userId string) (result model.HistoricProcessInstances, err error) {
@@ -272,7 +270,7 @@ func (this *Camunda) GetProcessInstanceHistoryByProcessDefinitionFinished(id str
 		return result, err
 	}
 	//"/engine-rest/history/process-instance?processDefinitionId="
-	err = request.Get(shard+"/engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id)+"&finished=true", &result)
+	err = Get(shard+"/engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id)+"&finished=true", &result)
 	return
 }
 func (this *Camunda) GetProcessInstanceHistoryByProcessDefinitionUnfinished(id string, userId string) (result model.HistoricProcessInstances, err error) {
@@ -281,7 +279,7 @@ func (this *Camunda) GetProcessInstanceHistoryByProcessDefinitionUnfinished(id s
 		return result, err
 	}
 	//"/engine-rest/history/process-instance?processDefinitionId="
-	err = request.Get(shard+"/engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id)+"&unfinished=true", &result)
+	err = Get(shard+"/engine-rest/history/process-instance?processDefinitionId="+url.QueryEscape(id)+"&unfinished=true", &result)
 	return
 }
 
@@ -291,7 +289,7 @@ func (this *Camunda) GetProcessInstanceHistoryList(userId string) (result model.
 		return result, err
 	}
 	//"/engine-rest/process-instance"
-	err = request.Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId), &result)
+	err = Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId), &result)
 	return
 }
 
@@ -301,7 +299,7 @@ func (this *Camunda) GetFilteredProcessInstanceHistoryList(userId string, query 
 		return result, err
 	}
 	query.Del("tenantIdIn")
-	err = request.Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&"+query.Encode(), &result)
+	err = Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&"+query.Encode(), &result)
 	return
 }
 
@@ -311,12 +309,12 @@ func (this *Camunda) GetFilteredProcessInstanceHistoryListWithTotal(userId strin
 		return result, err
 	}
 	query.Del("tenantIdIn")
-	err = request.Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&"+query.Encode(), &result.Data)
+	err = Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&"+query.Encode(), &result.Data)
 	if err != nil {
 		return result, err
 	}
 	count := model.Count{}
-	err = request.Get(shard+"/engine-rest/history/process-instance/count?tenantIdIn="+url.QueryEscape(userId)+"&"+query.Encode(), &count)
+	err = Get(shard+"/engine-rest/history/process-instance/count?tenantIdIn="+url.QueryEscape(userId)+"&"+query.Encode(), &count)
 	result.Total = count.Count
 	return
 }
@@ -327,7 +325,7 @@ func (this *Camunda) GetProcessInstanceHistoryListFinished(userId string) (resul
 		return result, err
 	}
 	//"/engine-rest/process-instance"
-	err = request.Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&finished=true", &result)
+	err = Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&finished=true", &result)
 	return
 }
 func (this *Camunda) GetProcessInstanceHistoryListUnfinished(userId string) (result model.HistoricProcessInstances, err error) {
@@ -336,7 +334,7 @@ func (this *Camunda) GetProcessInstanceHistoryListUnfinished(userId string) (res
 		return result, err
 	}
 	//"/engine-rest/process-instance"
-	err = request.Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&unfinished=true", &result)
+	err = Get(shard+"/engine-rest/history/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&unfinished=true", &result)
 	return
 }
 func (this *Camunda) GetProcessInstanceCount(userId string) (result model.Count, err error) {
@@ -345,7 +343,7 @@ func (this *Camunda) GetProcessInstanceCount(userId string) (result model.Count,
 		return result, err
 	}
 	//"/engine-rest/process-instance/count"
-	err = request.Get(shard+"/engine-rest/process-instance/count?tenantIdIn="+url.QueryEscape(userId), &result)
+	err = Get(shard+"/engine-rest/process-instance/count?tenantIdIn="+url.QueryEscape(userId), &result)
 	return
 }
 func (this *Camunda) GetProcessInstanceList(userId string) (result model.ProcessInstances, err error) {
@@ -354,7 +352,7 @@ func (this *Camunda) GetProcessInstanceList(userId string) (result model.Process
 		return result, err
 	}
 	//"/engine-rest/process-instance"
-	err = request.Get(shard+"/engine-rest/process-instance?tenantIdIn="+url.QueryEscape(userId), &result)
+	err = Get(shard+"/engine-rest/process-instance?tenantIdIn="+url.QueryEscape(userId), &result)
 	return
 }
 
@@ -364,7 +362,7 @@ func (this *Camunda) GetProcessDefinition(id string, userId string) (result mode
 		return result, err
 	}
 	//"/engine-rest/process-definition/" + processDefinitionId
-	err = request.Get(shard+"/engine-rest/process-definition/"+url.QueryEscape(id), &result)
+	err = Get(shard+"/engine-rest/process-definition/"+url.QueryEscape(id), &result)
 	if err != nil {
 		return
 	}
@@ -389,7 +387,7 @@ func (this *Camunda) GetDeploymentList(userId string, params url.Values) (result
 	temp := model.Deployments{}
 	params.Del("tenantIdIn")
 	path := shard + "/engine-rest/deployment?tenantIdIn=" + url.QueryEscape(userId) + "&" + params.Encode()
-	err = request.Get(path, &temp)
+	err = Get(path, &temp)
 	if err != nil {
 		return
 	}
@@ -444,7 +442,7 @@ func (this *Camunda) GetInstancesByDeploymentVid(vid string, userId string) (res
 	if err != nil {
 		return result, err
 	}
-	err = request.Get(shard+"/engine-rest/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&deploymentId="+url.QueryEscape(id), &result)
+	err = Get(shard+"/engine-rest/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&deploymentId="+url.QueryEscape(id), &result)
 	return
 }
 
@@ -453,7 +451,7 @@ func (this *Camunda) GetRawDefinitionsByDeployment(deploymentId string, userId s
 	if err != nil {
 		return result, err
 	}
-	err = request.Get(shard+"/engine-rest/process-definition?deploymentId="+url.QueryEscape(deploymentId), &result)
+	err = Get(shard+"/engine-rest/process-definition?deploymentId="+url.QueryEscape(deploymentId), &result)
 	return
 }
 
@@ -470,7 +468,7 @@ func (this *Camunda) GetDeployment(vid string, userId string) (result model.Depl
 		return result, UnknownVid
 	}
 	//"/engine-rest/deployment/" + id
-	err = request.Get(shard+"/engine-rest/deployment/"+url.QueryEscape(deploymentId), &result)
+	err = Get(shard+"/engine-rest/deployment/"+url.QueryEscape(deploymentId), &result)
 	if err != nil {
 		return
 	}
@@ -479,7 +477,7 @@ func (this *Camunda) GetDeployment(vid string, userId string) (result model.Depl
 }
 
 func (this *Camunda) GetDeploymentCountByShard(deploymentId string, shard string) (result model.Count, err error) {
-	err = request.Get(shard+"/engine-rest/deployment/count?id="+url.QueryEscape(deploymentId), &result)
+	err = Get(shard+"/engine-rest/deployment/count?id="+url.QueryEscape(deploymentId), &result)
 	return
 }
 
@@ -672,7 +670,7 @@ func (this *Camunda) GetProcessInstanceHistoryListWithTotal(userId string, searc
 	}
 
 	temp := model.HistoricProcessInstances{}
-	err = request.Get(shard+"/engine-rest/history/process-instance?"+params.Encode(), &temp)
+	err = Get(shard+"/engine-rest/history/process-instance?"+params.Encode(), &temp)
 	if err != nil {
 		return
 	}
@@ -681,7 +679,7 @@ func (this *Camunda) GetProcessInstanceHistoryListWithTotal(userId string, searc
 	}
 
 	count := model.Count{}
-	err = request.Get(shard+"/engine-rest/history/process-instance/count?"+params.Encode(), &count)
+	err = Get(shard+"/engine-rest/history/process-instance/count?"+params.Encode(), &count)
 	result.Total = count.Count
 	return
 }

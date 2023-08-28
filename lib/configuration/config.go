@@ -19,7 +19,6 @@ package configuration
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"log"
 	"net/http"
 	"os"
@@ -64,11 +63,11 @@ type Config struct {
 func LoadConfig(location string) (config Config, err error) {
 	file, err := os.Open(location)
 	if err != nil {
-		return config, errors.WithStack(err)
+		return config, err
 	}
 	err = json.NewDecoder(file).Decode(&config)
 	if err != nil {
-		return config, errors.WithStack(err)
+		return config, err
 	}
 	handleEnvironmentVars(&config)
 	setDefaultHttpClient(config)
