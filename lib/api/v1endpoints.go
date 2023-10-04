@@ -38,6 +38,7 @@ func init() {
 func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camunda.Camunda, e *events.Events, m Metrics) {
 
 	router.GET("/", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(map[string]string{"status": "OK"})
 	})
 
@@ -69,6 +70,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		// keep empty list as output
 		// 		to keep signature of endpoint
 		// 		and ensure that no other services throw errors because of this change
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode([]string{})
 	})
 
@@ -95,6 +97,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -119,6 +122,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -134,6 +138,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 
 		err = c.CheckDeploymentAccess(id, token.GetUserId())
 		if err == camunda.UnknownVid || err == camunda.CamundaDeploymentUnknown {
+			writer.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(writer).Encode(false)
 			return
 		}
@@ -141,6 +146,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(true)
 	})
 
@@ -178,6 +184,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -213,6 +220,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -237,6 +245,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -258,6 +267,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -282,6 +292,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -334,6 +345,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -352,6 +364,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -370,6 +383,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -388,6 +402,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -404,6 +419,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -427,6 +443,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -450,6 +467,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -466,6 +484,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -490,6 +509,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -514,6 +534,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -538,6 +559,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
 
@@ -569,6 +591,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode("ok")
 	})
 
@@ -593,6 +616,7 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode("ok")
 	})
 }
