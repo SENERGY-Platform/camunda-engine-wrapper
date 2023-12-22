@@ -121,7 +121,12 @@ func (this *Shards) EnsureShard(shardUrl string) (err error) {
 	return
 }
 
-//selects shard with the fewest users
+// selects shard with the fewest users
+func (this *Shards) SelectShard() (shardUrl string, err error) {
+	return selectShard(this.db)
+}
+
+// selects shard with the fewest users
 func selectShard(tx Tx) (shardUrl string, err error) {
 	min := MaxInt
 	counts, err := getShardUserCount(tx)
@@ -138,6 +143,10 @@ func selectShard(tx Tx) (shardUrl string, err error) {
 		err = errors.New("no shard found")
 	}
 	return
+}
+
+func (this *Shards) GetShardUserCount() (result map[string]int, err error) {
+	return getShardUserCount(this.db)
 }
 
 func getShardUserCount(tx Tx) (result map[string]int, err error) {

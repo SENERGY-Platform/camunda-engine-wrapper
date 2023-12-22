@@ -343,3 +343,7 @@ func (this *Events) notifyProcessDeploymentDone(id string) {
 		}
 	}
 }
+
+func (this *Events) GetPublisher() kafka.Interface {
+	return this.cqrs
+}

@@ -1,7 +1,8 @@
-package shardmigration
+package tests
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shardmigration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
@@ -24,7 +25,7 @@ func TestMigrate(t *testing.T) {
 		return
 	}
 
-	responseSetter := &[]TenantWrapper{
+	responseSetter := &[]shardmigration.TenantWrapper{
 		{TenantId: "t1"},
 		{TenantId: "t2"},
 		{TenantId: "t3"},
@@ -36,7 +37,7 @@ func TestMigrate(t *testing.T) {
 	camundaUrl2, _ := mocks.CamundaServerWithResponse(ctx, &wg, responseSetter)
 
 	t.Run("empty remove", func(t *testing.T) {
-		err = Remove(camundaUrl, pgConn)
+		err = shardmigration.Remove(camundaUrl, pgConn)
 		if err != nil {
 			t.Error(err)
 			return
@@ -44,7 +45,7 @@ func TestMigrate(t *testing.T) {
 	})
 
 	t.Run("run add", func(t *testing.T) {
-		err = Add(camundaUrl, pgConn, 100)
+		err = shardmigration.Add(camundaUrl, pgConn, 100)
 		if err != nil {
 			t.Error(err)
 			return
@@ -96,7 +97,7 @@ func TestMigrate(t *testing.T) {
 	})
 
 	t.Run("run remove", func(t *testing.T) {
-		err = Remove(camundaUrl, pgConn)
+		err = shardmigration.Remove(camundaUrl, pgConn)
 		if err != nil {
 			t.Error(err)
 			return
@@ -122,7 +123,7 @@ func TestMigrate(t *testing.T) {
 	})
 
 	t.Run("run add 2", func(t *testing.T) {
-		err = Add(camundaUrl2, pgConn, 100)
+		err = shardmigration.Add(camundaUrl2, pgConn, 100)
 		if err != nil {
 			t.Error(err)
 			return

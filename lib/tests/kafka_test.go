@@ -1,7 +1,9 @@
-package kafka
+package tests
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
 	"reflect"
 	"sync"
 	"testing"
@@ -14,19 +16,18 @@ func TestKafka(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	_, zkIp, err := ZookeeperContainer(ctx, wg)
+	_, zkIp, err := docker.Zookeeper(ctx, wg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	zookeeperUrl := zkIp + ":2181"
 
-	//kafka
-	kafkaUrl, err := KafkaContainer(ctx, wg, zookeeperUrl)
+	kafkaUrl, err := docker.Kafka(ctx, wg, zookeeperUrl)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	kafka, err := Init(kafkaUrl, "test", true)
+	k, err := kafka.Init(kafkaUrl, "test", true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +35,7 @@ func TestKafka(t *testing.T) {
 	deliveries := []string{}
 	mux := sync.Mutex{}
 
-	err = kafka.Consume("test", func(delivery []byte) error {
+	err = k.Consume("test", func(delivery []byte) error {
 		mux.Lock()
 		defer mux.Unlock()
 		deliveries = append(deliveries, string(delivery))
@@ -45,19 +46,19 @@ func TestKafka(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = kafka.Publish("test", "a", []byte("1"))
+	err = k.Publish("test", "a", []byte("1"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = kafka.Publish("test", "b", []byte("2"))
+	err = k.Publish("test", "b", []byte("2"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	time.Sleep(10 * time.Second)
 
-	kafka.Close()
+	k.Close()
 
 	time.Sleep(5 * time.Second)
 

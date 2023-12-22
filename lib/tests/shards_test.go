@@ -1,7 +1,8 @@
-package shards
+package tests
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
 	"reflect"
@@ -22,7 +23,7 @@ func TestSelectShard(t *testing.T) {
 		return
 	}
 
-	s, err := New(pgConn, cache.None)
+	s, err := shards.New(pgConn, cache.None)
 	if err != nil {
 		t.Error(err)
 		return
@@ -44,7 +45,7 @@ func TestSelectShardWithCache(t *testing.T) {
 		return
 	}
 
-	s, err := New(pgConn, cache.New(nil))
+	s, err := shards.New(pgConn, cache.New(nil))
 	if err != nil {
 		t.Error(err)
 		return
@@ -54,7 +55,7 @@ func TestSelectShardWithCache(t *testing.T) {
 
 }
 
-func testSelectShard(s *Shards, t *testing.T) {
+func testSelectShard(s *shards.Shards, t *testing.T) {
 	t.Run("init shards", testInitShards(s))
 	t.Run("check expected count", testCheckCount(s, map[string]int{"shard1": 0, "shard2": 1, "shard3": 2}))
 	t.Run("check expected shard selection", testCheckShardSelection(s, "shard1"))
@@ -69,7 +70,7 @@ func testSelectShard(s *Shards, t *testing.T) {
 	t.Run("check expected count", testCheckCount(s, map[string]int{"shard1": 1, "shard2": 3, "shard3": 1}))
 }
 
-func testSetShardForUser(s *Shards, user string, shard string) func(t *testing.T) {
+func testSetShardForUser(s *shards.Shards, user string, shard string) func(t *testing.T) {
 	return func(t *testing.T) {
 		err := s.SetShardForUser(user, shard)
 		if err != nil {
@@ -79,7 +80,7 @@ func testSetShardForUser(s *Shards, user string, shard string) func(t *testing.T
 	}
 }
 
-func testEnsureShardForUser(s *Shards, user string, expectedShardUsed string) func(t *testing.T) {
+func testEnsureShardForUser(s *shards.Shards, user string, expectedShardUsed string) func(t *testing.T) {
 	return func(t *testing.T) {
 		shard, err := s.EnsureShardForUser(user)
 		if err != nil {
@@ -93,9 +94,9 @@ func testEnsureShardForUser(s *Shards, user string, expectedShardUsed string) fu
 	}
 }
 
-func testCheckCount(s *Shards, expected map[string]int) func(t *testing.T) {
+func testCheckCount(s *shards.Shards, expected map[string]int) func(t *testing.T) {
 	return func(t *testing.T) {
-		actual, err := getShardUserCount(s.db)
+		actual, err := s.GetShardUserCount()
 		if err != nil {
 			t.Error(err)
 			return
@@ -107,9 +108,9 @@ func testCheckCount(s *Shards, expected map[string]int) func(t *testing.T) {
 	}
 }
 
-func testCheckShardSelection(s *Shards, expected string) func(t *testing.T) {
+func testCheckShardSelection(s *shards.Shards, expected string) func(t *testing.T) {
 	return func(t *testing.T) {
-		actual, err := selectShard(s.db)
+		actual, err := s.SelectShard()
 		if err != nil {
 			t.Error(err)
 			return
@@ -121,7 +122,7 @@ func testCheckShardSelection(s *Shards, expected string) func(t *testing.T) {
 	}
 }
 
-func testInitShards(s *Shards) func(t *testing.T) {
+func testInitShards(s *shards.Shards) func(t *testing.T) {
 	return func(t *testing.T) {
 		err := s.EnsureShard("shard1")
 		if err != nil {

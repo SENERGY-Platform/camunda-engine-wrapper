@@ -1,10 +1,11 @@
-package events
+package tests
 
 import (
 	"context"
 	"encoding/json"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/messages"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
@@ -57,7 +58,7 @@ func TestEvents(t *testing.T) {
 
 	c := camunda.New(config, v, s, nil)
 
-	e, err := New(config, mocks.Kafka(), v, c, nil)
+	e, err := events.New(config, mocks.Kafka(), v, c, nil)
 	if err != nil {
 		t.Error(err)
 		return
@@ -65,35 +66,35 @@ func TestEvents(t *testing.T) {
 
 	t.Log("sub test naming schema is deprecated. only one deployment version is supported for this service")
 
-	t.Run("publish version 1 deployment", publishDeployment(e, "1", "testname", helper.BpmnExample, helper.SvgExample))
+	t.Run("publish version 1 deployment", publishDeployment(config, e, "1", "testname", helper.BpmnExample, helper.SvgExample))
 
 	t.Run("check version 1 camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("publish version 1 invalid deployment", publishDeployment(e, "1", "testname", "invalid", helper.SvgExample))
+	t.Run("publish version 1 invalid deployment", publishDeployment(config, e, "1", "testname", "invalid", helper.SvgExample))
 
 	t.Run("check version 1 invalid camunda request", checkCamundaRequest(requests, "testname", camunda.CreateBlankProcess(), camunda.CreateBlankSvg()))
 
-	t.Run("publish version 2 deployment", publishDeployment(e, "1", "testname", helper.BpmnExample, helper.SvgExample))
+	t.Run("publish version 2 deployment", publishDeployment(config, e, "1", "testname", helper.BpmnExample, helper.SvgExample))
 
 	t.Run("check version 2 camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("publish version 2 invalid deployment", publishDeployment(e, "1", "testname", "invalid", helper.SvgExample))
+	t.Run("publish version 2 invalid deployment", publishDeployment(config, e, "1", "testname", "invalid", helper.SvgExample))
 
 	t.Run("check version 2 invalid camunda request", checkCamundaRequest(requests, "testname", camunda.CreateBlankProcess(), camunda.CreateBlankSvg()))
 
-	t.Run("publish explicit version 1 deployment", publishDeployment(e, "3", "testname", helper.BpmnExample, helper.SvgExample))
+	t.Run("publish explicit version 1 deployment", publishDeployment(config, e, "3", "testname", helper.BpmnExample, helper.SvgExample))
 
 	t.Run("check explicit version 1 camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("publish explicit version 1 invalid deployment", publishDeployment(e, "3", "testname", "invalid", helper.SvgExample))
+	t.Run("publish explicit version 1 invalid deployment", publishDeployment(config, e, "3", "testname", "invalid", helper.SvgExample))
 
 	t.Run("check explicit version 1 invalid camunda request", checkCamundaRequest(requests, "testname", camunda.CreateBlankProcess(), camunda.CreateBlankSvg()))
 
-	t.Run("publish explicit version '' deployment", publishDeployment(e, "3", "testname", helper.BpmnExample, helper.SvgExample))
+	t.Run("publish explicit version '' deployment", publishDeployment(config, e, "3", "testname", helper.BpmnExample, helper.SvgExample))
 
 	t.Run("check explicit version '' camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("publish explicit version '' invalid deployment", publishDeployment(e, "3", "testname", "invalid", helper.SvgExample))
+	t.Run("publish explicit version '' invalid deployment", publishDeployment(config, e, "3", "testname", "invalid", helper.SvgExample))
 
 	t.Run("check explicit version '' invalid camunda request", checkCamundaRequest(requests, "testname", camunda.CreateBlankProcess(), camunda.CreateBlankSvg()))
 }
@@ -183,7 +184,7 @@ type TestDeploymentCommand struct {
 	Deployment interface{} `json:"deployment"`
 }
 
-func publishDeployment(events *Events, id string, name string, xml string, svg string) func(t *testing.T) {
+func publishDeployment(config configuration.Config, events *events.Events, id string, name string, xml string, svg string) func(t *testing.T) {
 	return func(t *testing.T) {
 		msg, err := json.Marshal(TestDeploymentCommand{
 			Version: messages.CurrentVersion,
@@ -204,7 +205,8 @@ func publishDeployment(events *Events, id string, name string, xml string, svg s
 			t.Error(err)
 			return
 		}
-		err = events.cqrs.Publish(events.deploymentTopic, id, msg)
+
+		err = events.GetPublisher().Publish(config.DeploymentTopic, id, msg)
 		if err != nil {
 			t.Error(err)
 			return

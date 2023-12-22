@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package api
+package tests
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/api"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
@@ -98,7 +99,7 @@ func TestDeploymentStart(t *testing.T) {
 		return
 	}
 
-	httpServer := httptest.NewServer(GetRouter(config, c, e, metrics.New()))
+	httpServer := httptest.NewServer(api.GetRouter(config, c, e, metrics.New()))
 	defer httpServer.Close()
 
 	//put process
@@ -181,7 +182,7 @@ func TestDeploymentStartWithSource(t *testing.T) {
 		return
 	}
 
-	httpServer := httptest.NewServer(GetRouter(config, c, e, metrics.New()))
+	httpServer := httptest.NewServer(api.GetRouter(config, c, e, metrics.New()))
 	defer httpServer.Close()
 
 	//put process

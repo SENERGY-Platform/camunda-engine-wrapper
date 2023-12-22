@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package cleanup
+package tests
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cleanup"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
@@ -116,7 +117,7 @@ func testCheckKafkaDeletes(cqrs *mocks.KafkaMock, expectedDeletes ...string) fun
 			return
 		}
 		for i, del := range actualDeletes {
-			msg := DeploymentDeleteCommand{}
+			msg := cleanup.DeploymentDeleteCommand{}
 			err := json.Unmarshal([]byte(del), &msg)
 			if err != nil {
 				t.Error(err)
@@ -142,23 +143,23 @@ func testCleanup(conn string, cqrs *mocks.KafkaMock) func(t *testing.T) {
 			ShardingDb:      conn,
 		}
 
-		unlinkedVid, err := FindUnlinkedVid(config)
+		unlinkedVid, err := cleanup.FindUnlinkedVid(config)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		err = RemoveVidWithCqrs(cqrs, config, unlinkedVid)
+		err = cleanup.RemoveVidWithCqrs(cqrs, config, unlinkedVid)
 		if err != nil {
 			t.Error(err)
 			return
 		}
 
-		unlinkedPid, err := FindUnlinkedPid(config, 0)
+		unlinkedPid, err := cleanup.FindUnlinkedPid(config, 0)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		err = RemovePid(unlinkedPid)
+		err = cleanup.RemovePid(unlinkedPid)
 		if err != nil {
 			t.Error(err)
 			return
