@@ -20,3 +20,6 @@ import _ "embed"
 
 //go:embed form_field_test.bpmn
 var FormFieldTest string
+
+//go:embed scripttest.bpmn
+var ScriptTest string

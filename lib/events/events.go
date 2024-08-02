@@ -146,14 +146,20 @@ func (this *Events) HandleDeploymentDelete(vid string, userId string) error {
 		err = this.camunda.RemoveProcessFromAllShards(id)
 	}
 	if err != nil {
-		rollback()
+		_ = rollback()
 	} else {
-		commit()
+		return commit()
 	}
 	return err
 }
 
 func (this *Events) HandleDeploymentCreate(owner string, id string, name string, xml string, svg string, source string, incidentHandling *messages.IncidentHandling) (err error) {
+	xml, err = SecureProcessScripts(xml)
+	if err != nil {
+		log.Println("ERROR: unable to secure process scripts", err)
+		xml = camunda.CreateBlankProcess()
+		svg = camunda.CreateBlankSvg()
+	}
 	err = this.cleanupExistingDeployment(id, owner)
 	if err != nil {
 		return err

@@ -64,11 +64,17 @@ func TestEvents(t *testing.T) {
 		return
 	}
 
+	bpmn, err := events.SecureProcessScripts(helper.BpmnExample)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	t.Log("sub test naming schema is deprecated. only one deployment version is supported for this service")
 
 	t.Run("publish version 1 deployment", publishDeployment(config, e, "1", "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("check version 1 camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
+	t.Run("check version 1 camunda request", checkCamundaRequest(requests, "testname", bpmn, helper.SvgExample))
 
 	t.Run("publish version 1 invalid deployment", publishDeployment(config, e, "1", "testname", "invalid", helper.SvgExample))
 
@@ -76,7 +82,7 @@ func TestEvents(t *testing.T) {
 
 	t.Run("publish version 2 deployment", publishDeployment(config, e, "1", "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("check version 2 camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
+	t.Run("check version 2 camunda request", checkCamundaRequest(requests, "testname", bpmn, helper.SvgExample))
 
 	t.Run("publish version 2 invalid deployment", publishDeployment(config, e, "1", "testname", "invalid", helper.SvgExample))
 
@@ -84,7 +90,7 @@ func TestEvents(t *testing.T) {
 
 	t.Run("publish explicit version 1 deployment", publishDeployment(config, e, "3", "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("check explicit version 1 camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
+	t.Run("check explicit version 1 camunda request", checkCamundaRequest(requests, "testname", bpmn, helper.SvgExample))
 
 	t.Run("publish explicit version 1 invalid deployment", publishDeployment(config, e, "3", "testname", "invalid", helper.SvgExample))
 
@@ -92,7 +98,7 @@ func TestEvents(t *testing.T) {
 
 	t.Run("publish explicit version '' deployment", publishDeployment(config, e, "3", "testname", helper.BpmnExample, helper.SvgExample))
 
-	t.Run("check explicit version '' camunda request", checkCamundaRequest(requests, "testname", helper.BpmnExample, helper.SvgExample))
+	t.Run("check explicit version '' camunda request", checkCamundaRequest(requests, "testname", bpmn, helper.SvgExample))
 
 	t.Run("publish explicit version '' invalid deployment", publishDeployment(config, e, "3", "testname", "invalid", helper.SvgExample))
 

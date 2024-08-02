@@ -18,6 +18,9 @@ to run the api wrapper normally, call the program without any additional flags
 ./camunda-engine-wrapper
 ```
 
+## Scripts in BPMN Processes
+the wrapper will prefix every script received with `var java = {}; var execution = {}; ` to prevent insecure access.
+
 ## New Shard
 - ensure that the config-variable `sharding_db` is set (env or json)
 - call `./addshard http://shard-url:8080`
