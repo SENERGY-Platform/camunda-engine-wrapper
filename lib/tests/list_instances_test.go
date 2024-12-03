@@ -62,6 +62,25 @@ func TestListInstances(t *testing.T) {
 	t.Run("list first deployment instances", testListDeploymentInstances(wrapperUrl, deploymentId, 2))
 	t.Run("list second deployment instances", testListDeploymentInstances(wrapperUrl, "withoutInput", 1))
 
+	t.Run("delete unknown instance", func(t *testing.T) {
+		req, err := http.NewRequest("DELETE", wrapperUrl+"/v2/process-instances/unknown", nil)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		req.Header.Set("Authorization", helper.Jwt)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		defer resp.Body.Close()
+		temp, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode != 200 && resp.StatusCode != 404 {
+			t.Error(resp.StatusCode, string(temp))
+			return
+		}
+	})
 }
 
 func testListDeploymentInstances(wrapper string, id string, expectedCount int) func(t *testing.T) {

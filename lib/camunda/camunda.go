@@ -174,13 +174,25 @@ func (this *Camunda) CheckProcessInstanceAccess(id string, userId string) (err e
 	if err != nil {
 		return err, 500
 	}
-	wrapper := model.ProcessInstance{}
-	err, code = GetWithCode(shard+"/engine-rest/process-instance/"+url.QueryEscape(id), &wrapper)
-	if err == nil && wrapper.TenantId != userId {
-		err = ErrAccessDenied
-		code = http.StatusForbidden
+	resp, err := http.Get(shard + "/engine-rest/process-instance/" + url.QueryEscape(id))
+	if err != nil {
+		return
 	}
-	return
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		err = errors.New(resp.Status + " " + string(b))
+		return err, resp.StatusCode
+	}
+	wrapper := model.ProcessInstance{}
+	err = json.NewDecoder(resp.Body).Decode(&wrapper)
+	if err != nil {
+		return err, http.StatusInternalServerError
+	}
+	if wrapper.TenantId != userId {
+		return ErrAccessDenied, http.StatusForbidden
+	}
+	return nil, http.StatusOK
 }
 
 func (this *Camunda) CheckHistoryAccess(id string, userId string) (definitionId string, err error) {

@@ -29,12 +29,3 @@ func Get(url string, result interface{}) (err error) {
 	defer resp.Body.Close()
 	return json.NewDecoder(resp.Body).Decode(result)
 }
-
-func GetWithCode(url string, result interface{}) (err error, code int) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-	return json.NewDecoder(resp.Body).Decode(result), resp.StatusCode
-}
