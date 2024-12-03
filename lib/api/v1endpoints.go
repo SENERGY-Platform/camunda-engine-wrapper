@@ -605,9 +605,8 @@ func V1Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			return
 		}
 
-		if err := c.CheckProcessInstanceAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
-			http.Error(writer, "Access denied", http.StatusUnauthorized)
+		if err, code := c.CheckProcessInstanceAccess(id, token.GetUserId()); err != nil {
+			http.Error(writer, err.Error(), code)
 			return
 		}
 		err = c.RemoveProcessInstance(id, token.GetUserId())

@@ -167,15 +167,18 @@ func (this *Camunda) CheckDeploymentAccess(vid string, userId string) (err error
 	return
 }
 
-func (this *Camunda) CheckProcessInstanceAccess(id string, userId string) (err error) {
+var ErrAccessDenied = errors.New("access denied")
+
+func (this *Camunda) CheckProcessInstanceAccess(id string, userId string) (err error, code int) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
-		return err
+		return err, 500
 	}
 	wrapper := model.ProcessInstance{}
-	err = Get(shard+"/engine-rest/process-instance/"+url.QueryEscape(id), &wrapper)
+	err, code = GetWithCode(shard+"/engine-rest/process-instance/"+url.QueryEscape(id), &wrapper)
 	if err == nil && wrapper.TenantId != userId {
-		err = errors.New("access denied")
+		err = ErrAccessDenied
+		code = http.StatusForbidden
 	}
 	return
 }

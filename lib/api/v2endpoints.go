@@ -433,9 +433,8 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err := c.CheckProcessInstanceAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
-			http.Error(writer, "Access denied", http.StatusUnauthorized)
+		if err, code := c.CheckProcessInstanceAccess(id, token.GetUserId()); err != nil {
+			http.Error(writer, err.Error(), code)
 			return
 		}
 		err = c.RemoveProcessInstance(id, token.GetUserId())
@@ -462,9 +461,8 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err := c.CheckProcessInstanceAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
-			http.Error(writer, "Access denied", http.StatusUnauthorized)
+		if err, code := c.CheckProcessInstanceAccess(id, token.GetUserId()); err != nil {
+			http.Error(writer, err.Error(), code)
 			return
 		}
 		err = c.SetProcessInstanceVariable(id, token.GetUserId(), varName, varValue)
@@ -490,9 +488,8 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			return
 		}
 		for _, id := range ids {
-			if err := c.CheckProcessInstanceAccess(id, token.GetUserId()); err != nil {
-				log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
-				http.Error(writer, "Access denied", http.StatusUnauthorized)
+			if err, code := c.CheckProcessInstanceAccess(id, token.GetUserId()); err != nil {
+				http.Error(writer, err.Error(), code)
 				return
 			}
 			err := c.RemoveProcessInstance(id, token.GetUserId())
