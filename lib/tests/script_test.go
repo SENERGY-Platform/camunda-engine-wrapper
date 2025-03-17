@@ -78,7 +78,7 @@ func TestScriptCleanup(t *testing.T) {
 			t.Error(string(temp))
 			return
 		}
-		if !strings.Contains(string(temp), "Cannot read property \\\"System\\\" from undefined") {
+		if !strings.Contains(string(temp), `Cannot read property 'System' of undefined`) {
 			t.Error(string(temp))
 			return
 		}

@@ -18,12 +18,12 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"time"
@@ -32,13 +32,28 @@ import (
 )
 
 func init() {
-	endpoints = append(endpoints, V2Endpoints)
+	endpoints = append(endpoints, &V2Endpoints{})
 }
 
-func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camunda.Camunda, e *events.Events, m Metrics) {
+type V2Endpoints struct{}
 
-	router.GET("/v2/process-definitions/:id/start", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+// StartProcessDefinition godoc
+// @Summary      start process-definitions
+// @Description  start process-definitions by id
+// @Tags         start, process-definitions
+// @Produce      json
+// @Security Bearer
+// @Param        id path string true "process-definitions id"
+// @Success      200
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/process-definitions/{id}/start [GET]
+func (this *V2Endpoints) StartProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/process-definitions/{id}/start", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
 
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -68,9 +83,25 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode([]string{})
 	})
+}
 
-	router.GET("/v2/process-definitions/:id/start/id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+// StartProcessDefinitionAndGetInstanceId godoc
+// @Summary      start process-definitions and get instance
+// @Description  start process-definitions and get started process-instance
+// @Tags         start, process-definitions
+// @Produce      json
+// @Security Bearer
+// @Param        id path string true "process-definitions id"
+// @Success      200 {object}  model.ProcessInstance
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/process-definitions/{id}/start/id [GET]
+func (this *V2Endpoints) StartProcessDefinitionAndGetInstanceId(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/process-definitions/{id}/start/id", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
 
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -95,9 +126,25 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
+}
 
-	router.GET("/v2/deployments/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+// GetDeployment godoc
+// @Summary      get deployment
+// @Description  get process deployment by id
+// @Tags         deployment
+// @Produce      json
+// @Security Bearer
+// @Param        id path string true "deployment id"
+// @Success      200 {object}  model.Deployment
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/process-definitions/{id}/start/id [GET]
+func (this *V2Endpoints) GetDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/deployments/{id}", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -117,9 +164,25 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
+}
 
-	router.GET("/v2/deployments/:id/exists", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+// DeploymentExists godoc
+// @Summary      deployment exists
+// @Description  deployment exists
+// @Tags         deployment
+// @Produce      json
+// @Security Bearer
+// @Param        id path string true "deployment id"
+// @Success      200 {object}  bool
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/deployments/{id}/exists [GET]
+func (this *V2Endpoints) DeploymentExists(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/deployments/{id}/exists", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
 
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -128,7 +191,7 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		}
 
 		err = c.CheckDeploymentAccess(id, token.GetUserId())
-		if err == camunda.UnknownVid || err == camunda.CamundaDeploymentUnknown {
+		if errors.Is(err, camunda.UnknownVid) || errors.Is(err, camunda.CamundaDeploymentUnknown) {
 			writer.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(writer).Encode(false)
 			return
@@ -140,9 +203,25 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(true)
 	})
+}
 
-	router.GET("/v2/deployments/:id/start", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+// StartDeployment godoc
+// @Summary      start deployment
+// @Description  start deployment by id
+// @Tags         start, deployment
+// @Produce      json
+// @Security Bearer
+// @Param        id path string true "deployment id"
+// @Success      200 {object}  model.ProcessInstance
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/deployments/{id}/start [GET]
+func (this *V2Endpoints) StartDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/deployments/{id}/start", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
 
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -178,9 +257,25 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
+}
 
-	router.GET("/v2/deployments/:id/parameter", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+// GetDeploymentParameters godoc
+// @Summary      get deployment parameter
+// @Description  get deployment start parameter
+// @Tags         start, deployment
+// @Produce      json
+// @Security Bearer
+// @Param        id path string true "deployment id"
+// @Success      200 {object}  model.VariableMap
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/deployments/{id}/parameter [GET]
+func (this *V2Endpoints) GetDeploymentParameters(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/deployments/{id}/parameter", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
 
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -214,9 +309,25 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
+}
 
-	router.GET("/v2/deployments/:id/definition", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+// GetDeploymentDefinition godoc
+// @Summary      get deployment process-definition
+// @Description  get deployment process-definition
+// @Tags         deployment, process-definition
+// @Produce      json
+// @Security Bearer
+// @Param        id path string true "deployment id"
+// @Success      200 {object}  model.ProcessDefinition
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/deployments/{id}/definition [GET]
+func (this *V2Endpoints) GetDeploymentDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/deployments/{id}/definition", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
 
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -238,16 +349,32 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
+}
 
-	router.GET("/v2/deployments/:id/instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+// GetDeploymentInstances godoc
+// @Summary      get deployment process-instances
+// @Description  get deployment process-instances
+// @Tags         deployment, process-instance
+// @Produce      json
+// @Security Bearer
+// @Param        id path string true "deployment id"
+// @Success      200 {array} model.ProcessInstance
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/deployments/{id}/instances [GET]
+func (this *V2Endpoints) GetDeploymentInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/deployments/{id}/instances", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
 		result, err := c.GetInstancesByDeploymentVid(id, token.GetUserId())
-		if err == camunda.UnknownVid {
+		if errors.Is(err, camunda.UnknownVid) {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -258,15 +385,30 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
+}
 
-	router.GET("/v2/deployments", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+// ListDeployments godoc
+// @Summary      list deployments
+// @Description  list deployments
+// @Tags         deployment
+// @Produce      json
+// @Security Bearer
+// @Success      200 {array}  model.ExtendedDeployment
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/deployments [GET]
+func (this *V2Endpoints) ListDeployments(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/deployments", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
 		result, err := c.GetExtendedDeploymentList(token.GetUserId(), request.URL.Query())
-		if err == camunda.UnknownVid {
+		if errors.Is(err, camunda.UnknownVid) {
 			log.Println("WARNING: unable to use vid for process; try repeat")
 			time.Sleep(1 * time.Second)
 			result, err = c.GetExtendedDeploymentList(token.GetUserId(), request.URL.Query())
@@ -279,9 +421,25 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
+}
 
-	router.GET("/v2/process-definitions/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+// GetProcessDefinition godoc
+// @Summary      get process-definition
+// @Description  get process-definition
+// @Tags         process-definition
+// @Produce      json
+// @Security Bearer
+// @Param        id path string true "process-definition id"
+// @Success      200 {object}  model.ProcessDefinition
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/process-definitions/{id} [GET]
+func (this *V2Endpoints) GetProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/process-definitions/{id}", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
 
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -303,9 +461,25 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
+}
 
-	router.GET("/v2/process-definitions/:id/diagram", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+// GetProcessDefinitionDiagram godoc
+// @Summary      get process-definition diagram
+// @Description  get process-definition diagram
+// @Tags         process-definition
+// @Produce      json
+// @Security Bearer
+// @Param        id path string true "process-definition id"
+// @Success      200 {object}  string
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/process-definitions/{id}/diagram [GET]
+func (this *V2Endpoints) GetProcessDefinitionDiagram(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/process-definitions/{id}/diagram", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -334,8 +508,23 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 			writer.Header().Set(key, result.Header.Get(key))
 		}
 	})
+}
 
-	router.GET("/v2/process-instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+// ListProcessInstances godoc
+// @Summary      list process-instances
+// @Description  list process-instances
+// @Tags         process-instance
+// @Produce      json
+// @Security Bearer
+// @Success      200 {array}  model.ProcessInstance
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/process-instances [GET]
+func (this *V2Endpoints) ListProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/process-instances", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -350,8 +539,23 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
+}
 
-	router.GET("/v2/process-instances/count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+// GetProcessInstanceCount godoc
+// @Summary      process-instance count
+// @Description  process-instance count
+// @Tags         process-instance
+// @Produce      json
+// @Security Bearer
+// @Success      200 {object} int
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/process-instances/count [GET]
+func (this *V2Endpoints) GetProcessInstanceCount(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/process-instances/count", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -366,8 +570,24 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
 	})
+}
 
-	router.GET("/v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+// GetHistoricProcessInstances godoc
+// @Summary      list historic process-instances
+// @Description  list historic process-instances
+// @Tags         process-instance
+// @Produce      json
+// @Security Bearer
+// @Param        with_total query bool false "if set to true, wraps the result in an objet with the result {total:0, data:[]}"
+// @Success      200 {array} model.HistoricProcessInstance
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/history/process-instances [GET]
+func (this *V2Endpoints) GetHistoricProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("GET /v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -396,9 +616,21 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		}
 
 	})
+}
 
-	router.DELETE("/v2/history/process-instances/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+// DeleteHistoricProcessInstance godoc
+// @Summary      delete historic process-instance
+// @Description  delete historic process-instance
+// @Tags         process-instance
+// @Security Bearer
+// @Param        id path string true "process-instance id"
+// @Success      200
+// @Failure      400
+// @Failure      500
+// @Router       /v2/history/process-instances/{id} [DELETE]
+func (this *V2Endpoints) DeleteHistoricProcessInstance(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("DELETE /v2/history/process-instances/{id}", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -425,9 +657,21 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode("ok")
 	})
+}
 
-	router.DELETE("/v2/process-instances/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
+// DeleteProcessInstance godoc
+// @Summary      delete process-instance
+// @Description  delete process-instance
+// @Tags         process-instance
+// @Security Bearer
+// @Param        id path string true "process-instance id"
+// @Success      200
+// @Failure      400
+// @Failure      500
+// @Router       /v2/process-instances/{id} [DELETE]
+func (this *V2Endpoints) DeleteProcessInstance(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("DELETE /v2/process-instances/{id}", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -446,10 +690,27 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode("ok")
 	})
+}
 
-	router.PUT("/v2/process-instances/:id/variables/:variable_name", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		id := params.ByName("id")
-		varName := params.ByName("variable_name")
+// SetProcessInstanceVariable godoc
+// @Summary      set process-instance variable
+// @Description  set process-instance variable
+// @Tags         process-instance
+// @Security Bearer
+// @Param        id path string true "process-instance id"
+// @Param        variable_name path string true "variable_name"
+// @Param        message body interface{} true "value"
+// @Success      200
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/process-instances/{id}/variables/{variable_name} [PUT]
+func (this *V2Endpoints) SetProcessInstanceVariable(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("PUT /v2/process-instances/{id}/variables/{variable_name}", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
+		varName := request.PathValue("variable_name")
 		var varValue interface{}
 		err := json.NewDecoder(request.Body).Decode(&varValue)
 		if err != nil {
@@ -474,8 +735,20 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode("ok")
 	})
+}
 
-	router.DELETE("/v2/process-instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+// DeleteProcessMultipleInstances godoc
+// @Summary      delete multiple process-instances
+// @Description  delete multiple process-instances
+// @Tags         process-instance
+// @Security Bearer
+// @Param        message body []string true "ids"
+// @Success      200
+// @Failure      400
+// @Failure      500
+// @Router       /v2/process-instances [DELETE]
+func (this *V2Endpoints) DeleteProcessMultipleInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("DELETE /v2/process-instances", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -503,8 +776,20 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		json.NewEncoder(writer).Encode("ok")
 		return
 	})
+}
 
-	router.DELETE("/v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+// DeleteMultipleHistoricProcessInstances godoc
+// @Summary      delete multiple historic process-instances
+// @Description  delete multiple historic process-instances
+// @Tags         process-instance
+// @Security Bearer
+// @Param        message body []string true "ids"
+// @Success      200
+// @Failure      400
+// @Failure      500
+// @Router       /v2/process-instances [DELETE]
+func (this *V2Endpoints) DeleteMultipleHistoricProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("DELETE /v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -540,8 +825,35 @@ func V2Endpoints(config configuration.Config, router *httprouter.Router, c *camu
 		json.NewEncoder(writer).Encode("ok")
 		return
 	})
+}
 
-	router.POST("/v2/event-trigger", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+// ref https://docs.camunda.org/rest/camunda-bpm-platform/7.23-SNAPSHOT/#tag/Message/operation/deliverMessage
+type EventTriggerMessage struct {
+	MessageName           string `json:"messageName"`
+	ProcessVariablesLocal map[string]struct {
+		Type  string      `json:"type,omitempty"`
+		Value interface{} `json:"value,omitempty"`
+	} `json:"processVariablesLocal"`
+	ResultEnabled bool   `json:"resultEnabled"`
+	TenantId      string `json:"tenantId"`
+}
+
+// TriggerEvent godoc
+// @Summary      trigger event
+// @Description  trigger event
+// @Tags         event
+// @Produce      json
+// @Security Bearer
+// @Param        message body EventTriggerMessage true "ref https://docs.camunda.org/rest/camunda-bpm-platform/7.23-SNAPSHOT/#tag/Message/operation/deliverMessage"
+// @Success      200
+// @Failure      400
+// @Failure      401
+// @Failure      403
+// @Failure      404
+// @Failure      500
+// @Router       /v2/event-trigger [POST]
+func (this *V2Endpoints) TriggerEvent(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+	router.HandleFunc("POST /v2/event-trigger", func(writer http.ResponseWriter, request *http.Request) {
 		m.NotifyEventTrigger()
 
 		token, err := auth.GetParsedToken(request)

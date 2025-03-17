@@ -16,6 +16,7 @@
 
 package model
 
+type VariableMap = map[string]Variable
 type Variable struct {
 	Value     interface{} `json:"value"`
 	Type      string      `json:"type"`

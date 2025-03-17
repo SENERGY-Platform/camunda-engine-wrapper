@@ -24,16 +24,18 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"reflect"
-	"runtime"
 	"runtime/debug"
 	"time"
 )
 
-var endpoints = []func(config configuration.Config, router *httprouter.Router, camunda *camunda.Camunda, event *events.Events, m Metrics){}
+//go:generate go tool swag init -o ../../docs --parseDependency -d .. -g api/api.go
+
+type EndpointMethod = func(config configuration.Config, router *http.ServeMux, camunda *camunda.Camunda, event *events.Events, m Metrics)
+
+var endpoints = []interface{}{} //list of objects with EndpointMethod
 
 func Start(ctx context.Context, config configuration.Config, camunda *camunda.Camunda, event *events.Events, m Metrics) (err error) {
 	defer func() {
@@ -70,11 +72,23 @@ func Start(ctx context.Context, config configuration.Config, camunda *camunda.Ca
 	return
 }
 
+// GetRouter doc
+// @title         Process-Engine-Wrapper
+// @version       0.1
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+// @BasePath  /
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 func GetRouter(config configuration.Config, camunda *camunda.Camunda, event *events.Events, m Metrics) http.Handler {
-	router := httprouter.New()
+	router := http.NewServeMux()
 	for _, e := range endpoints {
-		log.Println("add endpoint: " + runtime.FuncForPC(reflect.ValueOf(e).Pointer()).Name())
-		e(config, router, camunda, event, m)
+		for name, call := range getEndpointMethods(e) {
+			log.Println("add endpoint: " + name)
+			call(config, router, camunda, event, m)
+		}
 	}
 	handler := util.NewCors(router)
 	handler = util.NewLogger(handler)
@@ -83,4 +97,26 @@ func GetRouter(config configuration.Config, camunda *camunda.Camunda, event *eve
 
 type Metrics interface {
 	NotifyEventTrigger()
+}
+
+func getEndpointMethods(e interface{}) map[string]EndpointMethod {
+	result := map[string]EndpointMethod{}
+	objRef := reflect.ValueOf(e)
+	methodCount := objRef.NumMethod()
+	for i := 0; i < methodCount; i++ {
+		m := objRef.Method(i)
+		f, ok := m.Interface().(EndpointMethod)
+		if ok {
+			name := getTypeName(objRef.Type()) + "::" + objRef.Type().Method(i).Name
+			result[name] = f
+		}
+	}
+	return result
+}
+
+func getTypeName(t reflect.Type) (res string) {
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t.Name()
 }

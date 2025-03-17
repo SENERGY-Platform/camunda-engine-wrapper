@@ -1,10 +1,11 @@
-FROM golang:1.22 AS builder
+FROM golang:1.24 AS builder
 
 COPY . /go/src/app
 WORKDIR /go/src/app
 
 ENV GO111MODULE=on
 
+RUN go generate ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -o app
 RUN CGO_ENABLED=0 GOOS=linux go build -o cleanup ./cmd/cleanup
 RUN CGO_ENABLED=0 GOOS=linux go build -o addshard ./cmd/addshard
