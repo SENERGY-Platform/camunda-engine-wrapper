@@ -18,8 +18,9 @@ package tests
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/messages"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/resources"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/server"
@@ -42,14 +43,25 @@ func TestScriptCleanup(t *testing.T) {
 		return
 	}
 
-	config, wrapperUrl, _, e, err := server.CreateTestEnv(ctx, &wg, config)
+	config, wrapperUrl, _, err := server.CreateTestEnv(ctx, &wg, config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	t.Run("deploy", func(t *testing.T) {
-		err = e.HandleDeploymentCreate(helper.JwtPayload.GetUserId(), "test", "test", resources.ScriptTest, helper.SvgExample, "", &messages.IncidentHandling{})
+		err, _ = client.New(wrapperUrl).Deploy(client.InternalAdminToken, client.DeploymentMessage{
+			Deployment: model.Deployment{
+				Id:   "test",
+				Name: "test",
+				Diagram: model.Diagram{
+					XmlDeployed: resources.ScriptTest,
+					Svg:         helper.SvgExample,
+				},
+				IncidentHandling: &model.IncidentHandling{},
+			},
+			UserId: helper.JwtPayload.GetUserId(),
+		})
 		if err != nil {
 			t.Error(err)
 			return

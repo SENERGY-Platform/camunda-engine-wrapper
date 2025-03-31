@@ -35,12 +35,6 @@ type Config struct {
 	ServerPort  string `json:"server_port"`
 	MetricsPort string `json:"metrics_port"`
 
-	KafkaUrl   string `json:"kafka_url"`
-	KafkaGroup string `json:"kafka_group"`
-
-	DeploymentTopic string `json:"deployment_topic"`
-	IncidentTopic   string `json:"incident_topic"`
-
 	WrapperDb  string `json:"wrapper_db"`
 	ShardingDb string `json:"sharding_db"`
 
@@ -51,7 +45,8 @@ type Config struct {
 	HttpServerReadTimeout string `json:"http_server_read_timeout"`
 	NotificationUrl       string `json:"notification_url"`
 
-	ProcessIoUrl string `json:"process_io_url"`
+	ProcessIoUrl   string `json:"process_io_url"`
+	IncidentApiUrl string `json:"incident_api_url"`
 
 	AuthEndpoint     string `json:"auth_endpoint"`
 	AuthClientId     string `json:"auth_client_id" config:"secret"`

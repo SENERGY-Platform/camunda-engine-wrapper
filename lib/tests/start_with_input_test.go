@@ -7,9 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/messages"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/server"
 	"io"
@@ -34,17 +33,19 @@ func TestGetParameter(t *testing.T) {
 		return
 	}
 
-	config, wrapperUrl, _, e, err := server.CreateTestEnv(ctx, &wg, config)
+	config, wrapperUrl, _, err := server.CreateTestEnv(ctx, &wg, config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
+	wrapperClient := client.New(wrapperUrl)
+
 	deploymentId := "withInput"
-	t.Run("deploy process with input", testDeployProcessWithInput(e, deploymentId, processWithInput))
+	t.Run("deploy process with input", testDeployProcessWithInput(wrapperClient, deploymentId, processWithInput))
 
 	idWithForm := "withForm"
-	t.Run("deploy process with form", testDeployProcessWithInput(e, idWithForm, processWithForm))
+	t.Run("deploy process with form", testDeployProcessWithInput(wrapperClient, idWithForm, processWithForm))
 
 	t.Run("check parameter of normal process", checkProcessParameterDeclaration(wrapperUrl, deploymentId, map[string]model.Variable{}))
 	t.Run("check parameter of form process", checkProcessParameterDeclaration(wrapperUrl, idWithForm, map[string]model.Variable{"inputTemperature": {
@@ -66,14 +67,16 @@ func TestStartWithInput(t *testing.T) {
 		return
 	}
 
-	config, wrapperUrl, shard, e, err := server.CreateTestEnv(ctx, &wg, config)
+	config, wrapperUrl, shard, err := server.CreateTestEnv(ctx, &wg, config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
+	wrapperClient := client.New(wrapperUrl)
+
 	deploymentId := "withInput"
-	t.Run("deploy process with input", testDeployProcessWithInput(e, deploymentId, processWithInput))
+	t.Run("deploy process with input", testDeployProcessWithInput(wrapperClient, deploymentId, processWithInput))
 
 	t.Run("start process with input inputTemperature 30", testStartProcessWithInput(wrapperUrl, deploymentId, map[string]interface{}{"inputTemperature": 30}))
 	t.Run("check and finish task with temp 30", testCheckProcessWithInputTask(shard, float64(30)))
@@ -105,7 +108,7 @@ func TestStartWithInput(t *testing.T) {
 	t.Run("start process with str inputs as raw string", testStartProcessWithRawStringInput(wrapperUrl, deploymentId, map[string]string{"inputTemperature": "foo bar batz"}))
 	t.Run("check and finish task with str inputs as raw string", testCheckProcessWithInputTask(shard, "foo bar batz"))
 
-	t.Run("deploy process without input", testDeployProcessWithInput(e, "withoutInput", processWithoutInput))
+	t.Run("deploy process without input", testDeployProcessWithInput(wrapperClient, "withoutInput", processWithoutInput))
 	t.Run("start process without inputs", testStartProcessWithInput(wrapperUrl, "withoutInput", nil))
 	t.Run("check and finish task with temp 42", testCheckProcessWithInputTask(shard, "42"))
 }
@@ -122,15 +125,17 @@ func TestStartWithInputForm(t *testing.T) {
 		return
 	}
 
-	config, wrapperUrl, shard, e, err := server.CreateTestEnv(ctx, &wg, config)
+	config, wrapperUrl, shard, err := server.CreateTestEnv(ctx, &wg, config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
+	wrapperClient := client.New(wrapperUrl)
+
 	idWithForm := "withForm"
 
-	t.Run("deploy process with form", testDeployProcessWithInput(e, idWithForm, processWithForm))
+	t.Run("deploy process with form", testDeployProcessWithInput(wrapperClient, idWithForm, processWithForm))
 
 	t.Run("start process with input inputTemperature 30", testStartProcessWithInput(wrapperUrl, idWithForm, map[string]interface{}{"inputTemperature": 30}))
 	t.Run("check and finish task with temp 30", testCheckProcessWithInputTask(shard, float64(30)))
@@ -163,16 +168,18 @@ func TestVarEdit(t *testing.T) {
 		return
 	}
 
-	config, wrapperUrl, shard, e, err := server.CreateTestEnv(ctx, &wg, config)
+	config, wrapperUrl, shard, err := server.CreateTestEnv(ctx, &wg, config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
+	wrapperClient := client.New(wrapperUrl)
+
 	instance := model.ProcessInstance{}
 
 	idWithInput := "withInput"
-	t.Run("deploy process withInput", testDeployProcessWithInput(e, idWithInput, processWithInput))
+	t.Run("deploy process withInput", testDeployProcessWithInput(wrapperClient, idWithInput, processWithInput))
 
 	t.Run("start withInput with debug boolean", testStartProcessWithInput(wrapperUrl, idWithInput, map[string]interface{}{"inputTemperature": 30, "debug": true}))
 	t.Run("check withInput with debug boolean", testCheckProcessVariables(shard, map[string]interface{}{"debug": true}))
@@ -192,7 +199,7 @@ func TestVarEdit(t *testing.T) {
 	t.Run("check withInput without debug to be set as string", testCheckProcessVariables(shard, map[string]interface{}{"inputTemperature": float64(30), "debug": "true"}))
 
 	idWithForm := "withForm"
-	t.Run("deploy process withForm", testDeployProcessWithInput(e, idWithForm, processWithInput))
+	t.Run("deploy process withForm", testDeployProcessWithInput(wrapperClient, idWithForm, processWithInput))
 
 	t.Run("start withForm with debug boolean", testStartProcessWithInput(wrapperUrl, idWithForm, map[string]interface{}{"inputTemperature": 30, "debug": true}))
 	t.Run("check withForm with debug boolean", testCheckProcessVariables(shard, map[string]interface{}{"debug": true}))
@@ -424,9 +431,20 @@ func checkProcessParameterDeclaration(wrapper string, id string, expected map[st
 	}
 }
 
-func testDeployProcessWithInput(e *events.Events, id string, bpmn string) func(t *testing.T) {
+func testDeployProcessWithInput(c *client.Client, id string, bpmn string) func(t *testing.T) {
 	return func(t *testing.T) {
-		err := e.HandleDeploymentCreate(helper.JwtPayload.GetUserId(), id, "processWithInput", bpmn, helper.SvgExample, "", &messages.IncidentHandling{})
+		err, _ := c.Deploy(client.InternalAdminToken, client.DeploymentMessage{
+			Deployment: client.Deployment{
+				Id:   id,
+				Name: "processWithInput",
+				Diagram: client.Diagram{
+					XmlDeployed: bpmn,
+					Svg:         helper.SvgExample,
+				},
+				IncidentHandling: &client.IncidentHandling{},
+			},
+			UserId: helper.JwtPayload.GetUserId(),
+		})
 		if err != nil {
 			t.Error(err)
 			return

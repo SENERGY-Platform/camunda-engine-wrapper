@@ -23,7 +23,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
 	"log"
 	"net/http"
 	"time"
@@ -51,7 +51,7 @@ type V2Endpoints struct{}
 // @Failure      404
 // @Failure      500
 // @Router       /v2/process-definitions/{id}/start [GET]
-func (this *V2Endpoints) StartProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) StartProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/process-definitions/{id}/start", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 
@@ -99,7 +99,7 @@ func (this *V2Endpoints) StartProcessDefinition(config configuration.Config, rou
 // @Failure      404
 // @Failure      500
 // @Router       /v2/process-definitions/{id}/start/id [GET]
-func (this *V2Endpoints) StartProcessDefinitionAndGetInstanceId(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) StartProcessDefinitionAndGetInstanceId(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/process-definitions/{id}/start/id", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 
@@ -142,7 +142,7 @@ func (this *V2Endpoints) StartProcessDefinitionAndGetInstanceId(config configura
 // @Failure      404
 // @Failure      500
 // @Router       /v2/process-definitions/{id}/start/id [GET]
-func (this *V2Endpoints) GetDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) GetDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/deployments/{id}", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 		token, err := auth.GetParsedToken(request)
@@ -180,7 +180,7 @@ func (this *V2Endpoints) GetDeployment(config configuration.Config, router *http
 // @Failure      404
 // @Failure      500
 // @Router       /v2/deployments/{id}/exists [GET]
-func (this *V2Endpoints) DeploymentExists(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) DeploymentExists(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/deployments/{id}/exists", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 
@@ -219,7 +219,7 @@ func (this *V2Endpoints) DeploymentExists(config configuration.Config, router *h
 // @Failure      404
 // @Failure      500
 // @Router       /v2/deployments/{id}/start [GET]
-func (this *V2Endpoints) StartDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) StartDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/deployments/{id}/start", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 
@@ -273,7 +273,7 @@ func (this *V2Endpoints) StartDeployment(config configuration.Config, router *ht
 // @Failure      404
 // @Failure      500
 // @Router       /v2/deployments/{id}/parameter [GET]
-func (this *V2Endpoints) GetDeploymentParameters(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) GetDeploymentParameters(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/deployments/{id}/parameter", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 
@@ -325,7 +325,7 @@ func (this *V2Endpoints) GetDeploymentParameters(config configuration.Config, ro
 // @Failure      404
 // @Failure      500
 // @Router       /v2/deployments/{id}/definition [GET]
-func (this *V2Endpoints) GetDeploymentDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) GetDeploymentDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/deployments/{id}/definition", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 
@@ -365,7 +365,7 @@ func (this *V2Endpoints) GetDeploymentDefinition(config configuration.Config, ro
 // @Failure      404
 // @Failure      500
 // @Router       /v2/deployments/{id}/instances [GET]
-func (this *V2Endpoints) GetDeploymentInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) GetDeploymentInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/deployments/{id}/instances", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 		token, err := auth.GetParsedToken(request)
@@ -400,7 +400,7 @@ func (this *V2Endpoints) GetDeploymentInstances(config configuration.Config, rou
 // @Failure      404
 // @Failure      500
 // @Router       /v2/deployments [GET]
-func (this *V2Endpoints) ListDeployments(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) ListDeployments(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/deployments", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -437,7 +437,7 @@ func (this *V2Endpoints) ListDeployments(config configuration.Config, router *ht
 // @Failure      404
 // @Failure      500
 // @Router       /v2/process-definitions/{id} [GET]
-func (this *V2Endpoints) GetProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) GetProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/process-definitions/{id}", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 
@@ -477,7 +477,7 @@ func (this *V2Endpoints) GetProcessDefinition(config configuration.Config, route
 // @Failure      404
 // @Failure      500
 // @Router       /v2/process-definitions/{id}/diagram [GET]
-func (this *V2Endpoints) GetProcessDefinitionDiagram(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) GetProcessDefinitionDiagram(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/process-definitions/{id}/diagram", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 		token, err := auth.GetParsedToken(request)
@@ -523,7 +523,7 @@ func (this *V2Endpoints) GetProcessDefinitionDiagram(config configuration.Config
 // @Failure      404
 // @Failure      500
 // @Router       /v2/process-instances [GET]
-func (this *V2Endpoints) ListProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) ListProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/process-instances", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -554,7 +554,7 @@ func (this *V2Endpoints) ListProcessInstances(config configuration.Config, route
 // @Failure      404
 // @Failure      500
 // @Router       /v2/process-instances/count [GET]
-func (this *V2Endpoints) GetProcessInstanceCount(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) GetProcessInstanceCount(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/process-instances/count", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -586,7 +586,7 @@ func (this *V2Endpoints) GetProcessInstanceCount(config configuration.Config, ro
 // @Failure      404
 // @Failure      500
 // @Router       /v2/history/process-instances [GET]
-func (this *V2Endpoints) GetHistoricProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) GetHistoricProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -628,7 +628,7 @@ func (this *V2Endpoints) GetHistoricProcessInstances(config configuration.Config
 // @Failure      400
 // @Failure      500
 // @Router       /v2/history/process-instances/{id} [DELETE]
-func (this *V2Endpoints) DeleteHistoricProcessInstance(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) DeleteHistoricProcessInstance(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("DELETE /v2/history/process-instances/{id}", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 		token, err := auth.GetParsedToken(request)
@@ -636,22 +636,10 @@ func (this *V2Endpoints) DeleteHistoricProcessInstance(config configuration.Conf
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		definitionId, err := c.CheckHistoryAccess(id, token.GetUserId())
-		if err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
-			http.Error(writer, "Access denied", http.StatusUnauthorized)
-			return
-		}
-		err = e.PublishIncidentDeleteByProcessInstanceEvent(id, definitionId)
+		err, code := e.DeleteHistoricProcessInstance(token.GetUserId(), id)
 		if err != nil {
 			log.Println("ERROR: error on PublishIncidentDeleteByProcessInstanceEvent", err)
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		err = c.RemoveProcessInstanceHistory(id, token.GetUserId())
-		if err != nil {
-			log.Println("ERROR: error on removeProcessInstanceHistory", err)
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			http.Error(writer, err.Error(), code)
 			return
 		}
 		writer.Header().Set("Content-Type", "application/json")
@@ -669,7 +657,7 @@ func (this *V2Endpoints) DeleteHistoricProcessInstance(config configuration.Conf
 // @Failure      400
 // @Failure      500
 // @Router       /v2/process-instances/{id} [DELETE]
-func (this *V2Endpoints) DeleteProcessInstance(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) DeleteProcessInstance(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("DELETE /v2/process-instances/{id}", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 		token, err := auth.GetParsedToken(request)
@@ -707,7 +695,7 @@ func (this *V2Endpoints) DeleteProcessInstance(config configuration.Config, rout
 // @Failure      404
 // @Failure      500
 // @Router       /v2/process-instances/{id}/variables/{variable_name} [PUT]
-func (this *V2Endpoints) SetProcessInstanceVariable(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) SetProcessInstanceVariable(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("PUT /v2/process-instances/{id}/variables/{variable_name}", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 		varName := request.PathValue("variable_name")
@@ -747,7 +735,7 @@ func (this *V2Endpoints) SetProcessInstanceVariable(config configuration.Config,
 // @Failure      400
 // @Failure      500
 // @Router       /v2/process-instances [DELETE]
-func (this *V2Endpoints) DeleteProcessMultipleInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) DeleteProcessMultipleInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("DELETE /v2/process-instances", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -788,7 +776,7 @@ func (this *V2Endpoints) DeleteProcessMultipleInstances(config configuration.Con
 // @Failure      400
 // @Failure      500
 // @Router       /v2/process-instances [DELETE]
-func (this *V2Endpoints) DeleteMultipleHistoricProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) DeleteMultipleHistoricProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("DELETE /v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -801,23 +789,12 @@ func (this *V2Endpoints) DeleteMultipleHistoricProcessInstances(config configura
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
+		userId := token.GetUserId()
 		for _, id := range ids {
-			definitionId, err := c.CheckHistoryAccess(id, token.GetUserId())
-			if err != nil {
-				log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
-				http.Error(writer, "Access denied", http.StatusUnauthorized)
-				return
-			}
-			err = e.PublishIncidentDeleteByProcessInstanceEvent(id, definitionId)
+			err, code := e.DeleteHistoricProcessInstance(userId, id)
 			if err != nil {
 				log.Println("ERROR: error on PublishIncidentDeleteByProcessInstanceEvent", err)
-				http.Error(writer, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			err = c.RemoveProcessInstanceHistory(id, token.GetUserId())
-			if err != nil {
-				log.Println("ERROR: error on removeProcessInstanceHistory", err)
-				http.Error(writer, err.Error(), http.StatusInternalServerError)
+				http.Error(writer, err.Error(), code)
 				return
 			}
 		}
@@ -852,7 +829,7 @@ type EventTriggerMessage struct {
 // @Failure      404
 // @Failure      500
 // @Router       /v2/event-trigger [POST]
-func (this *V2Endpoints) TriggerEvent(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V2Endpoints) TriggerEvent(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("POST /v2/event-trigger", func(writer http.ResponseWriter, request *http.Request) {
 		m.NotifyEventTrigger()
 

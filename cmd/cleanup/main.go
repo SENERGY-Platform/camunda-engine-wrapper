@@ -95,7 +95,8 @@ func removePids(inputs []string, noConfirmation bool) error {
 }
 
 func removeVids(config configuration.Config, inputs []string, noConfirmation bool) error {
-	fmt.Println("this will delete", len(inputs), "vids")
+	fmt.Println("this will delete", len(inputs), "vids locally")
+	fmt.Println("WARNING: this will not delete those deployments in other services. please use the process-deployment service to delete deployments to ensure consistent data")
 
 	if !noConfirmation {
 		reader := bufio.NewReader(os.Stdin)

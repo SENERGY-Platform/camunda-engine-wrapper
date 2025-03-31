@@ -20,7 +20,7 @@ import (
 	_ "github.com/SENERGY-Platform/camunda-engine-wrapper/docs"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
 	"github.com/swaggo/swag"
 	"net/http"
 	"strings"
@@ -32,7 +32,7 @@ func init() {
 
 type Swagger struct{}
 
-func (this *Swagger) Swagger(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *Swagger) Swagger(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /doc", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		doc, err := swag.ReadDoc()

@@ -5,8 +5,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/api"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/metrics"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/processio"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
@@ -36,24 +35,11 @@ func Wrapper(parentCtx context.Context, config configuration.Config) (err error)
 
 	c := camunda.New(config, v, s, processIo)
 
-	cqrs, err := kafka.Init(config.KafkaUrl, config.KafkaGroup, config.Debug)
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		<-ctx.Done()
-		cqrs.Close()
-	}()
-
-	e, err := events.New(config, cqrs, v, c, processIo)
-	if err != nil {
-		return err
-	}
-
 	m := metrics.New().Serve(ctx, config.MetricsPort)
 
-	err = api.Start(ctx, config, c, e, m)
+	ctrl := controller.New(config, c, v, processIo)
+
+	err = api.Start(ctx, config, c, ctrl, m)
 	if err != nil {
 		return
 	}

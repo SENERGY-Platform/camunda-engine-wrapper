@@ -23,15 +23,16 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/metrics"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/mocks"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
+	"net/http"
 	"net/http/httptest"
 	"sync"
 	"testing"
@@ -44,8 +45,6 @@ func TestDeploymentStart(t *testing.T) {
 	defer wg.Wait()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	cqrs := mocks.Kafka()
 
 	pgStr, _, _, err := docker.PostgresWithNetwork(ctx, wg, "vid_relations")
 	if err != nil {
@@ -74,6 +73,10 @@ func TestDeploymentStart(t *testing.T) {
 	config.WrapperDb = pgStr
 	config.ShardingDb = pgStr
 
+	incidentApiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	defer incidentApiServer.Close()
+	config.IncidentApiUrl = incidentApiServer.URL
+
 	s, err := shards.New(config.ShardingDb, cache.None)
 	if err != nil {
 		t.Error(err)
@@ -93,17 +96,15 @@ func TestDeploymentStart(t *testing.T) {
 
 	c := camunda.New(config, v, s, nil)
 
-	e, err := events.New(config, cqrs, v, c, nil)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	ctrl := controller.New(config, c, v, nil)
 
-	httpServer := httptest.NewServer(api.GetRouter(config, c, e, metrics.New()))
+	httpServer := httptest.NewServer(api.GetRouter(config, c, ctrl, metrics.New()))
 	defer httpServer.Close()
 
+	wrapperClient := client.New(httpServer.URL)
+
 	//put process
-	err = helper.PutProcess(e, "1", "n11", helper.JwtPayload.GetUserId())
+	err = helper.PutProcess(wrapperClient, "1", "n11", helper.JwtPayload.GetUserId())
 	if err != nil {
 		t.Error(err)
 		return
@@ -128,8 +129,6 @@ func TestDeploymentStartWithSource(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cqrs := mocks.Kafka()
-
 	pgStr, _, _, err := docker.PostgresWithNetwork(ctx, wg, "vid_relations")
 	if err != nil {
 		t.Error(err)
@@ -157,6 +156,10 @@ func TestDeploymentStartWithSource(t *testing.T) {
 	config.WrapperDb = pgStr
 	config.ShardingDb = pgStr
 
+	incidentApiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	defer incidentApiServer.Close()
+	config.IncidentApiUrl = incidentApiServer.URL
+
 	s, err := shards.New(config.ShardingDb, cache.None)
 	if err != nil {
 		t.Error(err)
@@ -176,17 +179,15 @@ func TestDeploymentStartWithSource(t *testing.T) {
 
 	c := camunda.New(config, v, s, nil)
 
-	e, err := events.New(config, cqrs, v, c, nil)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	ctrl := controller.New(config, c, v, nil)
 
-	httpServer := httptest.NewServer(api.GetRouter(config, c, e, metrics.New()))
+	httpServer := httptest.NewServer(api.GetRouter(config, c, ctrl, metrics.New()))
 	defer httpServer.Close()
 
+	wrapperClient := client.New(httpServer.URL)
+
 	//put process
-	err = helper.PutProcessWithSource(e, "1", "n11", helper.JwtPayload.GetUserId(), "")
+	err = helper.PutProcessWithSource(wrapperClient, "1", "n11", helper.JwtPayload.GetUserId(), "")
 	if err != nil {
 		t.Error(err)
 		return
@@ -196,7 +197,7 @@ func TestDeploymentStartWithSource(t *testing.T) {
 	t.Run("check source = 'sepl'", CheckDeploymentList(httpServer.URL, "sepl", 1))
 	t.Run("check source = 'generated'", CheckDeploymentList(httpServer.URL, "generated", 0))
 
-	err = helper.PutProcessWithSource(e, "2", "n2", helper.JwtPayload.GetUserId(), "generated")
+	err = helper.PutProcessWithSource(wrapperClient, "2", "n2", helper.JwtPayload.GetUserId(), "generated")
 	if err != nil {
 		t.Error(err)
 		return
@@ -206,7 +207,7 @@ func TestDeploymentStartWithSource(t *testing.T) {
 	t.Run("check source = 'sepl'", CheckDeploymentList(httpServer.URL, "sepl", 1))
 	t.Run("check source = 'generated'", CheckDeploymentList(httpServer.URL, "generated", 1))
 
-	err = helper.DeleteProcess(e, "1", helper.JwtPayload.GetUserId())
+	err = helper.DeleteProcess(wrapperClient, "1", helper.JwtPayload.GetUserId())
 	if err != nil {
 		t.Error(err)
 		return

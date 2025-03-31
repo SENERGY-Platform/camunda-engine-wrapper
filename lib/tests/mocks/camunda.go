@@ -3,9 +3,12 @@ package mocks
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -19,13 +22,17 @@ func CamundaServer(ctx context.Context, wg *sync.WaitGroup) (url string, request
 	requests = make(chan Request, 100)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-		pl, err := ioutil.ReadAll(r.Body)
+		pl, err := io.ReadAll(r.Body)
 		requests <- Request{
 			Url:     r.URL.String(),
 			Payload: pl,
 			Err:     err,
 		}
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		if strings.Contains(r.URL.Path, "/process-definition") {
+			json.NewEncoder(w).Encode([]interface{}{})
+		} else {
+			json.NewEncoder(w).Encode(map[string]interface{}{"id": strconv.Itoa(rand.Int())})
+		}
 	}))
 	url = ts.URL
 	wg.Add(1)
@@ -42,7 +49,7 @@ func CamundaServerWithResponse(ctx context.Context, wg *sync.WaitGroup, resp int
 	requests = make(chan Request, 100)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-		pl, err := ioutil.ReadAll(r.Body)
+		pl, err := io.ReadAll(r.Body)
 		requests <- Request{
 			Url:     r.URL.String(),
 			Payload: pl,

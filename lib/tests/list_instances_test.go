@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/server"
@@ -41,14 +42,16 @@ func TestListInstances(t *testing.T) {
 		return
 	}
 
-	config, wrapperUrl, shard, e, err := server.CreateTestEnv(ctx, &wg, config)
+	config, wrapperUrl, shard, err := server.CreateTestEnv(ctx, &wg, config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
+	wrapperClient := client.New(wrapperUrl)
+
 	deploymentId := "withInput"
-	t.Run("deploy process with input", testDeployProcessWithInput(e, deploymentId, processWithInput))
+	t.Run("deploy process with input", testDeployProcessWithInput(wrapperClient, deploymentId, processWithInput))
 
 	t.Run("start process with input inputTemperature 30", testStartProcessWithInput(wrapperUrl, deploymentId, map[string]interface{}{"inputTemperature": 30}))
 	t.Run("start process with input inputTemperature 21", testStartProcessWithInput(wrapperUrl, deploymentId, map[string]interface{}{"inputTemperature": 21}))
@@ -56,7 +59,7 @@ func TestListInstances(t *testing.T) {
 
 	t.Run("fetch and complete one task to finish one process", testFetchAndComplete(shard))
 
-	t.Run("deploy process without input", testDeployProcessWithInput(e, "withoutInput", processWithoutInput))
+	t.Run("deploy process without input", testDeployProcessWithInput(wrapperClient, "withoutInput", processWithoutInput))
 	t.Run("start process without inputs", testStartProcessWithInput(wrapperUrl, "withoutInput", nil))
 
 	t.Run("list first deployment instances", testListDeploymentInstances(wrapperUrl, deploymentId, 2))

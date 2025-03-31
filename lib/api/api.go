@@ -23,7 +23,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/api/util"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
 	"log"
 	"net/http"
 	"reflect"
@@ -33,17 +33,17 @@ import (
 
 //go:generate go tool swag init -o ../../docs --parseDependency -d .. -g api/api.go
 
-type EndpointMethod = func(config configuration.Config, router *http.ServeMux, camunda *camunda.Camunda, event *events.Events, m Metrics)
+type EndpointMethod = func(config configuration.Config, router *http.ServeMux, camunda *camunda.Camunda, ctrl *controller.Controller, m Metrics)
 
 var endpoints = []interface{}{} //list of objects with EndpointMethod
 
-func Start(ctx context.Context, config configuration.Config, camunda *camunda.Camunda, event *events.Events, m Metrics) (err error) {
+func Start(ctx context.Context, config configuration.Config, camunda *camunda.Camunda, ctrl *controller.Controller, m Metrics) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = errors.New(fmt.Sprint(r))
 		}
 	}()
-	router := GetRouter(config, camunda, event, m)
+	router := GetRouter(config, camunda, ctrl, m)
 
 	timeout, err := time.ParseDuration(config.HttpServerTimeout)
 	if err != nil {
@@ -82,12 +82,12 @@ func Start(ctx context.Context, config configuration.Config, camunda *camunda.Ca
 // @in header
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
-func GetRouter(config configuration.Config, camunda *camunda.Camunda, event *events.Events, m Metrics) http.Handler {
+func GetRouter(config configuration.Config, camunda *camunda.Camunda, ctrl *controller.Controller, m Metrics) http.Handler {
 	router := http.NewServeMux()
 	for _, e := range endpoints {
 		for name, call := range getEndpointMethods(e) {
 			log.Println("add endpoint: " + name)
-			call(config, router, camunda, event, m)
+			call(config, router, camunda, ctrl, m)
 		}
 	}
 	handler := util.NewCors(router)

@@ -2,25 +2,47 @@ package helper
 
 import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/messages"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
 	"net/http"
 )
 
-type Events interface {
-	HandleDeploymentCreate(owner string, id string, name string, xml string, svg string, source string, handling *messages.IncidentHandling) (err error)
-	HandleDeploymentDelete(vid string, userId string) error
+func PutProcess(c *client.Client, vid string, name string, owner string) error {
+	err, _ := c.Deploy(client.InternalAdminToken, client.DeploymentMessage{
+		Deployment: model.Deployment{
+			Id:   vid,
+			Name: name,
+			Diagram: model.Diagram{
+				XmlDeployed: BpmnExample,
+				Svg:         SvgExample,
+			},
+			IncidentHandling: &model.IncidentHandling{},
+		},
+		UserId: owner,
+	})
+	return err
 }
 
-func PutProcess(event Events, vid string, name string, owner string) error {
-	return event.HandleDeploymentCreate(owner, vid, name, BpmnExample, SvgExample, "", &messages.IncidentHandling{})
+func PutProcessWithSource(c *client.Client, vid string, name string, owner string, source string) error {
+	err, _ := c.Deploy(client.InternalAdminToken, client.DeploymentMessage{
+		Deployment: model.Deployment{
+			Id:   vid,
+			Name: name,
+			Diagram: model.Diagram{
+				XmlDeployed: BpmnExample,
+				Svg:         SvgExample,
+			},
+			IncidentHandling: &model.IncidentHandling{},
+		},
+		UserId: owner,
+		Source: source,
+	})
+	return err
 }
 
-func PutProcessWithSource(event Events, vid string, name string, owner string, source string) error {
-	return event.HandleDeploymentCreate(owner, vid, name, BpmnExample, SvgExample, source, &messages.IncidentHandling{})
-}
-
-func DeleteProcess(event Events, vid string, userId string) error {
-	return event.HandleDeploymentDelete(vid, userId)
+func DeleteProcess(c *client.Client, vid string, userId string) error {
+	err, _ := c.DeleteDeployment(client.InternalAdminToken, userId, vid)
+	return err
 }
 
 const BpmnExample = `<bpmn:definitions xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:bpmn='http://www.omg.org/spec/BPMN/20100524/MODEL' xmlns:bpmndi='http://www.omg.org/spec/BPMN/20100524/DI' xmlns:dc='http://www.omg.org/spec/DD/20100524/DC' xmlns:di='http://www.omg.org/spec/DD/20100524/DI' id='Definitions_1' targetNamespace='http://bpmn.io/schema/bpmn'><bpmn:process id='Process_1' isExecutable='true'><bpmn:startEvent id='StartEvent_1'><bpmn:outgoing>SequenceFlow_02ibfc0</bpmn:outgoing></bpmn:startEvent><bpmn:endEvent id='EndEvent_1728wjv'><bpmn:incoming>SequenceFlow_02ibfc0</bpmn:incoming></bpmn:endEvent><bpmn:sequenceFlow id='SequenceFlow_02ibfc0' sourceRef='StartEvent_1' targetRef='EndEvent_1728wjv'/></bpmn:process><bpmndi:BPMNDiagram id='BPMNDiagram_1'><bpmndi:BPMNPlane id='BPMNPlane_1' bpmnElement='Process_1'><bpmndi:BPMNShape id='_BPMNShape_StartEvent_2' bpmnElement='StartEvent_1'><dc:Bounds x='173' y='102' width='36' height='36'/></bpmndi:BPMNShape><bpmndi:BPMNShape id='EndEvent_1728wjv_di' bpmnElement='EndEvent_1728wjv'><dc:Bounds x='259' y='102' width='36' height='36'/></bpmndi:BPMNShape><bpmndi:BPMNEdge id='SequenceFlow_02ibfc0_di' bpmnElement='SequenceFlow_02ibfc0'><di:waypoint x='209' y='120'></di:waypoint><di:waypoint x='259' y='120'></di:waypoint></bpmndi:BPMNEdge></bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>`

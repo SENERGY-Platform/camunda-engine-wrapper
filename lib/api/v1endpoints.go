@@ -21,7 +21,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
 	"log"
 	"net/http"
 	"net/url"
@@ -36,14 +36,14 @@ func init() {
 
 type V1Endpoints struct{}
 
-func (this *V1Endpoints) HealthCheck(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) HealthCheck(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(map[string]string{"status": "OK"})
 	})
 }
 
-func (this *V1Endpoints) StartProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) StartProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /process-definition/{id}/start", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 
@@ -77,7 +77,7 @@ func (this *V1Endpoints) StartProcessDefinition(config configuration.Config, rou
 	})
 }
 
-func (this *V1Endpoints) StartProcessDefinitionAndGetInstanceId(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) StartProcessDefinitionAndGetInstanceId(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /process-definition/{id}/start/id", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 
@@ -106,7 +106,7 @@ func (this *V1Endpoints) StartProcessDefinitionAndGetInstanceId(config configura
 	})
 }
 
-func (this *V1Endpoints) GetDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /deployment/{id}", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/deployment/" + id
 		id := request.PathValue("id")
@@ -133,7 +133,7 @@ func (this *V1Endpoints) GetDeployment(config configuration.Config, router *http
 	})
 }
 
-func (this *V1Endpoints) DeploymentExists(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) DeploymentExists(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /deployment/{id}/exists", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/deployment/" + id
 		id := request.PathValue("id")
@@ -159,7 +159,7 @@ func (this *V1Endpoints) DeploymentExists(config configuration.Config, router *h
 	})
 }
 
-func (this *V1Endpoints) StartDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) StartDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /deployment/{id}/start", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 
@@ -199,7 +199,7 @@ func (this *V1Endpoints) StartDeployment(config configuration.Config, router *ht
 	})
 }
 
-func (this *V1Endpoints) GetDeploymentParameters(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetDeploymentParameters(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /deployment/{id}/parameter", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")
 
@@ -237,7 +237,7 @@ func (this *V1Endpoints) GetDeploymentParameters(config configuration.Config, ro
 	})
 }
 
-func (this *V1Endpoints) GetDeploymentDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetDeploymentDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /deployment/{id}/definition", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/process-definition?deploymentId=
 		id := request.PathValue("id")
@@ -264,7 +264,7 @@ func (this *V1Endpoints) GetDeploymentDefinition(config configuration.Config, ro
 	})
 }
 
-func (this *V1Endpoints) GetDeployments(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetDeployments(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /deployment", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
 		if err != nil {
@@ -288,7 +288,7 @@ func (this *V1Endpoints) GetDeployments(config configuration.Config, router *htt
 	})
 }
 
-func (this *V1Endpoints) GetProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /process-definition/{id}", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/process-definition/" + processDefinitionId
 		id := request.PathValue("id")
@@ -315,7 +315,7 @@ func (this *V1Endpoints) GetProcessDefinition(config configuration.Config, route
 	})
 }
 
-func (this *V1Endpoints) GetProcessDefinitionDiagram(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetProcessDefinitionDiagram(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /process-definition/{id}/diagram", func(writer http.ResponseWriter, request *http.Request) {
 		// "/engine-rest/process-definition/" + processDefinitionId + "/diagram"
 		id := request.PathValue("id")
@@ -351,7 +351,7 @@ func (this *V1Endpoints) GetProcessDefinitionDiagram(config configuration.Config
 	})
 }
 
-func (this *V1Endpoints) GetProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /process-instance", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/process-instance"
 
@@ -372,7 +372,7 @@ func (this *V1Endpoints) GetProcessInstances(config configuration.Config, router
 	})
 }
 
-func (this *V1Endpoints) GetProcessInstanceCount(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetProcessInstanceCount(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /process-instances/count", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/process-instance/count"
 
@@ -393,7 +393,7 @@ func (this *V1Endpoints) GetProcessInstanceCount(config configuration.Config, ro
 	})
 }
 
-func (this *V1Endpoints) GetHistoricProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetHistoricProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /history/process-instance", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/history/process-instance"
 
@@ -414,7 +414,7 @@ func (this *V1Endpoints) GetHistoricProcessInstances(config configuration.Config
 	})
 }
 
-func (this *V1Endpoints) GetFilteredHistoricProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetFilteredHistoricProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /history/filtered/process-instance", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/history/process-instance"
 
@@ -435,7 +435,7 @@ func (this *V1Endpoints) GetFilteredHistoricProcessInstances(config configuratio
 	})
 }
 
-func (this *V1Endpoints) GetFinishedProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetFinishedProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /history/finished/process-instance", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/history/process-instance"
 		token, err := auth.GetParsedToken(request)
@@ -454,7 +454,7 @@ func (this *V1Endpoints) GetFinishedProcessInstances(config configuration.Config
 	})
 }
 
-func (this *V1Endpoints) FindFinishedProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) FindFinishedProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /history/finished/process-instance/{searchtype}/{searchvalue}/{limit}/{offset}/{sortby}/{sortdirection}", func(writer http.ResponseWriter, request *http.Request) {
 		searchvalue := request.PathValue("searchvalue")
 		searchtype := request.PathValue("searchtype")
@@ -480,7 +480,7 @@ func (this *V1Endpoints) FindFinishedProcessInstances(config configuration.Confi
 	})
 }
 
-func (this *V1Endpoints) FindUnfinishedProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) FindUnfinishedProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /history/unfinished/process-instance/{searchtype}/{searchvalue}/{limit}/{offset}/{sortby}/{sortdirection}", func(writer http.ResponseWriter, request *http.Request) {
 		searchvalue := request.PathValue("searchvalue")
 		searchtype := request.PathValue("searchtype")
@@ -506,7 +506,7 @@ func (this *V1Endpoints) FindUnfinishedProcessInstances(config configuration.Con
 	})
 }
 
-func (this *V1Endpoints) GetUnfinishedProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetUnfinishedProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /history/unfinished/process-instance", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/history/process-instance"
 		token, err := auth.GetParsedToken(request)
@@ -525,7 +525,7 @@ func (this *V1Endpoints) GetUnfinishedProcessInstances(config configuration.Conf
 	})
 }
 
-func (this *V1Endpoints) GetHistoricProcessInstancesOfProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetHistoricProcessInstancesOfProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /history/process-definition/{id}/process-instance", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/history/process-instance?processDefinitionId="
 		id := request.PathValue("id")
@@ -552,7 +552,7 @@ func (this *V1Endpoints) GetHistoricProcessInstancesOfProcessDefinition(config c
 	})
 }
 
-func (this *V1Endpoints) GetFinishedProcessInstancesOfProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetFinishedProcessInstancesOfProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /history/process-definition/{id}/process-instance/finished", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/history/process-instance?processDefinitionId="
 		id := request.PathValue("id")
@@ -579,7 +579,7 @@ func (this *V1Endpoints) GetFinishedProcessInstancesOfProcessDefinition(config c
 	})
 }
 
-func (this *V1Endpoints) GetUnfinishedProcessInstancesOfProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) GetUnfinishedProcessInstancesOfProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /history/process-definition/{id}/process-instance/unfinished", func(writer http.ResponseWriter, request *http.Request) {
 		//"/engine-rest/history/process-instance?processDefinitionId="
 		id := request.PathValue("id")
@@ -606,7 +606,7 @@ func (this *V1Endpoints) GetUnfinishedProcessInstancesOfProcessDefinition(config
 	})
 }
 
-func (this *V1Endpoints) DeleteHistoricPricessInstance(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) DeleteHistoricPricessInstance(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("DELETE /history/process-instance/{id}", func(writer http.ResponseWriter, request *http.Request) {
 		//DELETE "/engine-rest/history/process-instance/" + processInstanceId
 		id := request.PathValue("id")
@@ -617,22 +617,10 @@ func (this *V1Endpoints) DeleteHistoricPricessInstance(config configuration.Conf
 			return
 		}
 
-		definitionId, err := c.CheckHistoryAccess(id, token.GetUserId())
-		if err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
-			http.Error(writer, "Access denied", http.StatusUnauthorized)
-			return
-		}
-		err = e.PublishIncidentDeleteByProcessInstanceEvent(id, definitionId)
+		err, code := e.DeleteHistoricProcessInstance(token.GetUserId(), id)
 		if err != nil {
 			log.Println("ERROR: error on PublishIncidentDeleteByProcessInstanceEvent", err)
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		err = c.RemoveProcessInstanceHistory(id, token.GetUserId())
-		if err != nil {
-			log.Println("ERROR: error on removeProcessInstanceHistory", err)
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			http.Error(writer, err.Error(), code)
 			return
 		}
 		writer.Header().Set("Content-Type", "application/json")
@@ -640,7 +628,7 @@ func (this *V1Endpoints) DeleteHistoricPricessInstance(config configuration.Conf
 	})
 }
 
-func (this *V1Endpoints) DeleteProcessInstance(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *events.Events, m Metrics) {
+func (this *V1Endpoints) DeleteProcessInstance(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("DELETE /process-instance/{id}", func(writer http.ResponseWriter, request *http.Request) {
 		//DELETE "/engine-rest/process-instance/" + processInstanceId
 		id := request.PathValue("id")

@@ -19,7 +19,7 @@ package cleanup
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 )
@@ -50,7 +50,7 @@ func removeProcess(shard string, deploymentId string) (err error) {
 		return err
 	}
 	defer resp.Body.Close()
-	temp, _ := ioutil.ReadAll(resp.Body)
+	temp, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= 300 {
 		return errors.New(fmt.Sprint("unable to delete ", anonymousShard.String(), " ", deploymentId, " ", resp.StatusCode, " ", string(temp)))
 	}

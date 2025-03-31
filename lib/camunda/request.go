@@ -18,14 +18,20 @@ package camunda
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 )
 
 func Get(url string, result interface{}) (err error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return
+		return err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		tmp, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("%v %v", resp.Status, string(tmp))
+	}
 	return json.NewDecoder(resp.Body).Decode(result)
 }

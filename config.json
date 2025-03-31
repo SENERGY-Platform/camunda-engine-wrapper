@@ -1,10 +1,6 @@
 {
     "server_port":"8080",
     "metrics_port": "2112",
-    "kafka_url":"kafka:9092",
-    "kafka_group":"camunda-engine-wrapper",
-    "deployment_topic":"deployments_v3",
-    "incident_topic":"camunda_incident",
     "wrapper_db":"postgres://user:password@host/dbname?sslmode=disable",
     "sharding_db":"postgres://user:password@host/dbname?sslmode=disable",
     "debug":false,
@@ -18,6 +14,7 @@
     "auth_client_secret": "",
 
     "process_io_url": "",
+    "incident_api_url": "http://api.process-incidents:8080",
 
     "process_deployment_done_topic": "process-deployment-done"
 }

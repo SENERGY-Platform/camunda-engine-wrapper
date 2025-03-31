@@ -19,6 +19,7 @@ package tests
 import (
 	"context"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/resources"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/server"
@@ -38,14 +39,16 @@ func TestFilteredParams(t *testing.T) {
 		return
 	}
 
-	config, wrapperUrl, _, e, err := server.CreateTestEnv(ctx, &wg, config)
+	config, wrapperUrl, _, err := server.CreateTestEnv(ctx, &wg, config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
+	wrapperClient := client.New(wrapperUrl)
+
 	deploymentId := "withInput"
-	t.Run("deploy", testDeployProcessWithInput(e, deploymentId, resources.FormFieldTest))
+	t.Run("deploy", testDeployProcessWithInput(wrapperClient, deploymentId, resources.FormFieldTest))
 
 	t.Run("check", checkProcessParameterDeclaration(wrapperUrl, deploymentId, map[string]model.Variable{
 		"bar": {

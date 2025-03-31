@@ -17,43 +17,17 @@
 package cleanup
 
 import (
-	"encoding/json"
-	"fmt"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/events/kafka"
 )
 
 func RemoveVid(config configuration.Config, ids []string) error {
-	cqrs, err := kafka.Init(config.KafkaUrl, config.KafkaGroup, config.Debug)
-	if err != nil {
-		return err
-	}
-	return RemoveVidWithCqrs(cqrs, config, ids)
-}
-
-func RemoveVidWithCqrs(cqrs kafka.Interface, config configuration.Config, ids []string) error {
+	c := client.New("http://localhost:" + config.ServerPort)
 	for _, id := range ids {
-		err := removeVidByEvent(cqrs, config.DeploymentTopic, id)
+		err, _ := c.DeleteDeployment(client.InternalAdminToken, "", id)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func removeVidByEvent(cqrs kafka.Interface, topic string, vid string) error {
-	fmt.Println("remove vid", vid)
-	command := DeploymentDeleteCommand{Id: vid, Command: "DELETE"}
-	payload, err := json.Marshal(command)
-	if err != nil {
-		return err
-	}
-	return cqrs.Publish(topic, vid, payload)
-}
-
-type DeploymentDeleteCommand struct {
-	Command string `json:"command"`
-	Id      string `json:"id"`
-	Owner   string `json:"owner"`
-	Source  string `json:"source,omitempty"`
 }

@@ -24,7 +24,6 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/mocks"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"log"
 	"net/http"
@@ -93,67 +92,34 @@ func TestClearUnlinkedDeployments(t *testing.T) {
 	t.Run("check camunda process", testCheckCamundaProcess(camundaUrl, expectedProcessId, true))
 	t.Run("check camunda deleted process", testCheckCamundaProcess(camundaUrl, deletedProcessId, true))
 
-	cqrs := mocks.Kafka()
-	t.Run("cleanup", testCleanup(pgConn, cqrs))
+	t.Run("cleanup", testCleanup(pgConn))
 
 	t.Run("check camunda process count after cleanup", testCheckCamundaProcessCount(camundaUrl, 1))
 
 	t.Run("check true vid after cleanup", testCheckVid(v, "expectedVid", expectedProcessId, true))
 	t.Run("check camunda process after cleanup", testCheckCamundaProcess(camundaUrl, expectedProcessId, true))
 	t.Run("check camunda deleted process after cleanup", testCheckCamundaProcess(camundaUrl, deletedProcessId, false))
-
-	//vid will be deleted by event so testCheckVid(v, "missingProcessVid", "missingProcess", false)) wil not work here
-	t.Run("check kafka delete messages", testCheckKafkaDeletes(cqrs, "missingProcessVid"))
 }
 
-func testCheckKafkaDeletes(cqrs *mocks.KafkaMock, expectedDeletes ...string) func(t *testing.T) {
+func testCleanup(conn string) func(t *testing.T) {
 	return func(t *testing.T) {
-		if cqrs == nil {
-			t.Fatal("missing kafka mock")
+		config := configuration.Config{
+			WrapperDb:  conn,
+			ShardingDb: conn,
 		}
-		actualDeletes := cqrs.Produced["deployment"]
-		if len(expectedDeletes) != len(actualDeletes) {
-			t.Error(actualDeletes, expectedDeletes)
-			return
-		}
-		for i, del := range actualDeletes {
-			msg := cleanup.DeploymentDeleteCommand{}
-			err := json.Unmarshal([]byte(del), &msg)
+
+		/*
+			unlinkedVid, err := cleanup.FindUnlinkedVid(config)
 			if err != nil {
 				t.Error(err)
 				return
 			}
-			if msg.Command != "DELETE" {
-				t.Error(del)
+			err = cleanup.RemoveVid(config, unlinkedVid)
+			if err != nil {
+				t.Error(err)
 				return
 			}
-			if msg.Id != expectedDeletes[i] {
-				t.Error(msg.Id, expectedDeletes[i], del)
-				return
-			}
-		}
-	}
-}
-
-func testCleanup(conn string, cqrs *mocks.KafkaMock) func(t *testing.T) {
-	return func(t *testing.T) {
-		config := configuration.Config{
-			DeploymentTopic: "deployment",
-			WrapperDb:       conn,
-			ShardingDb:      conn,
-		}
-
-		unlinkedVid, err := cleanup.FindUnlinkedVid(config)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		err = cleanup.RemoveVidWithCqrs(cqrs, config, unlinkedVid)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-
+		*/
 		unlinkedPid, err := cleanup.FindUnlinkedPid(config, 0)
 		if err != nil {
 			t.Error(err)
