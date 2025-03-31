@@ -135,13 +135,13 @@ func (this *V2Endpoints) StartProcessDefinitionAndGetInstanceId(config configura
 // @Produce      json
 // @Security Bearer
 // @Param        id path string true "deployment id"
-// @Success      200 {object}  model.Deployment
+// @Success      200 {object}  model.CamundaDeployment
 // @Failure      400
 // @Failure      401
 // @Failure      403
 // @Failure      404
 // @Failure      500
-// @Router       /v2/process-definitions/{id}/start/id [GET]
+// @Router       /v2/deployments/{id} [GET]
 func (this *V2Endpoints) GetDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("GET /v2/deployments/{id}", func(writer http.ResponseWriter, request *http.Request) {
 		id := request.PathValue("id")

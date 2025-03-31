@@ -34,7 +34,7 @@ type DeployEndpoints struct{}
 
 // Deploy godoc
 // @Summary      deploy process
-// @Description  deploy process, only admins may access this endpoint
+// @Description  deploy process, meant for internal use by the process-deployment service, only admins may access this endpoint
 // @Tags         deployment
 // @Security Bearer
 // @Param        message body model.DeploymentMessage true "deployment"
@@ -44,9 +44,9 @@ type DeployEndpoints struct{}
 // @Failure      403
 // @Failure      404
 // @Failure      500
-// @Router       /deployment [PUT]
+// @Router       /process-deployments [PUT]
 func (this *DeployEndpoints) Deploy(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
-	router.HandleFunc("PUT /deployment", func(writer http.ResponseWriter, request *http.Request) {
+	router.HandleFunc("PUT /process-deployments", func(writer http.ResponseWriter, request *http.Request) {
 		depl := model.DeploymentMessage{}
 		err := json.NewDecoder(request.Body).Decode(&depl)
 		if err != nil {
@@ -73,7 +73,7 @@ func (this *DeployEndpoints) Deploy(config configuration.Config, router *http.Se
 
 // DeleteDeployment godoc
 // @Summary      delete deployment
-// @Description  delete deployment, only admins may access this endpoint
+// @Description  delete deployment, meant for internal use by the process-deployment service, only admins may access this endpoint
 // @Tags         deployment
 // @Security Bearer
 // @Param        deplid path string true "deployment id"
@@ -84,9 +84,9 @@ func (this *DeployEndpoints) Deploy(config configuration.Config, router *http.Se
 // @Failure      403
 // @Failure      404
 // @Failure      500
-// @Router       /deployment/{userid}/{deplid} [DELETE]
+// @Router       /process-deployments/{userid}/{deplid} [DELETE]
 func (this *DeployEndpoints) DeleteDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
-	router.HandleFunc("DELETE /deployment/{userid}/{deplid}", func(writer http.ResponseWriter, request *http.Request) {
+	router.HandleFunc("DELETE /process-deployments/{userid}/{deplid}", func(writer http.ResponseWriter, request *http.Request) {
 		userid := request.PathValue("userid")
 		deplid := request.PathValue("deplid")
 		token, err := auth.GetParsedToken(request)

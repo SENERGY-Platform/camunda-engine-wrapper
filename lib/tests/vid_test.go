@@ -21,11 +21,11 @@ import (
 	"encoding/json"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/api"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/metrics"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
@@ -119,7 +119,7 @@ func TestVid(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	deployments := model.Deployments{}
+	deployments := model.CamundaDeployments{}
 	err = json.NewDecoder(resp.Body).Decode(&deployments)
 	if err != nil {
 		t.Error(err)
@@ -150,7 +150,7 @@ func TestVid(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	deployments = model.Deployments{}
+	deployments = model.CamundaDeployments{}
 	err = json.NewDecoder(resp.Body).Decode(&deployments)
 	if err != nil {
 		t.Error(err)
@@ -181,7 +181,7 @@ func TestVid(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	deployments = model.Deployments{}
+	deployments = model.CamundaDeployments{}
 	err = json.NewDecoder(resp.Body).Decode(&deployments)
 	if err != nil {
 		t.Error(err)
@@ -219,7 +219,7 @@ func TestVid(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	deployments = model.Deployments{}
+	deployments = model.CamundaDeployments{}
 	err = json.NewDecoder(resp.Body).Decode(&deployments)
 	if err != nil {
 		t.Error(err)
@@ -257,7 +257,7 @@ func TestVid(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	deployments = model.Deployments{}
+	deployments = model.CamundaDeployments{}
 	err = json.NewDecoder(resp.Body).Decode(&deployments)
 	if err != nil {
 		t.Error(err)
@@ -288,7 +288,7 @@ func TestVid(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	deployments = model.Deployments{}
+	deployments = model.CamundaDeployments{}
 	err = json.NewDecoder(resp.Body).Decode(&deployments)
 	if err != nil {
 		t.Error(err)

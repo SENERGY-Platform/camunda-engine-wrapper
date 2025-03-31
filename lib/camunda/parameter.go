@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/etree"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
 	"io"
 	"log"
 	"net/http"

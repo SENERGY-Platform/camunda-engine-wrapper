@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 InfAI (CC SES)
+ * Copyright 2025 InfAI (CC SES)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ type ProcessDefinitions = []ProcessDefinition
 // /engine-rest/deployment/"+url.QueryEscape(id)
 // /engine-rest/deployment/"+url.QueryEscape(deploymentId)
 // /engine-rest/deployment/" + id + "?cascade=true
-type Deployment struct {
+type CamundaDeployment struct {
 	Id             string      `json:"id"`
 	Name           string      `json:"name"`
 	Source         string      `json:"source"`
@@ -78,16 +78,16 @@ type Deployment struct {
 	TenantId       string      `json:"tenantId"`
 }
 
-func (this *Deployment) SetDeploymentId(id string) {
+func (this *CamundaDeployment) SetDeploymentId(id string) {
 	this.Id = id
 }
 
-func (this *Deployment) GetDeploymentId() (id string) {
+func (this *CamundaDeployment) GetDeploymentId() (id string) {
 	return this.Id
 }
 
 // /engine-rest/deployment?tenantIdIn="+url.QueryEscape(userId)+"&"+params.Encode()
-type Deployments = []Deployment
+type CamundaDeployments = []CamundaDeployment
 
 // /engine-rest/process-instance/count?tenantIdIn="+url.QueryEscape(userId)
 // /engine-rest/incident/count?processDefinitionId="+url.QueryEscape(definitionId)
@@ -123,7 +123,7 @@ type HistoricProcessInstance struct {
 type HistoricProcessInstances = []HistoricProcessInstance
 
 type ExtendedDeployment struct {
-	Deployment
+	CamundaDeployment
 	Diagram      string `json:"diagram"`
 	DefinitionId string `json:"definition_id"`
 	Error        string `json:"error"`

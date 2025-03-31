@@ -18,9 +18,9 @@ package tests
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/resources"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/server"
 	"sync"

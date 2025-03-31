@@ -43,7 +43,7 @@ func (this *Client) Deploy(token string, depl DeploymentMessage) (err error, cod
 	if err != nil {
 		return err, 0
 	}
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%v/deployment", this.serverUrl), bytes.NewBuffer(body))
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%v/process-deployments", this.serverUrl), bytes.NewBuffer(body))
 	if err != nil {
 		return err, 0
 	}
@@ -51,7 +51,7 @@ func (this *Client) Deploy(token string, depl DeploymentMessage) (err error, cod
 }
 
 func (this *Client) DeleteDeployment(token string, userId string, deplId string) (err error, code int) {
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%v/deployment/%v/%v", this.serverUrl, userId, deplId), nil)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%v/process-deployments/%v/%v", this.serverUrl, userId, deplId), nil)
 	if err != nil {
 		return err, 0
 	}

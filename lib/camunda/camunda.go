@@ -18,8 +18,8 @@ package camunda
 
 import (
 	"bytes"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/notification"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/processio"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
@@ -153,7 +153,7 @@ func (this *Camunda) CheckDeploymentAccess(vid string, userId string) (err error
 	if !exists {
 		return UnknownVid
 	}
-	wrapper := model.Deployment{}
+	wrapper := model.CamundaDeployment{}
 	err = Get(shard+"/engine-rest/deployment/"+url.QueryEscape(id), &wrapper)
 	if err != nil {
 		return err
@@ -393,13 +393,13 @@ func (this *Camunda) GetProcessDefinitionDiagram(id string, userId string) (resp
 	resp, err = http.Get(shard + "/engine-rest/process-definition/" + url.QueryEscape(id) + "/diagram")
 	return
 }
-func (this *Camunda) GetDeploymentList(userId string, params url.Values) (result model.Deployments, err error) {
+func (this *Camunda) GetDeploymentList(userId string, params url.Values) (result model.CamundaDeployments, err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
 	// "/engine-rest/deployment?tenantIdIn="+userId
-	temp := model.Deployments{}
+	temp := model.CamundaDeployments{}
 	params.Del("tenantIdIn")
 	path := shard + "/engine-rest/deployment?tenantIdIn=" + url.QueryEscape(userId) + "&" + params.Encode()
 	err = Get(path, &temp)
@@ -470,7 +470,7 @@ func (this *Camunda) GetRawDefinitionsByDeployment(deploymentId string, userId s
 	return
 }
 
-func (this *Camunda) GetDeployment(vid string, userId string) (result model.Deployment, err error) {
+func (this *Camunda) GetDeployment(vid string, userId string) (result model.CamundaDeployment, err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
@@ -626,7 +626,7 @@ func (this *Camunda) GetExtendedDeploymentList(userId string, params url.Values)
 	for _, deployment := range deployments {
 		extended, err := this.GetExtendedDeployment(deployment, userId)
 		if err != nil {
-			result = append(result, model.ExtendedDeployment{Deployment: deployment, Error: err.Error()})
+			result = append(result, model.ExtendedDeployment{CamundaDeployment: deployment, Error: err.Error()})
 			err = nil
 		} else {
 			result = append(result, extended)
@@ -635,7 +635,7 @@ func (this *Camunda) GetExtendedDeploymentList(userId string, params url.Values)
 	return
 }
 
-func (this *Camunda) GetExtendedDeployment(deployment model.Deployment, userId string) (result model.ExtendedDeployment, err error) {
+func (this *Camunda) GetExtendedDeployment(deployment model.CamundaDeployment, userId string) (result model.ExtendedDeployment, err error) {
 	definition, err := this.GetDefinitionByDeploymentVid(deployment.Id, userId)
 	if err != nil {
 		return result, err
@@ -654,7 +654,7 @@ func (this *Camunda) GetExtendedDeployment(deployment model.Deployment, userId s
 	if err != nil {
 		return result, err
 	}
-	return model.ExtendedDeployment{Deployment: deployment, Diagram: string(svg), DefinitionId: definition[0].Id}, nil
+	return model.ExtendedDeployment{CamundaDeployment: deployment, Diagram: string(svg), DefinitionId: definition[0].Id}, nil
 }
 
 func (this *Camunda) GetProcessInstanceHistoryListWithTotal(userId string, searchtype string, searchvalue string, limit string, offset string, sortby string, sortdirection string, finished bool) (result model.HistoricProcessInstancesWithTotal, err error) {

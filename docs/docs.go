@@ -19,6 +19,101 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/process-deployments": {
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "deploy process, meant for internal use by the process-deployment service, only admins may access this endpoint",
+                "tags": [
+                    "deployment"
+                ],
+                "summary": "deploy process",
+                "parameters": [
+                    {
+                        "description": "deployment",
+                        "name": "message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.DeploymentMessage"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/process-deployments/{userid}/{deplid}": {
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "delete deployment, meant for internal use by the process-deployment service, only admins may access this endpoint",
+                "tags": [
+                    "deployment"
+                ],
+                "summary": "delete deployment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "deployment id",
+                        "name": "deplid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "user id",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/v2/deployments": {
             "get": {
                 "security": [
@@ -42,6 +137,55 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/model.ExtendedDeployment"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v2/deployments/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "get process deployment by id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deployment"
+                ],
+                "summary": "get deployment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "deployment id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.CamundaDeployment"
                         }
                     },
                     "400": {
@@ -599,18 +743,19 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "get process deployment by id",
+                "description": "start process-definitions and get started process-instance",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "deployment"
+                    "start",
+                    "process-definitions"
                 ],
-                "summary": "get deployment",
+                "summary": "start process-definitions and get instance",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "deployment id",
+                        "description": "process-definitions id",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -620,7 +765,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Deployment"
+                            "$ref": "#/definitions/model.ProcessInstance"
                         }
                     },
                     "400": {
@@ -880,7 +1025,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.Deployment": {
+        "model.CamundaDeployment": {
             "type": "object",
             "properties": {
                 "deploymentTime": {},
@@ -894,6 +1039,41 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tenantId": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.DeploymentMessage": {
+            "type": "object",
+            "properties": {
+                "diagram": {
+                    "$ref": "#/definitions/model.Diagram"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "incident_handling": {
+                    "$ref": "#/definitions/model.IncidentHandling"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "description": "optional",
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Diagram": {
+            "type": "object",
+            "properties": {
+                "svg": {
+                    "type": "string"
+                },
+                "xml_deployed": {
                     "type": "string"
                 }
             }
@@ -978,6 +1158,20 @@ const docTemplate = `{
                 },
                 "tenantId": {
                     "type": "string"
+                }
+            }
+        },
+        "model.IncidentHandling": {
+            "type": "object",
+            "properties": {
+                "notify": {
+                    "type": "boolean"
+                },
+                "restart": {
+                    "type": "boolean"
+                },
+                "restart_is_valid_option": {
+                    "type": "boolean"
                 }
             }
         },
