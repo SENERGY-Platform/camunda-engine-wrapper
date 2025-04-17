@@ -16,6 +16,8 @@
 
 package model
 
+import "github.com/SENERGY-Platform/models/go/models"
+
 type Deployment struct {
 	Id               string            `json:"id"`
 	Name             string            `json:"name"`
@@ -23,16 +25,9 @@ type Deployment struct {
 	IncidentHandling *IncidentHandling `json:"incident_handling,omitempty"`
 }
 
-type IncidentHandling struct {
-	Restart              bool `json:"restart"`
-	Notify               bool `json:"notify"`
-	RestartIsValidOption bool `json:"restart_is_valid_option"`
-}
+type IncidentHandling = models.IncidentHandling
 
-type Diagram struct {
-	XmlDeployed string `json:"xml_deployed"`
-	Svg         string `json:"svg"`
-}
+type Diagram = models.Diagram
 
 type DeploymentMessage struct {
 	Deployment
