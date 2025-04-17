@@ -10,7 +10,7 @@ require (
 )
 
 require (
-	github.com/SENERGY-Platform/models/go v0.0.0-20250416100015-352501ba4571
+	github.com/SENERGY-Platform/models/go v0.0.0-20250417082304-c41a4b3157af
 	github.com/SENERGY-Platform/process-incident-api v0.0.8
 	github.com/prometheus/client_golang v1.21.1
 	github.com/swaggo/swag v1.16.4
