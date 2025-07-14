@@ -14,7 +14,5 @@
     "auth_client_secret": "",
 
     "process_io_url": "",
-    "incident_api_url": "http://api.process-incidents:8080",
-
-    "process_deployment_done_topic": "process-deployment-done"
+    "incident_api_url": "http://api.process-incidents:8080"
 }

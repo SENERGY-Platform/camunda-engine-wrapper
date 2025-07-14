@@ -264,7 +264,7 @@ func (this *Camunda) RemoveProcessInstanceHistory(id string, userId string) (err
 	}
 	defer resp.Body.Close()
 	if err == nil && !(resp.StatusCode == 200 || resp.StatusCode == 204) {
-		msg, _ := ioutil.ReadAll(resp.Body)
+		msg, _ := io.ReadAll(resp.Body)
 		err = errors.New("error on delete in engine for " + u.String() + "/engine-rest/history/process-instance/" + url.QueryEscape(id) + ": " + resp.Status + " " + string(msg))
 	}
 	return

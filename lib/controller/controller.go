@@ -60,6 +60,10 @@ func (this *Controller) Deploy(depl model.DeploymentMessage) (err error, code in
 	if depl.Diagram.Svg == "" {
 		return errors.New("no svg provided"), http.StatusBadRequest
 	}
+	xml, err = SetProcessId(xml, depl.Id)
+	if err != nil {
+		return err, http.StatusInternalServerError
+	}
 	if !validateXml(xml) {
 		return errors.New("invalid bpmn"), http.StatusBadRequest
 	}

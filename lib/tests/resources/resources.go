@@ -23,3 +23,6 @@ var FormFieldTest string
 
 //go:embed scripttest.bpmn
 var ScriptTest string
+
+//go:embed cron_test.bpmn
+var CronTest string
