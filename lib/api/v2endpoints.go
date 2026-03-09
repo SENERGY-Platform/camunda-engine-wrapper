@@ -20,13 +20,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
+	"time"
+
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
-	"log"
-	"net/http"
-	"time"
 
 	"io"
 )
@@ -44,6 +45,7 @@ type V2Endpoints struct{}
 // @Produce      json
 // @Security Bearer
 // @Param        id path string true "process-definitions id"
+// @Param        business_key query string false "businessKey of started process"
 // @Success      200
 // @Failure      400
 // @Failure      401
@@ -67,9 +69,10 @@ func (this *V2Endpoints) StartProcessDefinition(config configuration.Config, rou
 			return
 		}
 
+		businessKey := request.URL.Query().Get("business_key")
 		inputs := parseQueryParameter(request.URL.Query())
 
-		err = c.StartProcess(id, token.GetUserId(), inputs)
+		err = c.StartProcess(id, businessKey, token.GetUserId(), inputs)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -92,6 +95,7 @@ func (this *V2Endpoints) StartProcessDefinition(config configuration.Config, rou
 // @Produce      json
 // @Security Bearer
 // @Param        id path string true "process-definitions id"
+// @Param        business_key query string false "businessKey of started process"
 // @Success      200 {object}  model.ProcessInstance
 // @Failure      400
 // @Failure      401
@@ -115,9 +119,10 @@ func (this *V2Endpoints) StartProcessDefinitionAndGetInstanceId(config configura
 			return
 		}
 
+		businessKey := request.URL.Query().Get("business_key")
 		inputs := parseQueryParameter(request.URL.Query())
 
-		result, err := c.StartProcessGetId(id, token.GetUserId(), inputs)
+		result, err := c.StartProcessGetId(id, businessKey, token.GetUserId(), inputs)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -212,6 +217,7 @@ func (this *V2Endpoints) DeploymentExists(config configuration.Config, router *h
 // @Produce      json
 // @Security Bearer
 // @Param        id path string true "deployment id"
+// @Param        business_key query string false "businessKey of started process"
 // @Success      200 {object}  model.ProcessInstance
 // @Failure      400
 // @Failure      401
@@ -246,9 +252,10 @@ func (this *V2Endpoints) StartDeployment(config configuration.Config, router *ht
 			return
 		}
 
+		businessKey := request.URL.Query().Get("business_key")
 		inputs := parseQueryParameter(request.URL.Query())
 
-		result, err := c.StartProcessGetId(definitions[0].Id, token.GetUserId(), inputs)
+		result, err := c.StartProcessGetId(definitions[0].Id, businessKey, token.GetUserId(), inputs)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)

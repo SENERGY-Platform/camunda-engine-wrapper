@@ -18,18 +18,19 @@ package camunda
 
 import (
 	"bytes"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/notification"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/processio"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"io"
 	"io/ioutil"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/notification"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/processio"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 
 	"errors"
 	"net/http"
@@ -50,13 +51,13 @@ func New(config configuration.Config, vid *vid.Vid, shards *shards.Shards, proce
 	return &Camunda{config: config, vid: vid, shards: shards, processIo: processIo}
 }
 
-func (this *Camunda) StartProcess(processDefinitionId string, userId string, parameter map[string]interface{}) (err error) {
+func (this *Camunda) StartProcess(processDefinitionId string, businessKey string, userId string, parameter map[string]interface{}) (err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return err
 	}
 
-	message := createStartMessage(parameter)
+	message := createStartMessage(parameter, businessKey)
 
 	b := new(bytes.Buffer)
 	err = json.NewEncoder(b).Encode(message)
@@ -83,9 +84,9 @@ func (this *Camunda) StartProcess(processDefinitionId string, userId string, par
 	return nil
 }
 
-func createStartMessage(parameter map[string]interface{}) map[string]interface{} {
+func createStartMessage(parameter map[string]interface{}, businessKey string) map[string]interface{} {
 	if len(parameter) == 0 {
-		return map[string]interface{}{}
+		return map[string]interface{}{"businessKey": businessKey}
 	}
 	variables := map[string]interface{}{}
 	for key, val := range parameter {
@@ -93,16 +94,16 @@ func createStartMessage(parameter map[string]interface{}) map[string]interface{}
 			"value": val,
 		}
 	}
-	return map[string]interface{}{"variables": variables}
+	return map[string]interface{}{"variables": variables, "businessKey": businessKey}
 }
 
-func (this *Camunda) StartProcessGetId(processDefinitionId string, userId string, parameter map[string]interface{}) (result model.ProcessInstance, err error) {
+func (this *Camunda) StartProcessGetId(processDefinitionId string, businessKey string, userId string, parameter map[string]interface{}) (result model.ProcessInstance, err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
 
-	message := createStartMessage(parameter)
+	message := createStartMessage(parameter, businessKey)
 
 	b := new(bytes.Buffer)
 	err = json.NewEncoder(b).Encode(message)

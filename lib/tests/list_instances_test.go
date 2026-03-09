@@ -19,15 +19,16 @@ package tests
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"net/http"
+	"sync"
+	"testing"
+
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/server"
-	"io"
-	"net/http"
-	"sync"
-	"testing"
 )
 
 func TestListInstances(t *testing.T) {
@@ -53,9 +54,9 @@ func TestListInstances(t *testing.T) {
 	deploymentId := "withInput"
 	t.Run("deploy process with input", testDeployProcessWithInput(wrapperClient, deploymentId, processWithInput))
 
-	t.Run("start process with input inputTemperature 30", testStartProcessWithInput(wrapperUrl, deploymentId, map[string]interface{}{"inputTemperature": 30}))
+	t.Run("start process with input inputTemperature 30", testStartProcessWithInput(wrapperUrl, deploymentId, map[string]interface{}{"inputTemperature": 30, "business_key": "bk1"}))
 	t.Run("start process with input inputTemperature 21", testStartProcessWithInput(wrapperUrl, deploymentId, map[string]interface{}{"inputTemperature": 21}))
-	t.Run("start process with partially unused inputs", testStartProcessWithInput(wrapperUrl, deploymentId, map[string]interface{}{"inputTemperature": 10, "unused": "foo"}))
+	t.Run("start process with partially unused inputs", testStartProcessWithInput(wrapperUrl, deploymentId, map[string]interface{}{"inputTemperature": 10, "unused": "foo", "business_key": "bk2"}))
 
 	t.Run("fetch and complete one task to finish one process", testFetchAndComplete(shard))
 

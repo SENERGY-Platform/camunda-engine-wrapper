@@ -423,6 +423,12 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "businessKey of started process",
+                        "name": "business_key",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -704,6 +710,12 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "businessKey of started process",
+                        "name": "business_key",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -751,6 +763,12 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "businessKey of started process",
+                        "name": "business_key",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1067,6 +1085,9 @@
                 },
                 "xml_deployed": {
                     "type": "string"
+                },
+                "xml_raw": {
+                    "type": "string"
                 }
             }
         },
@@ -1160,9 +1181,6 @@
                     "type": "boolean"
                 },
                 "restart": {
-                    "type": "boolean"
-                },
-                "restart_is_valid_option": {
                     "type": "boolean"
                 }
             }

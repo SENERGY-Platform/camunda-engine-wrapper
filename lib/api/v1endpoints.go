@@ -18,14 +18,15 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
 	"log"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
 
 	"io"
 )
@@ -59,9 +60,10 @@ func (this *V1Endpoints) StartProcessDefinition(config configuration.Config, rou
 			return
 		}
 
+		businessKey := request.URL.Query().Get("business_key")
 		inputs := parseQueryParameter(request.URL.Query())
 
-		err = c.StartProcess(id, token.GetUserId(), inputs)
+		err = c.StartProcess(id, businessKey, token.GetUserId(), inputs)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -93,9 +95,10 @@ func (this *V1Endpoints) StartProcessDefinitionAndGetInstanceId(config configura
 			return
 		}
 
+		businessKey := request.URL.Query().Get("business_key")
 		inputs := parseQueryParameter(request.URL.Query())
 
-		result, err := c.StartProcessGetId(id, token.GetUserId(), inputs)
+		result, err := c.StartProcessGetId(id, businessKey, token.GetUserId(), inputs)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -186,9 +189,10 @@ func (this *V1Endpoints) StartDeployment(config configuration.Config, router *ht
 			return
 		}
 
+		businessKey := request.URL.Query().Get("business_key")
 		inputs := parseQueryParameter(request.URL.Query())
 
-		result, err := c.StartProcessGetId(definitions[0].Id, token.GetUserId(), inputs)
+		result, err := c.StartProcessGetId(definitions[0].Id, businessKey, token.GetUserId(), inputs)
 		if err != nil {
 			log.Println("ERROR: error on process start", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)

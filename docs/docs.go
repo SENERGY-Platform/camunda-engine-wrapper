@@ -431,6 +431,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "businessKey of started process",
+                        "name": "business_key",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -712,6 +718,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "businessKey of started process",
+                        "name": "business_key",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -759,6 +771,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "businessKey of started process",
+                        "name": "business_key",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1075,6 +1093,9 @@ const docTemplate = `{
                 },
                 "xml_deployed": {
                     "type": "string"
+                },
+                "xml_raw": {
+                    "type": "string"
                 }
             }
         },
@@ -1168,9 +1189,6 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "restart": {
-                    "type": "boolean"
-                },
-                "restart_is_valid_option": {
                     "type": "boolean"
                 }
             }

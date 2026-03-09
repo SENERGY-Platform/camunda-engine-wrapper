@@ -51,6 +51,8 @@ definitions:
         type: string
       xml_deployed:
         type: string
+      xml_raw:
+        type: string
     type: object
   model.ExtendedDeployment:
     properties:
@@ -112,8 +114,6 @@ definitions:
       notify:
         type: boolean
       restart:
-        type: boolean
-      restart_is_valid_option:
         type: boolean
     type: object
   model.ProcessDefinition:
@@ -439,6 +439,10 @@ paths:
         name: id
         required: true
         type: string
+      - description: businessKey of started process
+        in: query
+        name: business_key
+        type: string
       produces:
       - application/json
       responses:
@@ -617,6 +621,10 @@ paths:
         name: id
         required: true
         type: string
+      - description: businessKey of started process
+        in: query
+        name: business_key
+        type: string
       produces:
       - application/json
       responses:
@@ -646,6 +654,10 @@ paths:
         in: path
         name: id
         required: true
+        type: string
+      - description: businessKey of started process
+        in: query
+        name: business_key
         type: string
       produces:
       - application/json
