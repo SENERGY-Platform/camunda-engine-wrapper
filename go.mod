@@ -1,6 +1,6 @@
 module github.com/SENERGY-Platform/camunda-engine-wrapper
 
-go 1.24
+go 1.25.0
 
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874
@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/SENERGY-Platform/go-service-base/struct-logger v0.6.0
 	github.com/SENERGY-Platform/models/go v0.0.0-20250417082304-c41a4b3157af
 	github.com/SENERGY-Platform/process-incident-api v0.0.8
 	github.com/prometheus/client_golang v1.21.1

@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/auth"
@@ -804,6 +805,52 @@ func (this *V2Endpoints) DeleteMultipleHistoricProcessInstances(config configura
 				http.Error(writer, err.Error(), code)
 				return
 			}
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(writer).Encode("ok")
+		return
+	})
+}
+
+// DeleteProcessInstancesByBusinessKey godoc
+// @Summary      delete process-instances by business-key
+// @Description  delete process-instances and historic process-instances identified by business-key
+// @Tags         process-instance
+// @Security Bearer
+// @Param        business-key path string true "business-key of instances and historic instances"
+// @Success      200
+// @Failure      400
+// @Failure      500
+// @Router       /v2/process-instances-by-business-key/{business-key} [DELETE]
+func (this *V2Endpoints) DeleteProcessInstancesByBusinessKey(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
+	router.HandleFunc("DELETE /v2/process-instances-by-business-key/{business_key}", func(writer http.ResponseWriter, request *http.Request) {
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		businessKey := request.PathValue("business_key")
+		userId := token.GetUserId()
+		instances, err := c.GetFilteredProcessInstanceHistoryList(userId, url.Values{"processInstanceBusinessKey": {businessKey}})
+		if err != nil {
+			config.GetLogger().Error("error in DeleteProcessInstancesByBusinessKey::GetFilteredProcessInstanceHistoryList", "error", err)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		for _, instance := range instances {
+			if instance.EndTime == "" && instance.BusinessKey == businessKey {
+				err = errors.Join(err, c.RemoveProcessInstance(instance.Id, userId))
+			}
+		}
+		for _, instance := range instances {
+			if instance.BusinessKey == businessKey {
+				err = errors.Join(err, c.RemoveProcessInstanceHistory(instance.Id, userId))
+			}
+		}
+		if err != nil {
+			config.GetLogger().Error("error in DeleteProcessInstancesByBusinessKey", "error", err)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode("ok")

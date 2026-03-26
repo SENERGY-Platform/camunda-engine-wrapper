@@ -6,20 +6,234 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/server"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"reflect"
+	"slices"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/resources"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/server"
 )
+
+func TestInstanceBusinessKey(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	wg := sync.WaitGroup{}
+	defer wg.Wait()
+	defer cancel()
+
+	config, err := configuration.LoadConfig("../../config.json")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	config, wrapperUrl, _, err := server.CreateTestEnv(ctx, &wg, config)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	wrapperClient := client.New(wrapperUrl)
+
+	t.Run("deploy process withParam", testDeployProcessWithInput(wrapperClient, "withParam", resources.LongWithParameter))
+	t.Run("deploy process long", testDeployProcessWithInput(wrapperClient, "long", resources.LongProcess))
+	t.Run("deploy process finishing", testDeployProcessWithInput(wrapperClient, "finishing", resources.Finishing))
+	//time.Sleep(time.Second * 5)
+	t.Run("list deployments", func(t *testing.T) {
+		depl, err, code := wrapperClient.ListDeployments(helper.Jwt, client.DeploymentListOptions{})
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+		if len(depl) != 3 {
+			t.Error("expected 3 deployment, got ", len(depl))
+			return
+		}
+		ids := []string{}
+		for _, d := range depl {
+			ids = append(ids, d.Id)
+		}
+		if !slices.Contains(ids, "withParam") {
+			t.Errorf("withParam not found in list: %#v", ids)
+		}
+	})
+	t.Run("start bk1 processes with param", func(t *testing.T) {
+		instance, err, code := wrapperClient.StartDeployment(helper.Jwt, "withParam", client.StartOptions{
+			BusinessKey: "bk1",
+			Inputs: map[string]interface{}{
+				"testinput": "42",
+			},
+		})
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+		if instance.Id == "" {
+			t.Error("no instance id returned")
+			return
+		}
+	})
+	t.Run("start long bk1 processes", func(t *testing.T) {
+		instance, err, code := wrapperClient.StartDeployment(helper.Jwt, "long", client.StartOptions{
+			BusinessKey: "bk1",
+		})
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+		if instance.Id == "" {
+			t.Error("no instance id returned")
+			return
+		}
+	})
+	t.Run("start finishing bk1 processes", func(t *testing.T) {
+		instance, err, code := wrapperClient.StartDeployment(helper.Jwt, "finishing", client.StartOptions{
+			BusinessKey: "bk1",
+		})
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+		if instance.Id == "" {
+			t.Error("no instance id returned")
+			return
+		}
+	})
+	t.Run("start bk2 processes with param", func(t *testing.T) {
+		instance, err, code := wrapperClient.StartDeployment(helper.Jwt, "withParam", client.StartOptions{
+			BusinessKey: "bk2",
+			Inputs: map[string]interface{}{
+				"testinput": "42",
+			},
+		})
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+		if instance.Id == "" {
+			t.Error("no instance id returned")
+			return
+		}
+	})
+	t.Run("start long bk2 processes", func(t *testing.T) {
+		instance, err, code := wrapperClient.StartDeployment(helper.Jwt, "long", client.StartOptions{
+			BusinessKey: "bk2",
+		})
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+		if instance.Id == "" {
+			t.Error("no instance id returned")
+			return
+		}
+	})
+	t.Run("start finishing bk2 processes", func(t *testing.T) {
+		instance, err, code := wrapperClient.StartDeployment(helper.Jwt, "finishing", client.StartOptions{
+			BusinessKey: "bk2",
+		})
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+		if instance.Id == "" {
+			t.Error("no instance id returned")
+			return
+		}
+	})
+	time.Sleep(time.Second * 5)
+	t.Run("check instance list", func(t *testing.T) {
+		list, err, code := wrapperClient.GetHistoricProcessInstances(helper.Jwt, client.InstanceListOptions{})
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+		if len(list) != 6 {
+			t.Error("expected 6 instance, got ", len(list))
+		}
+	})
+	t.Run("check instance list with businessKey", func(t *testing.T) {
+		list, err, code := wrapperClient.GetHistoricProcessInstances(helper.Jwt, client.InstanceListOptions{BusinessKey: "bk1"})
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+		if len(list) != 3 {
+			t.Error("expected 3 instance, got ", len(list))
+		}
+	})
+	t.Run("stop bk1 processes", func(t *testing.T) {
+		err, code := wrapperClient.DeleteProcessInstancesByBusinessKey(helper.Jwt, "bk1")
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+	})
+	time.Sleep(time.Second * 5)
+	t.Run("check instance list after delete", func(t *testing.T) {
+		list, err, code := wrapperClient.GetHistoricProcessInstances(helper.Jwt, client.InstanceListOptions{})
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+		if len(list) != 3 {
+			t.Error("expected 3 instance, got ", len(list))
+		}
+	})
+}
 
 func TestGetParameter(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())

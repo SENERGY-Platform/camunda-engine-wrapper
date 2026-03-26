@@ -884,6 +884,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/v2/process-instances-by-business-key/{business-key}": {
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "delete process-instances and historic process-instances identified by business-key",
+                "tags": [
+                    "process-instance"
+                ],
+                "summary": "delete process-instances by business-key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "business-key of instances and historic instances",
+                        "name": "business-key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/v2/process-instances/count": {
             "get": {
                 "security": [

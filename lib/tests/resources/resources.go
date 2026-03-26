@@ -26,3 +26,12 @@ var ScriptTest string
 
 //go:embed cron_test.bpmn
 var CronTest string
+
+//go:embed long.bpmn
+var LongProcess string
+
+//go:embed test_long_with_parameter.bpmn
+var LongWithParameter string
+
+//go:embed finishing.bpmn
+var Finishing string

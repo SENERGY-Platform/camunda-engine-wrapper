@@ -20,9 +20,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
 	"io"
 	"net/http"
+	"net/url"
+
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
 )
 
 type Client struct {
@@ -37,6 +39,24 @@ type DeploymentMessage = model.DeploymentMessage
 type Deployment = model.Deployment
 type Diagram = model.Diagram
 type IncidentHandling = model.IncidentHandling
+type ProcessInstance = model.ProcessInstance
+type HistoricProcessInstances = model.HistoricProcessInstances
+type HistoricProcessInstancesWithTotal = model.HistoricProcessInstancesWithTotal
+type ExtendedDeployment = model.ExtendedDeployment
+
+type StartOptions struct {
+	BusinessKey string
+	Inputs      map[string]interface{}
+}
+
+type InstanceListOptions struct {
+	BusinessKey string
+	OtherArgs   map[string]string
+}
+
+type DeploymentListOptions struct {
+	OtherArgs map[string]string
+}
 
 func (this *Client) Deploy(token string, depl DeploymentMessage) (err error, code int) {
 	body, err := json.Marshal(depl)
@@ -50,8 +70,75 @@ func (this *Client) Deploy(token string, depl DeploymentMessage) (err error, cod
 	return doVoid(token, req)
 }
 
+func (this *Client) ListDeployments(token string, options DeploymentListOptions) (result []ExtendedDeployment, err error, code int) {
+	query := url.Values{}
+	for key, val := range options.OtherArgs {
+		query.Add(key, val)
+	}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%v/v2/deployments?%v", this.serverUrl, query.Encode()), nil)
+	if err != nil {
+		return result, err, 0
+	}
+	return do[[]ExtendedDeployment](token, req)
+}
+
 func (this *Client) DeleteDeployment(token string, userId string, deplId string) (err error, code int) {
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%v/process-deployments/%v/%v", this.serverUrl, userId, deplId), nil)
+	if err != nil {
+		return err, 0
+	}
+	return doVoid(token, req)
+}
+
+func (this *Client) GetHistoricProcessInstances(token string, options InstanceListOptions) (result HistoricProcessInstances, err error, code int) {
+	query := url.Values{}
+	if options.BusinessKey != "" {
+		query.Add("processInstanceBusinessKey", options.BusinessKey)
+	}
+	for key, val := range options.OtherArgs {
+		query.Add(key, val)
+	}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%v/v2/history/process-instances?%v", this.serverUrl, query.Encode()), nil)
+	if err != nil {
+		return result, err, 0
+	}
+	return do[HistoricProcessInstances](token, req)
+}
+
+func (this *Client) GetHistoricProcessInstancesWithTotal(token string, options InstanceListOptions) (result HistoricProcessInstancesWithTotal, err error, code int) {
+	query := url.Values{}
+	query.Add("with_total", "true")
+	if options.BusinessKey != "" {
+		query.Add("processInstanceBusinessKey", options.BusinessKey)
+	}
+	for key, val := range options.OtherArgs {
+		query.Add(key, val)
+	}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%v/v2/history/process-instances?%v", this.serverUrl, query.Encode()), nil)
+	if err != nil {
+		return result, err, 0
+	}
+	return do[HistoricProcessInstancesWithTotal](token, req)
+}
+
+func (this *Client) StartDeployment(token string, deplId string, options StartOptions) (result ProcessInstance, err error, code int) {
+	query := url.Values{}
+	if options.BusinessKey != "" {
+		query.Add("business_key", options.BusinessKey)
+	}
+	for key, val := range options.Inputs {
+		str, _ := json.Marshal(val)
+		query.Add(key, string(str))
+	}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%v/v2/deployments/%v/start?%v", this.serverUrl, url.PathEscape(deplId), query.Encode()), nil)
+	if err != nil {
+		return result, err, 0
+	}
+	return do[ProcessInstance](token, req)
+}
+
+func (this *Client) DeleteProcessInstancesByBusinessKey(token string, businessKey string) (err error, code int) {
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%v/v2/process-instances-by-business-key/%v", this.serverUrl, url.PathEscape(businessKey)), nil)
 	if err != nil {
 		return err, 0
 	}

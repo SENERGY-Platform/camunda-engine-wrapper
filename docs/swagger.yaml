@@ -732,6 +732,28 @@ paths:
       summary: list process-instances
       tags:
       - process-instance
+  /v2/process-instances-by-business-key/{business-key}:
+    delete:
+      description: delete process-instances and historic process-instances identified
+        by business-key
+      parameters:
+      - description: business-key of instances and historic instances
+        in: path
+        name: business-key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: delete process-instances by business-key
+      tags:
+      - process-instance
   /v2/process-instances/{id}:
     delete:
       description: delete process-instance
