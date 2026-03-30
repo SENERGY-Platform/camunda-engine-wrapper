@@ -55,6 +55,8 @@ type Config struct {
 	AuthClientId     string `json:"auth_client_id" config:"secret"`
 	AuthClientSecret string `json:"auth_client_secret" config:"secret"`
 
+	AccessLogTrimFormat string `json:"access_log_trim_format"`
+
 	LogLevel string       `json:"log_level"`
 	logger   *slog.Logger `json:"-"`
 }

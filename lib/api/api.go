@@ -94,7 +94,7 @@ func GetRouter(config configuration.Config, camunda *camunda.Camunda, ctrl *cont
 		}
 	}
 	handler := util.NewCors(router)
-	handler = accesslog.New(handler)
+	handler = accesslog.New(handler, accesslog.Options{TrimFormat: config.AccessLogTrimFormat, TrimAttributes: "body"})
 	return handler
 }
 

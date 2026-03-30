@@ -16,5 +16,6 @@
     "process_io_url": "",
     "incident_api_url": "http://api.process-incidents:8080",
 
-    "log_level": "info"
+    "log_level": "info",
+    "access_log_trim_format": "50:[...]:10"
 }
