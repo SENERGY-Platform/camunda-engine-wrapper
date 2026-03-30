@@ -13,6 +13,7 @@ require (
 	github.com/SENERGY-Platform/go-service-base/struct-logger v0.6.0
 	github.com/SENERGY-Platform/models/go v0.0.0-20250417082304-c41a4b3157af
 	github.com/SENERGY-Platform/process-incident-api v0.0.8
+	github.com/SENERGY-Platform/service-commons v0.0.0-20250123095636-6dfc659ee43e
 	github.com/prometheus/client_golang v1.21.1
 	github.com/swaggo/swag v1.16.4
 	github.com/testcontainers/testcontainers-go v0.31.0

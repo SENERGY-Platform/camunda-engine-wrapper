@@ -20,15 +20,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/api/util"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
 	"log"
 	"net/http"
 	"reflect"
 	"runtime/debug"
 	"time"
+
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/api/util"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
+	"github.com/SENERGY-Platform/service-commons/pkg/accesslog"
 )
 
 //go:generate go tool swag init -o ../../docs --parseDependency -d .. -g api/api.go
@@ -47,27 +49,28 @@ func Start(ctx context.Context, config configuration.Config, camunda *camunda.Ca
 
 	timeout, err := time.ParseDuration(config.HttpServerTimeout)
 	if err != nil {
-		log.Println("WARNING: invalid http server timeout --> no timeouts\n", err)
+		config.GetLogger().Warn("invalid http server timeout --> no timeouts", "error", err)
 		err = nil
 	}
 
 	readtimeout, err := time.ParseDuration(config.HttpServerReadTimeout)
 	if err != nil {
-		log.Println("WARNING: invalid http server read timeout --> no timeouts\n", err)
+		config.GetLogger().Warn("invalid http server read timeout --> no timeouts", "error", err)
 		err = nil
 	}
 
 	server := &http.Server{Addr: ":" + config.ServerPort, Handler: router, WriteTimeout: timeout, ReadTimeout: readtimeout}
 	go func() {
-		log.Println("listening on ", server.Addr)
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		config.GetLogger().Info("listening", "address", server.Addr)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			debug.PrintStack()
+			config.GetLogger().Error("FATAL: http server error", "error", err)
 			log.Fatal("FATAL:", err)
 		}
 	}()
 	go func() {
 		<-ctx.Done()
-		log.Println("api shutdown", server.Shutdown(context.Background()))
+		config.GetLogger().Info("api shutdown", "result", server.Shutdown(context.Background()))
 	}()
 	return
 }
@@ -86,12 +89,12 @@ func GetRouter(config configuration.Config, camunda *camunda.Camunda, ctrl *cont
 	router := http.NewServeMux()
 	for _, e := range endpoints {
 		for name, call := range getEndpointMethods(e) {
-			log.Println("add endpoint: " + name)
+			config.GetLogger().Info("adding endpoint", "name", name)
 			call(config, router, camunda, ctrl, m)
 		}
 	}
 	handler := util.NewCors(router)
-	handler = util.NewLogger(handler)
+	handler = accesslog.New(handler)
 	return handler
 }
 

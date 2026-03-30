@@ -19,18 +19,19 @@ package controller
 import (
 	"errors"
 	"fmt"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/etree"
-	"log"
+	"log/slog"
 	"runtime/debug"
 	"strconv"
 	"strings"
+
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/etree"
 )
 
 func SecureProcessScripts(xml string) (result string, err error) {
 	defer func() {
 		if r := recover(); r != nil && err == nil {
-			log.Printf("%s: %s", r, debug.Stack())
 			err = errors.New(fmt.Sprint("Recovered Error: ", r))
+			slog.Error("recover from panic in SecureProcessScripts", "error", err, "stack", string(debug.Stack()))
 		}
 	}()
 	doc := etree.NewDocument()
@@ -53,8 +54,8 @@ func SecureProcessScripts(xml string) (result string, err error) {
 func SetProcessId(xml string, id string) (result string, err error) {
 	defer func() {
 		if r := recover(); r != nil && err == nil {
-			log.Printf("%s: %s", r, debug.Stack())
 			err = errors.New(fmt.Sprint("Recovered Error: ", r))
+			slog.Error("recover from panic in SetProcessId", "error", err, "stack", string(debug.Stack()))
 		}
 	}()
 	doc := etree.NewDocument()

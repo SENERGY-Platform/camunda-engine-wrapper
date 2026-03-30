@@ -20,12 +20,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 )
 
 func main() {
@@ -46,11 +47,12 @@ func wrapper(config configuration.Config) {
 	ctx, cancel := context.WithCancel(context.Background())
 	err := lib.Wrapper(ctx, config)
 	if err != nil {
+		config.GetLogger().Error("FATAL: unable to start wrapper", "error", err)
 		log.Fatalf("FATAL: %+v", err)
 	}
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 	sig := <-shutdown
-	log.Println("received shutdown signal", sig)
+	config.GetLogger().Info("received shutdown signal", "signal", sig.String())
 	cancel()
 }

@@ -20,13 +20,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/etree"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"runtime/debug"
+
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/etree"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
 )
 
 func (this *Camunda) GetProcessParameters(processDefinitionId string, userId string) (result map[string]model.Variable, err error) {
@@ -82,13 +82,12 @@ func (this *Camunda) getProcessDefinitionXml(shard string, processDefinitionId s
 func (this *Camunda) filterParameter(shard string, id string, variables map[string]model.Variable) (result map[string]model.Variable, err error) {
 	xml, err := this.getProcessDefinitionXml(shard, id)
 	if err != nil {
-		log.Println("WARNING: unable to filter parameter", err)
-		debug.PrintStack()
+		this.config.GetLogger().Warn("unable to filter parameter", "error", err, "stack", string(debug.Stack()))
 		return variables, nil //return unfiltered
 	}
 	parameter, err := this.estimateStartParameter(xml.Bpmn)
 	if err != nil {
-		log.Println("WARNING: unable to filter parameter", err)
+		this.config.GetLogger().Warn("unable to filter parameter", "error", err, "stack", string(debug.Stack()))
 		debug.PrintStack()
 		return variables, nil //return unfiltered
 	}
@@ -118,8 +117,8 @@ type ProcessStartParameter struct {
 func (this *Camunda) estimateStartParameter(xml string) (result []ProcessStartParameter, err error) {
 	defer func() {
 		if r := recover(); r != nil && err == nil {
-			log.Printf("%s: %s", r, debug.Stack())
 			err = errors.New(fmt.Sprint("Recovered Error: ", r))
+			this.config.GetLogger().Error("recover from panic in estimateStartParameter", "error", err, "stack", string(debug.Stack()))
 		}
 	}()
 	doc := etree.NewDocument()

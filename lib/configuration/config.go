@@ -19,7 +19,6 @@ package configuration
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -141,7 +140,7 @@ func setDefaultHttpClient(config Config) {
 	var err error
 	http.DefaultClient.Timeout, err = time.ParseDuration(config.HttpClientTimeout)
 	if err != nil {
-		log.Println("WARNING: invalid http timeout --> no timeouts\n", err)
+		config.GetLogger().Warn("invalid http timeout --> no timeouts", "error", err)
 	}
 }
 
@@ -171,6 +170,8 @@ func (this *Config) GetLogger() *slog.Logger {
 			org,
 			project,
 		)
+		slog.SetDefault(this.logger)
+		slog.SetLogLoggerLevel(slog.LevelInfo)
 	}
 	return this.logger
 }

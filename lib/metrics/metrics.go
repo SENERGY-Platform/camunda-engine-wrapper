@@ -18,11 +18,13 @@ package metrics
 
 import (
 	"context"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
+	"log/slog"
 	"net/http"
 	"runtime/debug"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Metrics struct {
@@ -64,7 +66,7 @@ func (this *Metrics) Serve(ctx context.Context, port string) *Metrics {
 
 	server := &http.Server{Addr: ":" + port, Handler: router}
 	go func() {
-		log.Println("listening on ", server.Addr, "for /metrics")
+		slog.Info("listening for /metrics", "address", server.Addr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			debug.PrintStack()
 			log.Fatal("FATAL:", err)
@@ -72,7 +74,7 @@ func (this *Metrics) Serve(ctx context.Context, port string) *Metrics {
 	}()
 	go func() {
 		<-ctx.Done()
-		log.Println("metrics shutdown", server.Shutdown(context.Background()))
+		slog.Info("metrics shutdown", "result", server.Shutdown(context.Background()))
 	}()
 	return this
 }

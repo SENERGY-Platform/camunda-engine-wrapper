@@ -18,6 +18,7 @@ package camunda
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -36,8 +37,6 @@ import (
 	"net/http"
 
 	"encoding/json"
-
-	"log"
 )
 
 type Camunda struct {
@@ -410,7 +409,7 @@ func (this *Camunda) GetDeploymentList(userId string, params url.Values) (result
 	for i := 0; i < len(temp); i++ {
 		err = this.vid.SetVid(&temp[i])
 		if err != nil {
-			log.Println("WARNING: unable to find virtual id for process; ignore process", temp[i].Id, temp[i].Name, err)
+			this.config.GetLogger().Warn("unable to find virtual id for process; ignore process", "id", temp[i].Id, "name", temp[i].Name, "error", err)
 			err = nil
 		} else {
 			result = append(result, temp[i])
@@ -516,13 +515,13 @@ func buildPayLoad(name string, xml string, svg string, boundary string, owner st
 func (this *Camunda) DeployProcess(name string, xml string, svg string, owner string, source string) (deploymentId string, err error) {
 	responseWrapper, err := this.deployProcess(name, xml, svg, owner, source)
 	if err != nil {
-		log.Println("ERROR: unable to decode process engine deployment response", err)
+		this.config.GetLogger().Error("unable to decode process engine deployment response", "error", err)
 		return deploymentId, err
 	}
 	ok := false
 	deploymentId, ok = responseWrapper["id"].(string)
 	if !ok {
-		log.Println("ERROR: unable to interpret process engine deployment response", responseWrapper)
+		this.config.GetLogger().Error("unable to interpret process engine deployment response", "error", "id is not string")
 		if responseWrapper["type"] == "ProcessEngineException" {
 			msg, ok := responseWrapper["message"].(string)
 			if !ok {
@@ -533,17 +532,17 @@ func (this *Camunda) DeployProcess(name string, xml string, svg string, owner st
 				Title:   "Deployment Error: ProcessEngineException",
 				Message: msg,
 			})
-			log.Println("DEBUG: try deploying placeholder process")
+			this.config.GetLogger().Debug("try deploying placeholder process")
 			responseWrapper, err = this.deployProcess(name, CreateBlankProcess(), CreateBlankSvg(), owner, source)
 			deploymentId, ok = responseWrapper["id"].(string)
 			if !ok {
-				log.Println("ERROR: unable to deploy placeholder process", responseWrapper)
 				err = errors.New("unable to interpret process engine deployment response")
+				this.config.GetLogger().Error("unable to deploy placeholder process", "error", err)
 				return
 			}
 		} else {
-			log.Println("ERROR: unable to deploy placeholder process", responseWrapper)
 			err = errors.New("unable to interpret process engine deployment response")
+			this.config.GetLogger().Error("unable to deploy placeholder process", "error", err)
 			return
 		}
 	}
@@ -563,7 +562,7 @@ func (this *Camunda) deployProcess(name string, xml string, svg string, owner st
 	b := strings.NewReader(buildPayLoad(name, xml, svg, boundary, owner, source))
 	resp, err := http.Post(shard+"/engine-rest/deployment/create", "multipart/form-data; boundary="+boundary, b)
 	if err != nil {
-		log.Println("ERROR: request to processengine ", err)
+		this.config.GetLogger().Error("error in request to processengine", "error", err)
 		return result, err
 	}
 	err = json.NewDecoder(resp.Body).Decode(&result)
@@ -599,7 +598,7 @@ func (this *Camunda) RemoveProcessForShard(deploymentId string, shard string) (e
 	defer resp.Body.Close()
 	payload, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= 300 && resp.StatusCode != 404 {
-		log.Println("ERROR:", resp.Status, string(payload))
+		this.config.GetLogger().Error("unable to remove process from shard", "error", resp.Status+": "+string(payload))
 		err = errors.New(resp.Status)
 	}
 	return err
@@ -712,7 +711,7 @@ func (this *Camunda) SendEventTrigger(userId string, msg map[string]interface{})
 		return response, err
 	}
 
-	log.Printf("trigger event: %#v\n", msg)
+	this.config.GetLogger().Debug("trigger event", "message", fmt.Sprintf("%#v", msg))
 	resp, err := http.Post(shard+"/engine-rest/message", "application/json", bytes.NewBuffer(requestWIthUserId))
 	if err != nil {
 		return response, err

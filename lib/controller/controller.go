@@ -19,6 +19,9 @@ package controller
 import (
 	"encoding/xml"
 	"errors"
+	"log/slog"
+	"net/http"
+
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/etree"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
@@ -26,8 +29,6 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/processio"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"github.com/SENERGY-Platform/process-incident-api/lib/client"
-	"log"
-	"net/http"
 )
 
 type Controller struct {
@@ -72,12 +73,10 @@ func (this *Controller) Deploy(depl model.DeploymentMessage) (err error, code in
 		return err, http.StatusInternalServerError
 	}
 
-	if this.config.Debug {
-		log.Println("deploy process", depl.Id, depl.Name, xml)
-	}
+	this.config.GetLogger().Debug("deploy process", "id", depl.Id, "name", depl.Name, "user", depl.UserId, "xml", xml)
 	deploymentId, err := this.camunda.DeployProcess(depl.Name, xml, depl.Diagram.Svg, depl.UserId, depl.Source)
 	if err != nil {
-		log.Println("WARNING: unable to deploy process to camunda ", err)
+		this.config.GetLogger().Warn("unable to deploy process to camunda ", "error", err)
 		return err, http.StatusInternalServerError
 	}
 
@@ -86,12 +85,12 @@ func (this *Controller) Deploy(depl model.DeploymentMessage) (err error, code in
 		if err != nil {
 			removeErr := this.camunda.RemoveProcess(deploymentId, depl.UserId)
 			if removeErr != nil {
-				log.Println("ERROR: unable to remove deployed process", deploymentId, removeErr, err)
+				this.config.GetLogger().Error("unable to remove deployed process", "deploymentId", deploymentId, "error", removeErr, "origErr", err)
 			}
 			return err, http.StatusInternalServerError
 		}
 		if len(definitions) == 0 {
-			log.Println("WARNING: no definitions for deployment found --> no incident handling deployed")
+			this.config.GetLogger().Warn("no definitions for deployment found --> no incident handling deployed")
 		}
 		for _, definition := range definitions {
 			err, _ = client.New(this.config.IncidentApiUrl).SetOnIncidentHandler(client.InternalAdminToken, client.OnIncident{
@@ -102,21 +101,19 @@ func (this *Controller) Deploy(depl model.DeploymentMessage) (err error, code in
 			if err != nil {
 				removeErr := this.camunda.RemoveProcess(deploymentId, depl.UserId)
 				if removeErr != nil {
-					log.Println("ERROR: unable to remove deployed process", deploymentId, removeErr, err)
+					this.config.GetLogger().Error("unable to remove deployed process", "deploymentId", deploymentId, "error", removeErr, "origErr", err)
 				}
 				return err, http.StatusInternalServerError
 			}
 		}
 	}
-	if this.config.Debug {
-		log.Println("save vid relation", depl.Id, deploymentId)
-	}
+	this.config.GetLogger().Debug("save vid relation", "vid", depl.Id, "deplId", deploymentId)
 	err = this.vid.SaveVidRelation(depl.Id, deploymentId)
 	if err != nil {
-		log.Println("WARNING: unable to publish deployment saga \n", err, "\nremove deployed process")
+		this.config.GetLogger().Warn("unable to publish deployment saga --> remove deployed process", "error", err)
 		removeErr := this.camunda.RemoveProcess(deploymentId, depl.UserId)
 		if removeErr != nil {
-			log.Println("ERROR: unable to remove deployed process", deploymentId, removeErr, err)
+			this.config.GetLogger().Error("unable to remove deployed process", "deploymentId", deploymentId, "error", removeErr, "origErr", err)
 		}
 		return err, http.StatusInternalServerError
 	}
@@ -181,12 +178,12 @@ func validateXml(xmlStr string) bool {
 	}
 	err := etree.NewDocument().ReadFromString(xmlStr)
 	if err != nil {
-		log.Println("ERROR: unable to parse xml", err)
+		slog.Error("unable to parse xml", "error", err)
 		return false
 	}
 	err = xml.Unmarshal([]byte(xmlStr), new(interface{}))
 	if err != nil {
-		log.Println("ERROR: unable to parse xml", err)
+		slog.Error("unable to parse xml", "error", err)
 		return false
 	}
 	return true

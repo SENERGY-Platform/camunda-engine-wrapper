@@ -21,8 +21,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -31,7 +32,7 @@ func Send(notificationUrl string, message Message) error {
 	if notificationUrl == "" {
 		return nil
 	}
-	log.Println("send notification", notificationUrl, message)
+	slog.Debug("send notification", "url", notificationUrl, "message", fmt.Sprintf("%#v", message))
 	b := new(bytes.Buffer)
 	err := json.NewEncoder(b).Encode(message)
 	if err != nil {
@@ -39,7 +40,7 @@ func Send(notificationUrl string, message Message) error {
 	}
 	req, err := http.NewRequest("POST", notificationUrl+"/notifications", b)
 	if err != nil {
-		log.Println("ERROR: unable to send notification", err)
+		slog.Error("unable to send notification", "error", err)
 		return err
 	}
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
@@ -47,13 +48,14 @@ func Send(notificationUrl string, message Message) error {
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Println("ERROR: unable to send notification", err)
+		slog.Error("unable to send notification", "error", err)
 		return err
 	}
 	if resp.StatusCode >= 300 {
 		respMsg, _ := io.ReadAll(resp.Body)
-		log.Println("ERROR: unexpected response status from notifier", resp.StatusCode, string(respMsg))
-		return errors.New("unexpected response status from notifier " + resp.Status)
+		err = errors.New("unexpected response status from notifier " + resp.Status)
+		slog.Error("unexpected response status from notifier", "error", err.Error()+": "+string(respMsg))
+		return err
 	}
 	return nil
 }

@@ -19,12 +19,6 @@ package tests
 import (
 	"context"
 	"encoding/json"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cleanup"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 	"log"
 	"net/http"
 	"net/url"
@@ -32,6 +26,13 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/cleanup"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
 )
 
 const bpmnExample = `<bpmn:definitions xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:bpmn='http://www.omg.org/spec/BPMN/20100524/MODEL' xmlns:bpmndi='http://www.omg.org/spec/BPMN/20100524/DI' xmlns:dc='http://www.omg.org/spec/DD/20100524/DC' xmlns:di='http://www.omg.org/spec/DD/20100524/DI' id='Definitions_1' targetNamespace='http://bpmn.io/schema/bpmn'><bpmn:process id='Process_1' isExecutable='true'><bpmn:startEvent id='StartEvent_1'><bpmn:outgoing>SequenceFlow_02ibfc0</bpmn:outgoing></bpmn:startEvent><bpmn:endEvent id='EndEvent_1728wjv'><bpmn:incoming>SequenceFlow_02ibfc0</bpmn:incoming></bpmn:endEvent><bpmn:sequenceFlow id='SequenceFlow_02ibfc0' sourceRef='StartEvent_1' targetRef='EndEvent_1728wjv'/></bpmn:process><bpmndi:BPMNDiagram id='BPMNDiagram_1'><bpmndi:BPMNPlane id='BPMNPlane_1' bpmnElement='Process_1'><bpmndi:BPMNShape id='_BPMNShape_StartEvent_2' bpmnElement='StartEvent_1'><dc:Bounds x='173' y='102' width='36' height='36'/></bpmndi:BPMNShape><bpmndi:BPMNShape id='EndEvent_1728wjv_di' bpmnElement='EndEvent_1728wjv'><dc:Bounds x='259' y='102' width='36' height='36'/></bpmndi:BPMNShape><bpmndi:BPMNEdge id='SequenceFlow_02ibfc0_di' bpmnElement='SequenceFlow_02ibfc0'><di:waypoint x='209' y='120'></di:waypoint><di:waypoint x='259' y='120'></di:waypoint></bpmndi:BPMNEdge></bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>`

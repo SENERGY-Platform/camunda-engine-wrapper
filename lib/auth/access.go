@@ -19,14 +19,13 @@ package auth
 import (
 	"encoding/json"
 	"errors"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
-	"log"
+	"io"
 	"net/http"
 	"time"
 
-	"net/url"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 
-	"io/ioutil"
+	"net/url"
 )
 
 type OpenidToken struct {
@@ -49,10 +48,10 @@ func (this *OpenidToken) EnsureAccess(config configuration.Config) (token string
 	}
 
 	if this.RefreshToken != "" && this.RefreshExpiresIn > duration+buffer {
-		log.Println("refresh token", this.RefreshExpiresIn, duration)
+		config.GetLogger().Debug("refresh token", "expires_in", this.RefreshExpiresIn, "duration", duration)
 		openid, err := RefreshOpenidToken(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret, this.RefreshToken)
 		if err != nil {
-			log.Println("WARNING: unable to use refreshtoken", err)
+			config.GetLogger().Warn("unable to use refreshtoken", "error", err)
 		} else {
 			*this = openid
 			token = "Bearer " + this.AccessToken
@@ -60,11 +59,11 @@ func (this *OpenidToken) EnsureAccess(config configuration.Config) (token string
 		}
 	}
 
-	log.Println("get new access token")
+	config.GetLogger().Debug("get new access token")
 	openid, err := GetOpenidToken(config.AuthEndpoint, config.AuthClientId, config.AuthClientSecret)
 	*this = openid
 	if err != nil {
-		log.Println("ERROR: unable to get new access token", err)
+		config.GetLogger().Error("unable to get new access token", "error", err)
 		*this = OpenidToken{}
 	}
 	token = "Bearer " + this.AccessToken
@@ -85,7 +84,7 @@ func GetOpenidToken(authEndpoint string, authClientId string, authClientSecret s
 		return openid, err
 	}
 	if resp.StatusCode >= 300 {
-		b, _ := ioutil.ReadAll(resp.Body)
+		b, _ := io.ReadAll(resp.Body)
 		err = errors.New(resp.Status + ": " + string(b))
 		return
 	}
@@ -110,7 +109,7 @@ func RefreshOpenidToken(authEndpoint string, authClientId string, authClientSecr
 		return openid, err
 	}
 	if resp.StatusCode >= 300 {
-		b, _ := ioutil.ReadAll(resp.Body)
+		b, _ := io.ReadAll(resp.Body)
 		err = errors.New(resp.Status + ": " + string(b))
 		return
 	}

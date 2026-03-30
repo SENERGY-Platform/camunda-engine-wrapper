@@ -14,5 +14,7 @@
     "auth_client_secret": "",
 
     "process_io_url": "",
-    "incident_api_url": "http://api.process-incidents:8080"
+    "incident_api_url": "http://api.process-incidents:8080",
+
+    "log_level": "info"
 }

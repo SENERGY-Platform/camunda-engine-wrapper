@@ -18,7 +18,7 @@ package api
 
 import (
 	"encoding/json"
-	"log"
+	"errors"
 	"net/http"
 	"net/url"
 	"time"
@@ -55,7 +55,7 @@ func (this *V1Endpoints) StartProcessDefinition(config configuration.Config, rou
 		}
 
 		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
+			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
@@ -65,7 +65,7 @@ func (this *V1Endpoints) StartProcessDefinition(config configuration.Config, rou
 
 		err = c.StartProcess(id, businessKey, token.GetUserId(), inputs)
 		if err != nil {
-			log.Println("ERROR: error on process start", err)
+			config.GetLogger().Error("error on process start", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -90,7 +90,7 @@ func (this *V1Endpoints) StartProcessDefinitionAndGetInstanceId(config configura
 		}
 
 		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
+			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
@@ -100,7 +100,7 @@ func (this *V1Endpoints) StartProcessDefinitionAndGetInstanceId(config configura
 
 		result, err := c.StartProcessGetId(id, businessKey, token.GetUserId(), inputs)
 		if err != nil {
-			log.Println("ERROR: error on process start", err)
+			config.GetLogger().Error("error on process start", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -121,13 +121,13 @@ func (this *V1Endpoints) GetDeployment(config configuration.Config, router *http
 		}
 
 		if err := c.CheckDeploymentAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
+			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
 		result, err := c.GetDeployment(id, token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on getDeployment", err)
+			config.GetLogger().Error("error on getDeployment", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -148,7 +148,7 @@ func (this *V1Endpoints) DeploymentExists(config configuration.Config, router *h
 		}
 
 		err = c.CheckDeploymentAccess(id, token.GetUserId())
-		if err == camunda.UnknownVid || err == camunda.CamundaDeploymentUnknown {
+		if errors.Is(err, camunda.UnknownVid) || errors.Is(err, camunda.CamundaDeploymentUnknown) {
 			writer.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(writer).Encode(false)
 			return
@@ -173,18 +173,18 @@ func (this *V1Endpoints) StartDeployment(config configuration.Config, router *ht
 		}
 
 		if err := c.CheckDeploymentAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
+			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
 		definitions, err := c.GetDefinitionByDeploymentVid(id, token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on getDeploymentByDef", err)
+			config.GetLogger().Error("error on getDeploymentByDef", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		if len(definitions) == 0 {
-			log.Println("ERROR: no definition for deployment found", err)
+			config.GetLogger().Error("no definition for deployment found", "error", err)
 			http.Error(writer, "no definition for deployment found", http.StatusInternalServerError)
 			return
 		}
@@ -194,7 +194,7 @@ func (this *V1Endpoints) StartDeployment(config configuration.Config, router *ht
 
 		result, err := c.StartProcessGetId(definitions[0].Id, businessKey, token.GetUserId(), inputs)
 		if err != nil {
-			log.Println("ERROR: error on process start", err)
+			config.GetLogger().Error("error on process start", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -214,25 +214,25 @@ func (this *V1Endpoints) GetDeploymentParameters(config configuration.Config, ro
 		}
 
 		if err := c.CheckDeploymentAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
+			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
 		definitions, err := c.GetDefinitionByDeploymentVid(id, token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on getDeploymentByDef", err)
+			config.GetLogger().Error("error on getDeploymentByDef", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		if len(definitions) == 0 {
-			log.Println("ERROR: no definition for deployment found", err)
+			config.GetLogger().Error("no definition for deployment found", "error", err)
 			http.Error(writer, "no definition for deployment found", http.StatusInternalServerError)
 			return
 		}
 
 		result, err := c.GetProcessParameters(definitions[0].Id, token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on process start", err)
+			config.GetLogger().Error("error on process start", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -253,13 +253,13 @@ func (this *V1Endpoints) GetDeploymentDefinition(config configuration.Config, ro
 		}
 
 		if err := c.CheckDeploymentAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), id, err)
+			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
 		result, err := c.GetDefinitionByDeploymentVid(id, token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on getDeploymentByDef", err)
+			config.GetLogger().Error("error on getDeploymentByDef", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -277,13 +277,13 @@ func (this *V1Endpoints) GetDeployments(config configuration.Config, router *htt
 		}
 
 		result, err := c.GetExtendedDeploymentList(token.GetUserId(), request.URL.Query())
-		if err == camunda.UnknownVid {
-			log.Println("WARNING: unable to use vid for process; try repeat")
+		if errors.Is(err, camunda.UnknownVid) {
+			config.GetLogger().Warn("unable to use vid for process; try repeat", "error", err)
 			time.Sleep(1 * time.Second)
 			result, err = c.GetExtendedDeploymentList(token.GetUserId(), request.URL.Query())
 		}
 		if err != nil {
-			log.Println("ERROR: error on getDeploymentList", err)
+			config.GetLogger().Error("error on getDeploymentList", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -304,13 +304,13 @@ func (this *V1Endpoints) GetProcessDefinition(config configuration.Config, route
 		}
 
 		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
+			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
 		result, err := c.GetProcessDefinition(id, token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on getProcessDefinition", err)
+			config.GetLogger().Error("error on getProcessDefinition", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -331,20 +331,20 @@ func (this *V1Endpoints) GetProcessDefinitionDiagram(config configuration.Config
 		}
 
 		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
+			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
 		result, err := c.GetProcessDefinitionDiagram(id, token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on getProcessDefinitionDiagram", err)
+			config.GetLogger().Error("error on getProcessDefinitionDiagram", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		//copy image data
 		_, err = io.Copy(writer, result.Body)
 		if err != nil {
-			log.Println("ERROR: error on diagram response copy", err)
+			config.GetLogger().Error("error on diagram response copy", "error", err)
 			http.Error(writer, err.Error(), http.StatusNotImplemented)
 			return
 		}
@@ -367,7 +367,7 @@ func (this *V1Endpoints) GetProcessInstances(config configuration.Config, router
 
 		result, err := c.GetProcessInstanceList(token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on getProcessInstanceList", err)
+			config.GetLogger().Error("error on getProcessInstanceList", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -388,7 +388,7 @@ func (this *V1Endpoints) GetProcessInstanceCount(config configuration.Config, ro
 
 		result, err := c.GetProcessInstanceCount(token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on getProcessInstanceCount", err)
+			config.GetLogger().Error("error on getProcessInstanceCount", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -409,7 +409,7 @@ func (this *V1Endpoints) GetHistoricProcessInstances(config configuration.Config
 
 		result, err := c.GetProcessInstanceHistoryList(token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on getProcessInstanceHistoryList", err)
+			config.GetLogger().Error("error on getProcessInstanceHistoryList", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -430,7 +430,7 @@ func (this *V1Endpoints) GetFilteredHistoricProcessInstances(config configuratio
 
 		result, err := c.GetFilteredProcessInstanceHistoryList(token.GetUserId(), request.URL.Query())
 		if err != nil {
-			log.Println("ERROR: error on getFilteredProcessInstanceHistoryList", err)
+			config.GetLogger().Error("error on getFilteredProcessInstanceHistoryList", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -449,7 +449,7 @@ func (this *V1Endpoints) GetFinishedProcessInstances(config configuration.Config
 		}
 		result, err := c.GetProcessInstanceHistoryListFinished(token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on getProcessInstanceHistoryListFinished", err)
+			config.GetLogger().Error("error on getProcessInstanceHistoryListFinished", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -475,7 +475,7 @@ func (this *V1Endpoints) FindFinishedProcessInstances(config configuration.Confi
 
 		result, err := c.GetProcessInstanceHistoryListWithTotal(token.GetUserId(), searchtype, searchvalue, limit, offset, sortby, sortdirection, true)
 		if err != nil {
-			log.Println("ERROR: error on getProcessInstanceHistoryListWithTotal", err)
+			config.GetLogger().Error("error on getProcessInstanceHistoryListWithTotal", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -501,7 +501,7 @@ func (this *V1Endpoints) FindUnfinishedProcessInstances(config configuration.Con
 
 		result, err := c.GetProcessInstanceHistoryListWithTotal(token.GetUserId(), searchtype, searchvalue, limit, offset, sortby, sortdirection, false)
 		if err != nil {
-			log.Println("ERROR: error on getProcessInstanceHistoryListWithTotal", err)
+			config.GetLogger().Error("error on getProcessInstanceHistoryListWithTotal", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -520,7 +520,7 @@ func (this *V1Endpoints) GetUnfinishedProcessInstances(config configuration.Conf
 		}
 		result, err := c.GetProcessInstanceHistoryListUnfinished(token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on getProcessInstanceHistoryListUnfinished", err)
+			config.GetLogger().Error("error on getProcessInstanceHistoryListUnfinished", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -541,13 +541,13 @@ func (this *V1Endpoints) GetHistoricProcessInstancesOfProcessDefinition(config c
 		}
 
 		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
+			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
 		result, err := c.GetProcessInstanceHistoryByProcessDefinition(id, token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on processinstanceHistoryByDefinition", err)
+			config.GetLogger().Error("error on processinstanceHistoryByDefinition", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -568,13 +568,13 @@ func (this *V1Endpoints) GetFinishedProcessInstancesOfProcessDefinition(config c
 		}
 
 		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
+			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
 		result, err := c.GetProcessInstanceHistoryByProcessDefinitionFinished(id, token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on processinstanceHistoryByDefinition", err)
+			config.GetLogger().Error("error on processinstanceHistoryByDefinition", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -595,13 +595,13 @@ func (this *V1Endpoints) GetUnfinishedProcessInstancesOfProcessDefinition(config
 		}
 
 		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
-			log.Println("WARNING: Access denied for user;", token.GetUserId(), err)
+			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
 			return
 		}
 		result, err := c.GetProcessInstanceHistoryByProcessDefinitionUnfinished(id, token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on processinstanceHistoryByDefinition", err)
+			config.GetLogger().Error("error on processinstanceHistoryByDefinition", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -623,7 +623,7 @@ func (this *V1Endpoints) DeleteHistoricPricessInstance(config configuration.Conf
 
 		err, code := e.DeleteHistoricProcessInstance(token.GetUserId(), id)
 		if err != nil {
-			log.Println("ERROR: error on PublishIncidentDeleteByProcessInstanceEvent", err)
+			config.GetLogger().Error("error on PublishIncidentDeleteByProcessInstanceEvent", "error", err)
 			http.Error(writer, err.Error(), code)
 			return
 		}
@@ -649,7 +649,7 @@ func (this *V1Endpoints) DeleteProcessInstance(config configuration.Config, rout
 		}
 		err = c.RemoveProcessInstance(id, token.GetUserId())
 		if err != nil {
-			log.Println("ERROR: error on removeProcessInstance", err)
+			config.GetLogger().Error("error on removeProcessInstance", "error", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}

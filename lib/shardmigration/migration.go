@@ -2,15 +2,17 @@ package shardmigration
 
 import (
 	"encoding/json"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
-	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
-	"log"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
+
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 )
 
 func Add(camundaUrl string, pgConnStr string, batchSize int) (err error) {
-	log.Println("start shard migration")
+	slog.Info("start shard migration", "camundaUrl", camundaUrl, "pgConnStr", pgConnStr, "batchSize", batchSize)
 	s, err := shards.New(pgConnStr, cache.None)
 	if err != nil {
 		return err
@@ -18,7 +20,7 @@ func Add(camundaUrl string, pgConnStr string, batchSize int) (err error) {
 	offset := 0
 	count := batchSize
 	tenantSet := map[string]bool{}
-	log.Println("load tenants from camunda deployments")
+	slog.Debug("load tenants from camunda deployments")
 	for count == batchSize {
 		tenants, err := getDeploymentTenants(camundaUrl, batchSize, offset)
 		if err != nil {
@@ -31,38 +33,38 @@ func Add(camundaUrl string, pgConnStr string, batchSize int) (err error) {
 		}
 	}
 
-	log.Println("ensure entry of", camundaUrl, " in Shard table")
+	slog.Debug(fmt.Sprint("ensure entry of", camundaUrl, " in Shard table"))
 	err = s.EnsureShard(camundaUrl)
 	if err != nil {
 		return err
 	}
 
-	log.Println("map", len(tenantSet), "tenants to", camundaUrl)
+	slog.Debug(fmt.Sprint("map", len(tenantSet), "tenants to", camundaUrl))
 	for tenant, _ := range tenantSet {
-		log.Println("add", tenant, "to", camundaUrl)
+		slog.Debug(fmt.Sprint("add", tenant, "to", camundaUrl))
 		err = s.SetShardForUser(tenant, camundaUrl)
 		if err != nil {
 			return err
 		}
 	}
-	log.Println("done")
+	slog.Debug("done")
 	return nil
 }
 
 func Remove(camundaUrl string, pgConnStr string) (err error) {
-	log.Println("start shard migration")
+	slog.Info("start shard migration", "camundaUrl", camundaUrl, "pgConnStr", pgConnStr)
 	s, err := shards.New(pgConnStr, cache.None)
 	if err != nil {
 		return err
 	}
 
-	log.Println("remove entry of", camundaUrl, " in Shard table")
+	slog.Debug(fmt.Sprint("remove entry of", camundaUrl, " in Shard table"))
 	err = s.RemoveShard(camundaUrl)
 	if err != nil {
 		return err
 	}
 
-	log.Println("done")
+	slog.Debug("done")
 	return nil
 }
 

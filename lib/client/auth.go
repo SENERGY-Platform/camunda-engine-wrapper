@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"sync"
@@ -51,10 +51,10 @@ func NewTokenProvider(authEndpoint string, authClientId string, authClientSecret
 		}
 
 		if openid.RefreshToken != "" && openid.RefreshExpiresIn > duration {
-			log.Println("refresh token", openid.RefreshExpiresIn, duration)
+			slog.Default().Debug("refresh token", "expires_in", openid.RefreshExpiresIn, "duration", duration)
 			openid, err = refreshOpenidToken(authEndpoint, authClientId, authClientSecret, openid)
 			if err != nil {
-				log.Println("WARNING: unable to use refresh token", err)
+				slog.Default().Warn("unable to use refresh token", "error", err)
 			} else {
 				return "Bearer " + openid.AccessToken, nil
 			}
@@ -86,10 +86,10 @@ func NewUserTokenProvider(authEndpoint string, authClientId string, authClientSe
 		}
 
 		if openid.RefreshToken != "" && openid.RefreshExpiresIn > duration {
-			log.Println("refresh token", openid.RefreshExpiresIn, duration)
+			slog.Default().Debug("refresh token", "expires_in", openid.RefreshExpiresIn, "duration", duration)
 			openid, err = refreshOpenidToken(authEndpoint, authClientId, authClientSecret, openid)
 			if err != nil {
-				log.Println("WARNING: unable to use refresh token", err)
+				slog.Default().Warn("unable to use refresh token", "error", err)
 			} else {
 				return "Bearer " + openid.AccessToken, nil
 			}
