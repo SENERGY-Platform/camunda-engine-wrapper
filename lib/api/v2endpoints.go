@@ -782,7 +782,7 @@ func (this *V2Endpoints) DeleteProcessMultipleInstances(config configuration.Con
 // @Success      200
 // @Failure      400
 // @Failure      500
-// @Router       /v2/process-instances [DELETE]
+// @Router       /v2/history/process-instances [DELETE]
 func (this *V2Endpoints) DeleteMultipleHistoricProcessInstances(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("DELETE /v2/history/process-instances", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)

@@ -561,6 +561,43 @@ const docTemplate = `{
                         "description": "Internal Server Error"
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "delete multiple historic process-instances",
+                "tags": [
+                    "process-instance"
+                ],
+                "summary": "delete multiple historic process-instances",
+                "parameters": [
+                    {
+                        "description": "ids",
+                        "name": "message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
             }
         },
         "/v2/history/process-instances/{id}": {
@@ -852,11 +889,11 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "delete multiple historic process-instances",
+                "description": "delete multiple process-instances",
                 "tags": [
                     "process-instance"
                 ],
-                "summary": "delete multiple historic process-instances",
+                "summary": "delete multiple process-instances",
                 "parameters": [
                     {
                         "description": "ids",
@@ -891,7 +928,7 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "delete process-instances and historic process-instances identified by business-key",
+                "description": "stops process-instances identified by business-key",
                 "tags": [
                     "process-instance"
                 ],
@@ -899,7 +936,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "business-key of instances and historic instances",
+                        "description": "business-key of instances",
                         "name": "business-key",
                         "in": "path",
                         "required": true
