@@ -755,13 +755,13 @@ paths:
       summary: list process-instances
       tags:
       - process-instance
-  /v2/process-instances-by-business-key/{business-key}:
+  /v2/process-instances-by-business-key/{business_key}:
     delete:
       description: stops process-instances identified by business-key
       parameters:
       - description: business-key of instances
         in: path
-        name: business-key
+        name: business_key
         required: true
         type: string
       responses:

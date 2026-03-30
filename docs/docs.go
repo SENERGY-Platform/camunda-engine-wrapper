@@ -921,7 +921,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/v2/process-instances-by-business-key/{business-key}": {
+        "/v2/process-instances-by-business-key/{business_key}": {
             "delete": {
                 "security": [
                     {
@@ -937,7 +937,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "business-key of instances",
-                        "name": "business-key",
+                        "name": "business_key",
                         "in": "path",
                         "required": true
                     }

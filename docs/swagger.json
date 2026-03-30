@@ -913,7 +913,7 @@
                 }
             }
         },
-        "/v2/process-instances-by-business-key/{business-key}": {
+        "/v2/process-instances-by-business-key/{business_key}": {
             "delete": {
                 "security": [
                     {
@@ -929,7 +929,7 @@
                     {
                         "type": "string",
                         "description": "business-key of instances",
-                        "name": "business-key",
+                        "name": "business_key",
                         "in": "path",
                         "required": true
                     }

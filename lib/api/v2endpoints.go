@@ -816,11 +816,11 @@ func (this *V2Endpoints) DeleteMultipleHistoricProcessInstances(config configura
 // @Description  stops process-instances identified by business-key
 // @Tags         process-instance
 // @Security Bearer
-// @Param        business-key path string true "business-key of instances"
+// @Param        business_key path string true "business-key of instances"
 // @Success      200
 // @Failure      400
 // @Failure      500
-// @Router       /v2/process-instances-by-business-key/{business-key} [DELETE]
+// @Router       /v2/process-instances-by-business-key/{business_key} [DELETE]
 func (this *V2Endpoints) DeleteProcessInstancesByBusinessKey(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
 	router.HandleFunc("DELETE /v2/process-instances-by-business-key/{business_key}", func(writer http.ResponseWriter, request *http.Request) {
 		token, err := auth.GetParsedToken(request)
