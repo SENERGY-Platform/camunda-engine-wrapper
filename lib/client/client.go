@@ -90,6 +90,14 @@ func (this *Client) DeleteDeployment(token string, userId string, deplId string)
 	return doVoid(token, req)
 }
 
+func (this *Client) GetProcessInstances(token string) (result HistoricProcessInstances, err error, code int) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%v/v2/process-instances", this.serverUrl), nil)
+	if err != nil {
+		return result, err, 0
+	}
+	return do[HistoricProcessInstances](token, req)
+}
+
 func (this *Client) GetHistoricProcessInstances(token string, options InstanceListOptions) (result HistoricProcessInstances, err error, code int) {
 	query := url.Values{}
 	if options.BusinessKey != "" {

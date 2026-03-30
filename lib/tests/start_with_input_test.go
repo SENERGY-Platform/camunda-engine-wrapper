@@ -180,6 +180,20 @@ func TestInstanceBusinessKey(t *testing.T) {
 	})
 	time.Sleep(time.Second * 5)
 	t.Run("check instance list", func(t *testing.T) {
+		list, err, code := wrapperClient.GetProcessInstances(helper.Jwt)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+		if len(list) != 4 { //2 finished -> 6 - 2 = 4
+			t.Error("expected 4 instance, got ", len(list))
+		}
+	})
+	t.Run("check instance history list", func(t *testing.T) {
 		list, err, code := wrapperClient.GetHistoricProcessInstances(helper.Jwt, client.InstanceListOptions{})
 		if err != nil {
 			t.Error(err)
@@ -193,7 +207,7 @@ func TestInstanceBusinessKey(t *testing.T) {
 			t.Error("expected 6 instance, got ", len(list))
 		}
 	})
-	t.Run("check instance list with businessKey", func(t *testing.T) {
+	t.Run("check instance history list with businessKey", func(t *testing.T) {
 		list, err, code := wrapperClient.GetHistoricProcessInstances(helper.Jwt, client.InstanceListOptions{BusinessKey: "bk1"})
 		if err != nil {
 			t.Error(err)
@@ -220,6 +234,20 @@ func TestInstanceBusinessKey(t *testing.T) {
 	})
 	time.Sleep(time.Second * 5)
 	t.Run("check instance list after delete", func(t *testing.T) {
+		list, err, code := wrapperClient.GetProcessInstances(helper.Jwt)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if code != 200 {
+			t.Error(code)
+			return
+		}
+		if len(list) != 2 { // 2 finished; 3 deleted; one of the deleted ones was also finished -> 6 - 2 - (3-1) = 2
+			t.Error("expected 2 instance, got ", len(list))
+		}
+	})
+	t.Run("check instance history list after delete", func(t *testing.T) {
 		list, err, code := wrapperClient.GetHistoricProcessInstances(helper.Jwt, client.InstanceListOptions{})
 		if err != nil {
 			t.Error(err)
@@ -229,8 +257,8 @@ func TestInstanceBusinessKey(t *testing.T) {
 			t.Error(code)
 			return
 		}
-		if len(list) != 3 {
-			t.Error("expected 3 instance, got ", len(list))
+		if len(list) != 6 {
+			t.Error("expected 6 instance, got ", len(list))
 		}
 	})
 }

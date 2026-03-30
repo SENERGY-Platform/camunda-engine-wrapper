@@ -813,10 +813,10 @@ func (this *V2Endpoints) DeleteMultipleHistoricProcessInstances(config configura
 
 // DeleteProcessInstancesByBusinessKey godoc
 // @Summary      delete process-instances by business-key
-// @Description  delete process-instances and historic process-instances identified by business-key
+// @Description  stops process-instances identified by business-key
 // @Tags         process-instance
 // @Security Bearer
-// @Param        business-key path string true "business-key of instances and historic instances"
+// @Param        business-key path string true "business-key of instances"
 // @Success      200
 // @Failure      400
 // @Failure      500
@@ -839,11 +839,6 @@ func (this *V2Endpoints) DeleteProcessInstancesByBusinessKey(config configuratio
 		for _, instance := range instances {
 			if instance.EndTime == "" && instance.BusinessKey == businessKey {
 				err = errors.Join(err, c.RemoveProcessInstance(instance.Id, userId))
-			}
-		}
-		for _, instance := range instances {
-			if instance.BusinessKey == businessKey {
-				err = errors.Join(err, c.RemoveProcessInstanceHistory(instance.Id, userId))
 			}
 		}
 		if err != nil {
