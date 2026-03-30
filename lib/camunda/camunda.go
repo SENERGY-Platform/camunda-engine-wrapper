@@ -84,8 +84,12 @@ func (this *Camunda) StartProcess(processDefinitionId string, businessKey string
 }
 
 func createStartMessage(parameter map[string]interface{}, businessKey string) map[string]interface{} {
+	result := map[string]interface{}{}
+	if businessKey != "" {
+		result["businessKey"] = businessKey
+	}
 	if len(parameter) == 0 {
-		return map[string]interface{}{"businessKey": businessKey}
+		return result
 	}
 	variables := map[string]interface{}{}
 	for key, val := range parameter {
@@ -93,7 +97,8 @@ func createStartMessage(parameter map[string]interface{}, businessKey string) ma
 			"value": val,
 		}
 	}
-	return map[string]interface{}{"variables": variables, "businessKey": businessKey}
+	result["variables"] = variables
+	return result
 }
 
 func (this *Camunda) StartProcessGetId(processDefinitionId string, businessKey string, userId string, parameter map[string]interface{}) (result model.ProcessInstance, err error) {
