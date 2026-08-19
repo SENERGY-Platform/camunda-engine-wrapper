@@ -42,6 +42,13 @@ type Config struct {
 	ShardingDb string `json:"sharding_db"`
 	CamundaDb  string `json:"camunda_db"`
 
+	//alternative to CamundaDb; used if CamundaDb == "" && CamundaDbHost != ""
+	CamundaDbHost string `json:"camunda_db_host"`
+	CamundaDbUser string `json:"camunda_db_user"`
+	CamundaDbPw   string `json:"camunda_db_pw"`
+	CamundaDbPort string `json:"camunda_db_port"`
+	CamundaDbName string `json:"camunda_db_name"`
+
 	Debug bool `json:"debug"`
 
 	HttpClientTimeout     string `json:"http_client_timeout"`

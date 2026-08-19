@@ -19,6 +19,7 @@ package camunda
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -28,6 +29,9 @@ import (
 )
 
 func UpdateDatabaseSchema(config configuration.Config) (err error) {
+	if config.CamundaDb == "" && config.CamundaDbHost != "" {
+		config.CamundaDb = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", config.CamundaDbUser, config.CamundaDbPw, config.CamundaDbHost, config.CamundaDbPort, config.CamundaDbName)
+	}
 	if config.CamundaDb == "" || config.CamundaDb == "-" {
 		return nil
 	}
