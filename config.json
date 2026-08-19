@@ -3,6 +3,7 @@
     "metrics_port": "2112",
     "wrapper_db":"postgres://user:password@host/dbname?sslmode=disable",
     "sharding_db":"postgres://user:password@host/dbname?sslmode=disable",
+    "camunda_db": "",
     "debug":false,
     "http_client_timeout": "30s",
     "http_server_timeout": "30s",

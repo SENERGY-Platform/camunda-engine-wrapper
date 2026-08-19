@@ -4,22 +4,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 	"io"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 func Camunda(ctx context.Context, wg *sync.WaitGroup, pgIp string, pgPort string) (camundaUrl string, err error) {
-	log.Println("start camunda")
+	return CamundaWithTag(ctx, wg, pgIp, pgPort, "dev")
+}
+
+func CamundaWithTag(ctx context.Context, wg *sync.WaitGroup, pgIp string, pgPort string, tag string) (camundaUrl string, err error) {
+	log.Println("start camunda", tag)
 	dbName := "camunda"
 	c, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "ghcr.io/senergy-platform/process-engine:dev",
+			Image:        "ghcr.io/senergy-platform/process-engine:" + tag,
 			ExposedPorts: []string{"8080/tcp"},
 			WaitingFor: wait.ForAll(
 				wait.ForListeningPort("8080/tcp"),
@@ -36,6 +41,7 @@ func Camunda(ctx context.Context, wg *sync.WaitGroup, pgIp string, pgPort string
 				"DB_USERNAME": "usr",
 				"DATABASE":    "postgres",
 			},
+			AlwaysPullImage: true,
 		},
 		Started: true,
 	})
@@ -47,7 +53,7 @@ func Camunda(ctx context.Context, wg *sync.WaitGroup, pgIp string, pgPort string
 	go func() {
 		defer wg.Done()
 		defer func() {
-			log.Println("DEBUG: remove container camunda", c.Terminate(context.Background()))
+			log.Println("DEBUG: remove container camunda", tag, c.Terminate(context.Background()))
 		}()
 		<-ctx.Done()
 		reader, err := c.Logs(context.Background())
@@ -57,7 +63,7 @@ func Camunda(ctx context.Context, wg *sync.WaitGroup, pgIp string, pgPort string
 		}
 		buf := new(strings.Builder)
 		io.Copy(buf, reader)
-		fmt.Println("CAMUNDA LOGS: ------------------------------------------")
+		fmt.Println("CAMUNDA LOGS", tag, ": ------------------------------------------")
 		fmt.Println(buf.String())
 		fmt.Println("\n---------------------------------------------------------------")
 	}()

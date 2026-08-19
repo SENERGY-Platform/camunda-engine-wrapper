@@ -19,6 +19,13 @@ package tests
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"net/http/httptest"
+	"sync"
+	"testing"
+
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/api"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/client"
@@ -31,11 +38,6 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/docker"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/tests/helper"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/vid"
-	"log"
-	"net/http"
-	"net/http/httptest"
-	"sync"
-	"testing"
 )
 
 func TestVid(t *testing.T) {
@@ -70,6 +72,7 @@ func TestVid(t *testing.T) {
 
 	config.WrapperDb = pgStr
 	config.ShardingDb = pgStr
+	config.CamundaDb = fmt.Sprintf("postgres://usr:pw@%s:5432/camunda?sslmode=disable", camundaPgIp)
 
 	incidentApiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	defer incidentApiServer.Close()
@@ -87,6 +90,12 @@ func TestVid(t *testing.T) {
 	}
 
 	v, err := vid.New(config.WrapperDb)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = camunda.UpdateDatabaseSchema(config)
 	if err != nil {
 		t.Error(err)
 		return

@@ -2,6 +2,7 @@ package lib
 
 import (
 	"context"
+
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/api"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
@@ -32,6 +33,11 @@ func Wrapper(parentCtx context.Context, config configuration.Config) (err error)
 	}
 
 	processIo := processio.NewOrNil(config)
+
+	err = camunda.UpdateDatabaseSchema(config)
+	if err != nil {
+		return err
+	}
 
 	c := camunda.New(config, v, s, processIo)
 

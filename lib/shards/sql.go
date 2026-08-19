@@ -17,6 +17,8 @@ const SqlCreateUserShard = "INSERT INTO ShardsMapping (UserId, ShardAddress) VAL
 
 const SqlEnsureShard = `INSERT INTO Shard(Address) VALUES ($1) ON CONFLICT DO NOTHING;`
 
+const SqlForceShardToBeUsedByAllUsers = `UPDATE ShardsMapping SET ShardAddress = $1 WHERE ShardAddress != $1;`
+
 const SqlDeleteShard = `DELETE FROM Shard WHERE Address = $1;`
 
 const SqlDeleteShardUsers = "DELETE FROM ShardsMapping WHERE ShardAddress = $1;"

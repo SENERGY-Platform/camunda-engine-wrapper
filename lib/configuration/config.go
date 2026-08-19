@@ -40,6 +40,7 @@ type Config struct {
 
 	WrapperDb  string `json:"wrapper_db"`
 	ShardingDb string `json:"sharding_db"`
+	CamundaDb  string `json:"camunda_db"`
 
 	Debug bool `json:"debug"`
 

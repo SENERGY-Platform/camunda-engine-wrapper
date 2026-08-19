@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
+
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/shards/cache"
 	_ "github.com/lib/pq"
-	"time"
 )
 
 func New(pgConnStr string, cache cache.Cache) (*Shards, error) {
@@ -57,7 +58,7 @@ func getShardForUser(tx Tx, userId string) (shardUrl string, err error) {
 		return
 	}
 	err = resp.Scan(&shardUrl)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = ErrorNotFound
 	}
 	return
@@ -200,6 +201,12 @@ func (this *Shards) RemoveShard(shard string) (err error) {
 		return err
 	}
 	return tx.Commit()
+}
+
+// used for testing
+func (this *Shards) ForceShardToBeUsedByAllUsers(shardUrl string) (err error) {
+	_, err = this.db.Exec(SqlForceShardToBeUsedByAllUsers, shardUrl)
+	return
 }
 
 func getShards(tx Tx) (result []string, err error) {
