@@ -12,7 +12,7 @@ require (
 require (
 	github.com/SENERGY-Platform/go-service-base/struct-logger v0.6.0
 	github.com/SENERGY-Platform/models/go v0.0.0-20250417082304-c41a4b3157af
-	github.com/SENERGY-Platform/process-incident-api v0.0.11
+	github.com/SENERGY-Platform/process-incident-api v0.0.12
 	github.com/SENERGY-Platform/service-commons v0.0.0-20260821114734-3e4578ac2358
 	github.com/prometheus/client_golang v1.21.1
 	github.com/swaggo/swag v1.16.4
@@ -48,7 +48,6 @@ require (
 	github.com/go-openapi/spec v0.20.6 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/lufia/plan9stats v0.0.0-20240513124658-fba389f38bae // indirect
