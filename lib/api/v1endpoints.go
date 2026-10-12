@@ -54,9 +54,14 @@ func (this *V1Endpoints) StartProcessDefinition(config configuration.Config, rou
 			return
 		}
 
-		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
+		definition, err := c.GetProcessDefinitionWithAccessCheck(id, token.GetUserId())
+		if err != nil {
 			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
+			return
+		}
+		if definition.Suspended {
+			http.Error(writer, deploymentDisabledMessage, http.StatusConflict)
 			return
 		}
 
@@ -89,9 +94,14 @@ func (this *V1Endpoints) StartProcessDefinitionAndGetInstanceId(config configura
 			return
 		}
 
-		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
+		definition, err := c.GetProcessDefinitionWithAccessCheck(id, token.GetUserId())
+		if err != nil {
 			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
+			return
+		}
+		if definition.Suspended {
+			http.Error(writer, deploymentDisabledMessage, http.StatusConflict)
 			return
 		}
 
@@ -186,6 +196,10 @@ func (this *V1Endpoints) StartDeployment(config configuration.Config, router *ht
 		if len(definitions) == 0 {
 			config.GetLogger().Error("no definition for deployment found", "error", err)
 			http.Error(writer, "no definition for deployment found", http.StatusInternalServerError)
+			return
+		}
+		if definitions[0].Suspended {
+			http.Error(writer, deploymentDisabledMessage, http.StatusConflict)
 			return
 		}
 

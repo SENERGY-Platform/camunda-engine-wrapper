@@ -80,6 +80,18 @@ func (this *Controller) Deploy(depl model.DeploymentMessage) (err error, code in
 		return err, http.StatusInternalServerError
 	}
 
+	// Applied before incident handling and SaveVidRelation to keep the window in which a disabled deployment
+	// can start instances (by event or overdue timer) as short as possible.
+	err = this.applyDisabledIntent(depl.Id, deploymentId, depl.UserId)
+	if err != nil {
+		this.config.GetLogger().Warn("unable to keep deployment disabled --> remove deployed process", "vid", depl.Id, "deploymentId", deploymentId, "error", err)
+		removeErr := this.camunda.RemoveProcess(deploymentId, depl.UserId)
+		if removeErr != nil {
+			this.config.GetLogger().Error("unable to remove deployed process", "deploymentId", deploymentId, "error", removeErr, "origErr", err)
+		}
+		return err, http.StatusInternalServerError
+	}
+
 	if depl.IncidentHandling != nil {
 		definitions, err := this.camunda.GetRawDefinitionsByDeployment(deploymentId, depl.UserId)
 		if err != nil {
@@ -117,15 +129,49 @@ func (this *Controller) Deploy(depl model.DeploymentMessage) (err error, code in
 		}
 		return err, http.StatusInternalServerError
 	}
-	return err, http.StatusOK
+
+	// Checked again after the vid relation is saved: a concurrent disable writes its intent before resolving the vid,
+	// so either this read sees the intent or the disable call sees the new deployment.
+	err = this.applyDisabledIntent(depl.Id, deploymentId, depl.UserId)
+	if err != nil {
+		this.config.GetLogger().Warn("unable to keep deployment disabled --> remove deployed process", "vid", depl.Id, "deploymentId", deploymentId, "error", err)
+		removeErr := this.deleteDeployment(depl.UserId, depl.Id, false)
+		if removeErr != nil {
+			this.config.GetLogger().Error("unable to remove deployment --> remove deployed process from camunda", "deploymentId", deploymentId, "error", removeErr, "origErr", err)
+			// fail closed: a deployment that should be disabled must not stay active in camunda
+			removeErr = this.camunda.RemoveProcess(deploymentId, depl.UserId)
+			if removeErr != nil {
+				this.config.GetLogger().Error("unable to remove deployed process", "deploymentId", deploymentId, "error", removeErr, "origErr", err)
+			}
+		}
+		return err, http.StatusInternalServerError
+	}
+	return nil, http.StatusOK
 }
 
+// applyDisabledIntent disables the camunda deployment if a disabled intent is recorded for vid.
+func (this *Controller) applyDisabledIntent(vid string, deploymentId string, userId string) error {
+	disabled, err := this.vid.HasDisabledIntent(vid)
+	if err != nil || !disabled {
+		return err
+	}
+	return this.applyDisabled(deploymentId, userId)
+}
+
+// DeleteDeployment removes the deployment and any disabled intent recorded for vid.
 func (this *Controller) DeleteDeployment(userId string, vid string) error {
+	return this.deleteDeployment(userId, vid, true)
+}
+
+func (this *Controller) deleteDeployment(userId string, vid string, removeDisabledIntent bool) error {
 	id, exists, err := this.vid.GetDeploymentId(vid)
 	if err != nil {
 		return err
 	}
 	if !exists {
+		if removeDisabledIntent {
+			return this.vid.RemoveDisabledIntent(vid)
+		}
 		return nil
 	}
 
@@ -139,7 +185,11 @@ func (this *Controller) DeleteDeployment(userId string, vid string) error {
 		return err
 	}
 
-	commit, rollback, err := this.vid.RemoveVidRelation(vid, id)
+	removeRelation := this.vid.RemoveVidRelation
+	if removeDisabledIntent {
+		removeRelation = this.vid.RemoveVidRelationAndDisabledIntent
+	}
+	commit, rollback, err := removeRelation(vid, id)
 	if err != nil {
 		return err
 	}
@@ -195,7 +245,8 @@ func (this *Controller) cleanupExistingDeployment(userId string, vid string) err
 		return err
 	}
 	if exists {
-		return this.DeleteDeployment(userId, vid)
+		// a redeploy keeps the disabled intent so the new deployment is disabled again
+		return this.deleteDeployment(userId, vid, false)
 	}
 	return nil
 }

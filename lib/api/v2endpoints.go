@@ -28,6 +28,7 @@ import (
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/camunda"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/configuration"
 	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/controller"
+	"github.com/SENERGY-Platform/camunda-engine-wrapper/lib/model"
 
 	"io"
 )
@@ -37,6 +38,9 @@ func init() {
 }
 
 type V2Endpoints struct{}
+
+// deploymentDisabledMessage is the 409 body of start endpoints for a suspended (disabled) process definition.
+const deploymentDisabledMessage = "deployment is disabled"
 
 // StartProcessDefinition godoc
 // @Summary      start process-definitions
@@ -51,6 +55,7 @@ type V2Endpoints struct{}
 // @Failure      401
 // @Failure      403
 // @Failure      404
+// @Failure      409 "deployment is disabled"
 // @Failure      500
 // @Router       /v2/process-definitions/{id}/start [GET]
 func (this *V2Endpoints) StartProcessDefinition(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
@@ -63,9 +68,14 @@ func (this *V2Endpoints) StartProcessDefinition(config configuration.Config, rou
 			return
 		}
 
-		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
+		definition, err := c.GetProcessDefinitionWithAccessCheck(id, token.GetUserId())
+		if err != nil {
 			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
+			return
+		}
+		if definition.Suspended {
+			http.Error(writer, deploymentDisabledMessage, http.StatusConflict)
 			return
 		}
 
@@ -101,6 +111,7 @@ func (this *V2Endpoints) StartProcessDefinition(config configuration.Config, rou
 // @Failure      401
 // @Failure      403
 // @Failure      404
+// @Failure      409 "deployment is disabled"
 // @Failure      500
 // @Router       /v2/process-definitions/{id}/start/id [GET]
 func (this *V2Endpoints) StartProcessDefinitionAndGetInstanceId(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
@@ -113,9 +124,14 @@ func (this *V2Endpoints) StartProcessDefinitionAndGetInstanceId(config configura
 			return
 		}
 
-		if err := c.CheckProcessDefinitionAccess(id, token.GetUserId()); err != nil {
+		definition, err := c.GetProcessDefinitionWithAccessCheck(id, token.GetUserId())
+		if err != nil {
 			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
 			http.Error(writer, "Access denied", http.StatusUnauthorized)
+			return
+		}
+		if definition.Suspended {
+			http.Error(writer, deploymentDisabledMessage, http.StatusConflict)
 			return
 		}
 
@@ -223,6 +239,7 @@ func (this *V2Endpoints) DeploymentExists(config configuration.Config, router *h
 // @Failure      401
 // @Failure      403
 // @Failure      404
+// @Failure      409 "deployment is disabled"
 // @Failure      500
 // @Router       /v2/deployments/{id}/start [GET]
 func (this *V2Endpoints) StartDeployment(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
@@ -251,6 +268,10 @@ func (this *V2Endpoints) StartDeployment(config configuration.Config, router *ht
 			http.Error(writer, "no definition for deployment found", http.StatusInternalServerError)
 			return
 		}
+		if definitions[0].Suspended {
+			http.Error(writer, deploymentDisabledMessage, http.StatusConflict)
+			return
+		}
 
 		businessKey := request.URL.Query().Get("business_key")
 		inputs := parseQueryParameter(request.URL.Query())
@@ -263,6 +284,61 @@ func (this *V2Endpoints) StartDeployment(config configuration.Config, router *ht
 		}
 		writer.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(writer).Encode(result)
+	})
+}
+
+// SetDeploymentDisabled godoc
+// @Summary      disable or enable deployment
+// @Description  a disabled deployment starts no new process-instances (by event, timer or manually) and its running instances are removed; the state is kept when the deployment is redeployed with the same id
+// @Tags         deployment
+// @Accept       json
+// @Produce      json
+// @Security Bearer
+// @Param        id path string true "deployment id"
+// @Param        message body model.DeploymentDisabled true "requested state"
+// @Success      200 {object}  model.DeploymentDisabled
+// @Failure      400
+// @Failure      401
+// @Failure      500
+// @Router       /v2/deployments/{id}/disabled [PUT]
+func (this *V2Endpoints) SetDeploymentDisabled(config configuration.Config, router *http.ServeMux, c *camunda.Camunda, e *controller.Controller, m Metrics) {
+	router.HandleFunc("PUT /v2/deployments/{id}/disabled", func(writer http.ResponseWriter, request *http.Request) {
+		id := request.PathValue("id")
+
+		token, err := auth.GetParsedToken(request)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := c.CheckDeploymentAccess(id, token.GetUserId()); err != nil {
+			config.GetLogger().Warn("access denied for user", "user", token.GetUserId(), "error", err)
+			http.Error(writer, "Access denied", http.StatusUnauthorized)
+			return
+		}
+
+		// pointer field: a body without "disabled" must be rejected instead of being read as false (enable)
+		body := struct {
+			Disabled *bool `json:"disabled"`
+		}{}
+		err = json.NewDecoder(http.MaxBytesReader(writer, request.Body, 4096)).Decode(&body)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if body.Disabled == nil {
+			http.Error(writer, "missing field disabled", http.StatusBadRequest)
+			return
+		}
+
+		err = e.SetDeploymentDisabled(token.GetUserId(), id, *body.Disabled)
+		if err != nil {
+			config.GetLogger().Error("error on setDeploymentDisabled", "error", err)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(writer).Encode(model.DeploymentDisabled{Disabled: *body.Disabled})
 	})
 }
 

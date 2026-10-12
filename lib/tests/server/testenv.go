@@ -20,6 +20,11 @@ import (
 )
 
 func CreateTestEnv(ctx context.Context, wg *sync.WaitGroup, initConf configuration.Config) (config configuration.Config, wrapperUrl string, shard string, err error) {
+	return CreateTestEnvWithIncidentApi(ctx, wg, initConf, nil)
+}
+
+// CreateTestEnvWithIncidentApi lets the test answer the wrapper's incident-api calls; nil answers every call with 200.
+func CreateTestEnvWithIncidentApi(ctx context.Context, wg *sync.WaitGroup, initConf configuration.Config, incidentApi http.Handler) (config configuration.Config, wrapperUrl string, shard string, err error) {
 	pgStr, err := docker.Postgres(ctx, wg, "vid_relations")
 	if err != nil {
 		return config, wrapperUrl, shard, err
@@ -34,14 +39,21 @@ func CreateTestEnv(ctx context.Context, wg *sync.WaitGroup, initConf configurati
 	initConf.ShardingDb = pgStr
 	config.CamundaDb = fmt.Sprintf("postgres://usr:pw@%s:5432/camunda?sslmode=disable", camundaPgIp)
 
-	return CreateTestEnvWithCamundaDatabaseAndTag(ctx, wg, initConf, camundaPgIp, "dev")
+	return createTestEnv(ctx, wg, initConf, camundaPgIp, "dev", incidentApi)
 }
 
 func CreateTestEnvWithCamundaDatabaseAndTag(ctx context.Context, wg *sync.WaitGroup, initConf configuration.Config, camundaPgIp string, camundaTag string) (config configuration.Config, wrapperUrl string, shard string, err error) {
+	return createTestEnv(ctx, wg, initConf, camundaPgIp, camundaTag, nil)
+}
+
+func createTestEnv(ctx context.Context, wg *sync.WaitGroup, initConf configuration.Config, camundaPgIp string, camundaTag string, incidentApi http.Handler) (config configuration.Config, wrapperUrl string, shard string, err error) {
 	config = initConf
 	config.CamundaDb = fmt.Sprintf("postgres://usr:pw@%s:5432/camunda?sslmode=disable", camundaPgIp)
 
-	incidentApiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	if incidentApi == nil {
+		incidentApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	}
+	incidentApiServer := httptest.NewServer(incidentApi)
 	go func() {
 		<-ctx.Done()
 		incidentApiServer.Close()

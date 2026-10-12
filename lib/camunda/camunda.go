@@ -134,16 +134,52 @@ func (this *Camunda) StartProcessGetId(processDefinitionId string, businessKey s
 }
 
 func (this *Camunda) CheckProcessDefinitionAccess(id string, userId string) (err error) {
+	_, err = this.GetProcessDefinitionWithAccessCheck(id, userId)
+	return err
+}
+
+// GetProcessDefinitionWithAccessCheck returns the raw camunda definition (deployment id not replaced by the vid)
+// and an error if it does not belong to userId.
+func (this *Camunda) GetProcessDefinitionWithAccessCheck(id string, userId string) (definition model.ProcessDefinition, err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
-		return err
+		return definition, err
 	}
-	definition := model.ProcessDefinition{}
 	err = Get(shard+"/engine-rest/process-definition/"+url.QueryEscape(id), &definition)
 	if err == nil && definition.TenantId != userId {
 		err = errors.New("access denied")
 	}
 	return
+}
+
+// SetProcessDefinitionSuspended suspends or activates a process definition without touching its running instances.
+func (this *Camunda) SetProcessDefinitionSuspended(definitionId string, userId string, suspended bool) error {
+	shard, err := this.shards.EnsureShardForUser(userId)
+	if err != nil {
+		return err
+	}
+	body, err := json.Marshal(map[string]interface{}{
+		"suspended":               suspended,
+		"includeProcessInstances": false,
+	})
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("PUT", shard+"/engine-rest/process-definition/"+url.PathEscape(definitionId)+"/suspended", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	msg, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return errors.New("unable to set suspension state of process definition " + definitionId + ": " + resp.Status + " " + string(msg))
+	}
+	return nil
 }
 
 func (this *Camunda) CheckDeploymentAccess(vid string, userId string) (err error) {
@@ -214,6 +250,15 @@ func (this *Camunda) CheckHistoryAccess(id string, userId string) (definitionId 
 }
 
 func (this *Camunda) RemoveProcessInstance(id string, userId string) (err error) {
+	return this.removeProcessInstance(id, userId, false)
+}
+
+// RemoveProcessInstanceIfExists treats an instance that ended before it could be deleted as removed.
+func (this *Camunda) RemoveProcessInstanceIfExists(id string, userId string) (err error) {
+	return this.removeProcessInstance(id, userId, true)
+}
+
+func (this *Camunda) removeProcessInstance(id string, userId string, ignoreNotFound bool) (err error) {
 	if this.processIo != nil {
 		err = this.processIo.DeleteProcessInstance(id)
 		if err != nil {
@@ -236,6 +281,9 @@ func (this *Camunda) RemoveProcessInstance(id string, userId string) (err error)
 	}
 	defer resp.Body.Close()
 	msg, _ := io.ReadAll(resp.Body)
+	if ignoreNotFound && resp.StatusCode == http.StatusNotFound {
+		return nil
+	}
 	if !(resp.StatusCode == 200 || resp.StatusCode == 204) {
 		u, _ := url.Parse(shard)
 		u.User = &url.Userinfo{}
@@ -457,12 +505,16 @@ func (this *Camunda) GetInstancesByDeploymentVid(vid string, userId string) (res
 	if !exists {
 		return result, UnknownVid
 	}
+	return this.GetRawInstancesByDeployment(id, userId)
+}
 
+// uses original deploymentId (not vid)
+func (this *Camunda) GetRawInstancesByDeployment(deploymentId string, userId string) (result model.ProcessInstances, err error) {
 	shard, err := this.shards.EnsureShardForUser(userId)
 	if err != nil {
 		return result, err
 	}
-	err = Get(shard+"/engine-rest/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&deploymentId="+url.QueryEscape(id), &result)
+	err = Get(shard+"/engine-rest/process-instance?tenantIdIn="+url.QueryEscape(userId)+"&deploymentId="+url.QueryEscape(deploymentId), &result)
 	return
 }
 
@@ -659,7 +711,7 @@ func (this *Camunda) GetExtendedDeployment(deployment model.CamundaDeployment, u
 	if err != nil {
 		return result, err
 	}
-	return model.ExtendedDeployment{CamundaDeployment: deployment, Diagram: string(svg), DefinitionId: definition[0].Id}, nil
+	return model.ExtendedDeployment{CamundaDeployment: deployment, Diagram: string(svg), DefinitionId: definition[0].Id, Disabled: definition[0].Suspended}, nil
 }
 
 func (this *Camunda) GetProcessInstanceHistoryListWithTotal(userId string, searchtype string, searchvalue string, limit string, offset string, sortby string, sortdirection string, finished bool) (result model.HistoricProcessInstancesWithTotal, err error) {

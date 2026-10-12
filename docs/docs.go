@@ -256,6 +256,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/v2/deployments/{id}/disabled": {
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "a disabled deployment starts no new process-instances (by event, timer or manually) and its running instances are removed; the state is kept when the deployment is redeployed with the same id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deployment"
+                ],
+                "summary": "disable or enable deployment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "deployment id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "requested state",
+                        "name": "message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.DeploymentDisabled"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.DeploymentDisabled"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/v2/deployments/{id}/exists": {
             "get": {
                 "security": [
@@ -457,6 +512,9 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found"
+                    },
+                    "409": {
+                        "description": "deployment is disabled"
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -779,6 +837,9 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found"
                     },
+                    "409": {
+                        "description": "deployment is disabled"
+                    },
                     "500": {
                         "description": "Internal Server Error"
                     }
@@ -834,6 +895,9 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found"
+                    },
+                    "409": {
+                        "description": "deployment is disabled"
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -1132,6 +1196,14 @@ const docTemplate = `{
                 }
             }
         },
+        "model.DeploymentDisabled": {
+            "type": "object",
+            "properties": {
+                "disabled": {
+                    "type": "boolean"
+                }
+            }
+        },
         "model.DeploymentMessage": {
             "type": "object",
             "properties": {
@@ -1179,6 +1251,9 @@ const docTemplate = `{
                 "deploymentTime": {},
                 "diagram": {
                     "type": "string"
+                },
+                "disabled": {
+                    "type": "boolean"
                 },
                 "error": {
                     "type": "string"

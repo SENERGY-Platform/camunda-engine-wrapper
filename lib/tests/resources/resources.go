@@ -35,3 +35,6 @@ var LongWithParameter string
 
 //go:embed finishing.bpmn
 var Finishing string
+
+//go:embed message_start_long.bpmn
+var MessageStartLong string

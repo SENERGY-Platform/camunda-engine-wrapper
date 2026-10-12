@@ -31,6 +31,13 @@ CREATE INDEX IF NOT EXISTS vid_index ON VidRelation (VirtualId);
 CREATE INDEX IF NOT EXISTS did_index ON VidRelation (DeploymentId);
 `
 
+// CreateDisabledTable holds the user's intent to keep a deployment disabled, keyed by virtual id,
+// so the state survives redeploys that replace the camunda deployment.
+var CreateDisabledTable = `CREATE TABLE IF NOT EXISTS DisabledDeployment (
+	VirtualId			VARCHAR(255) PRIMARY KEY
+);
+`
+
 type DbInterface interface {
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	QueryRow(query string, args ...interface{}) *sql.Row
@@ -43,5 +50,9 @@ func InitDb(pgConn string) (db *sql.DB, err error) {
 		return
 	}
 	_, err = db.Exec(CreateVidTable)
+	if err != nil {
+		return db, err
+	}
+	_, err = db.Exec(CreateDisabledTable)
 	return db, err
 }

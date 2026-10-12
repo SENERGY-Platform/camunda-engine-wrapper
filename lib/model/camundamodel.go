@@ -126,7 +126,12 @@ type ExtendedDeployment struct {
 	CamundaDeployment
 	Diagram      string `json:"diagram"`
 	DefinitionId string `json:"definition_id"`
+	Disabled     bool   `json:"disabled"`
 	Error        string `json:"error"`
+}
+
+type DeploymentDisabled struct {
+	Disabled bool `json:"disabled"`
 }
 
 type HistoricProcessInstancesWithTotal = struct {

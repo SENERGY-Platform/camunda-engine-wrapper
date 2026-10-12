@@ -52,6 +52,15 @@ func (this *Vid) VidExists(vid string) (exists bool, err error) {
 
 //remove relation between vid (command.Id) and deploymentId
 func (this *Vid) RemoveVidRelation(vid string, deploymentId string) (commit func() error, rollback func() error, err error) {
+	return this.removeVidRelation(vid, deploymentId, false)
+}
+
+// RemoveVidRelationAndDisabledIntent removes the relation and the disabled intent of vid in one transaction.
+func (this *Vid) RemoveVidRelationAndDisabledIntent(vid string, deploymentId string) (commit func() error, rollback func() error, err error) {
+	return this.removeVidRelation(vid, deploymentId, true)
+}
+
+func (this *Vid) removeVidRelation(vid string, deploymentId string, removeDisabledIntent bool) (commit func() error, rollback func() error, err error) {
 	tx, err := this.db.Begin()
 	if err != nil {
 		return commit, rollback, err
@@ -65,6 +74,13 @@ func (this *Vid) RemoveVidRelation(vid string, deploymentId string) (commit func
 	if err != nil {
 		tx.Rollback()
 		return commit, rollback, err
+	}
+	if removeDisabledIntent {
+		_, err = tx.Exec("DELETE FROM DisabledDeployment WHERE VirtualId = $1;", vid)
+		if err != nil {
+			tx.Rollback()
+			return commit, rollback, err
+		}
 	}
 	return tx.Commit, tx.Rollback, err
 }
