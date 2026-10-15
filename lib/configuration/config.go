@@ -38,14 +38,14 @@ type Config struct {
 	ServerPort  string `json:"server_port"`
 	MetricsPort string `json:"metrics_port"`
 
-	WrapperDb  string `json:"wrapper_db"`
-	ShardingDb string `json:"sharding_db"`
-	CamundaDb  string `json:"camunda_db"`
+	WrapperDb  string `json:"wrapper_db" config:"secret"`
+	ShardingDb string `json:"sharding_db" config:"secret"`
+	CamundaDb  string `json:"camunda_db" config:"secret"`
 
 	//alternative to CamundaDb; used if CamundaDb == "" && CamundaDbHost != ""
 	CamundaDbHost string `json:"camunda_db_host"`
-	CamundaDbUser string `json:"camunda_db_user"`
-	CamundaDbPw   string `json:"camunda_db_pw"`
+	CamundaDbUser string `json:"camunda_db_user" config:"secret"`
+	CamundaDbPw   string `json:"camunda_db_pw" config:"secret"`
 	CamundaDbPort string `json:"camunda_db_port"`
 	CamundaDbName string `json:"camunda_db_name"`
 
@@ -107,7 +107,7 @@ func handleEnvironmentVars(config *Config) {
 		envName := fieldNameToEnvName(fieldName)
 		envValue := os.Getenv(envName)
 		if envValue != "" {
-			if LogEnvConfig {
+			if LogEnvConfig && !strings.Contains(configType.Field(index).Tag.Get("config"), "secret") {
 				fmt.Println("use environment variable: ", envName, " = ", envValue)
 			}
 			if configValue.FieldByName(fieldName).Kind() == reflect.Int64 {
